@@ -1,0 +1,28 @@
+# Secrets - never commit
+Firebase/firebase-key.json
+Seed/firebase-key.json
+appsettings.json
+
+# .NET build output
+bin/
+obj/
+
+# Visual Studio / Rider / JetBrains
+.vs/
+.idea/
+*.user
+*.DotSettings.user
+
+# Node (Seed script)
+Seed/node_modules/
+Seed/package-lock.json
+
+# Local uploads
+wwwroot/uploads/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db

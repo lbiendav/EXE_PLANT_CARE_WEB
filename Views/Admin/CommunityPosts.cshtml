@@ -1,0 +1,71 @@
+@model List<HomePlant.Models.CommunityPostModel>
+
+<style>
+    .post-card {
+        border: none;
+        border-radius: 16px;
+    }
+
+    .post-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .post-image {
+        height: 160px;
+        width: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+    }
+</style>
+
+<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
+    ← Quay lại Quản lý
+</a>
+
+<h1 class="fw-bold mb-4" style="color:#2e7d32;">💬 Quản lý bài đăng cộng đồng</h1>
+
+<div class="row g-3">
+    @foreach (var post in Model)
+    {
+        <div class="col-lg-4 col-md-6">
+            <div class="card post-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="@(string.IsNullOrEmpty(post.AuthorAvatar) ? "https://i.pravatar.cc/150" : post.AuthorAvatar)"
+                             class="post-avatar" />
+                        <div>
+                            <div class="fw-semibold">@post.AuthorName</div>
+                            <small class="text-muted">@post.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+
+                        <span class="badge bg-@(post.Status == "approved" ? "success" : "secondary") ms-auto">
+                            @post.Status
+                        </span>
+                    </div>
+
+                    <p class="mb-2">@post.Content</p>
+
+                    @if (post.Images.Count > 0)
+                    {
+                        <img src="@post.Images[0]" class="post-image mb-2" />
+                    }
+
+                    <div class="d-flex gap-3 text-muted small mb-3">
+                        <span>❤️ @post.LikeCount</span>
+                        <span>💬 @post.CommentCount</span>
+                    </div>
+
+                    <a asp-action="DeleteCommunityPost"
+                       asp-route-id="@post.Id"
+                       class="btn btn-outline-danger btn-sm w-100"
+                       onclick="return confirm('Xóa bài đăng này?');">
+                        Xóa bài đăng
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

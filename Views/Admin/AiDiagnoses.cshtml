@@ -1,0 +1,72 @@
+@model List<HomePlant.Models.AiDiagnosisModel>
+
+<style>
+    .diag-card {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .diag-card img {
+        height: 160px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+
+    .confidence-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #43a047, #1b5e20);
+    }
+</style>
+
+<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
+    ← Quay lại Quản lý
+</a>
+
+<h1 class="fw-bold mb-4" style="color:#2e7d32;">🩺 Quản lý chẩn đoán AI</h1>
+
+<div class="row g-3">
+    @foreach (var d in Model)
+    {
+        <div class="col-lg-4 col-md-6">
+            <div class="card diag-card shadow-sm h-100">
+                @if (!string.IsNullOrEmpty(d.UploadedImageUrl))
+                {
+                    <img src="@d.UploadedImageUrl" />
+                }
+
+                <div class="card-body">
+                    <h6 class="fw-bold text-danger mb-1">@d.Result?.DiseaseName</h6>
+
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="confidence-bar flex-fill">
+                            <div class="confidence-bar-fill" style="width:@((d.Result?.Confidence ?? 0) * 100)%;"></div>
+                        </div>
+                        <small class="text-muted">@((d.Result?.Confidence ?? 0) * 100)%</small>
+                    </div>
+
+                    <p class="small mb-1"><strong>Nguyên nhân:</strong> @d.Result?.Cause</p>
+                    <p class="small mb-2"><strong>Điều trị:</strong> @d.Result?.Treatment</p>
+
+                    <small class="text-muted d-block mb-3">
+                        @d.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    </small>
+
+                    <a asp-action="DeleteAiDiagnosis"
+                       asp-route-id="@d.Id"
+                       class="btn btn-outline-danger btn-sm w-100"
+                       onclick="return confirm('Xóa bản ghi chẩn đoán này?');">
+                        Xóa
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

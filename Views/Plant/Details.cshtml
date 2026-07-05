@@ -1,0 +1,178 @@
+@using HomePlant.Models
+@model UserPlantModel
+
+@{
+    var template = ViewBag.Template as PlantTemplateModel;
+}
+
+<style>
+    .detail-hero {
+        border-radius: 22px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .detail-hero img {
+        width: 100%;
+        height: 320px;
+        object-fit: cover;
+    }
+
+    .detail-hero .status-pill {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        padding: 6px 16px;
+        border-radius: 999px;
+        font-weight: 700;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+
+    .info-card {
+        border: none;
+        border-radius: 16px;
+    }
+
+    .field-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eef2ee;
+    }
+
+    .field-row:last-child {
+        border-bottom: none;
+    }
+
+    .field-label {
+        color: #7a8a7a;
+        font-size: .88rem;
+    }
+
+    .field-value {
+        font-weight: 600;
+    }
+</style>
+
+<a asp-action="Index" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
+    ← Quay lại vườn
+</a>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="detail-hero shadow-sm">
+            <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : Model.ImageUrl)" />
+            <span class="status-pill bg-@Model.StatusColorClass">@Model.DisplayStatus</span>
+        </div>
+
+        @if (template != null)
+        {
+            <div class="card info-card shadow-sm mt-3">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-1" style="color:#2e7d32;">@template.Name</h5>
+                    <p class="text-muted fst-italic mb-2">@template.ScientificName</p>
+                    <p class="mb-3">@template.Description</p>
+
+                    @if (template.CareInstructions != null)
+                    {
+                        <div class="field-row">
+                            <span class="field-label">☀️ Ánh sáng</span>
+                            <span class="field-value text-end">@template.CareInstructions.Light</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="field-label">💧 Nước</span>
+                            <span class="field-value text-end">@template.CareInstructions.Water</span>
+                        </div>
+                        <div class="field-row">
+                            <span class="field-label">🌱 Đất</span>
+                            <span class="field-value text-end">@template.CareInstructions.Soil</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-7">
+        <h1 class="fw-bold mb-1">@Model.CustomName</h1>
+        <p class="text-muted mb-4">Chi tiết cây trong vườn của bạn</p>
+
+        <div class="card info-card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold text-uppercase text-muted small mb-3">Thông tin chung</h6>
+
+                <div class="field-row">
+                    <span class="field-label">Mã cây (Plant ID)</span>
+                    <span class="field-value">@Model.PlantId</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Mã tài liệu Firestore</span>
+                    <span class="field-value">@Model.Id</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Mã loại cây (Template ID)</span>
+                    <span class="field-value">@Model.TemplateId</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Trạng thái</span>
+                    <span class="field-value">
+                        <span class="badge bg-@Model.StatusColorClass">@Model.DisplayStatus</span>
+                    </span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Ngày tạo</span>
+                    <span class="field-value">@Model.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Ngày trồng</span>
+                    <span class="field-value">@Model.PlantedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card info-card shadow-sm mb-3">
+            <div class="card-body">
+                <h6 class="fw-bold text-uppercase text-muted small mb-3">Lịch chăm sóc</h6>
+
+                <div class="field-row">
+                    <span class="field-label">💧 Tưới nước gần nhất</span>
+                    <span class="field-value">
+                        @(Model.LastWatered.HasValue ? Model.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
+                    </span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Tần suất tưới nước</span>
+                    <span class="field-value">@(Model.WateringFrequency.HasValue ? $"{Model.WateringFrequency} ngày/lần" : "Chưa thiết lập")</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">🌱 Bón phân gần nhất</span>
+                    <span class="field-value">
+                        @(Model.LastFertilized.HasValue ? Model.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
+                    </span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Tần suất bón phân</span>
+                    <span class="field-value">@(Model.FertilizingFrequency.HasValue ? $"{Model.FertilizingFrequency} ngày/lần" : "Chưa thiết lập")</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">🪴 Thay chậu gần nhất</span>
+                    <span class="field-value">
+                        @(Model.LastRepotted.HasValue ? Model.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
+                    </span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">Tần suất thay chậu</span>
+                    <span class="field-value">@(Model.RepottingFrequency.HasValue ? $"{Model.RepottingFrequency} ngày/lần" : "Chưa thiết lập")</span>
+                </div>
+            </div>
+        </div>
+
+        <a asp-controller="CareLog"
+           asp-action="Index"
+           asp-route-plantId="@Model.Id"
+           class="btn btn-primary fw-semibold">
+            Xem lịch sử chăm sóc
+        </a>
+    </div>
+</div>

@@ -1,0 +1,8 @@
+@model HomePlant.ViewModels.PlantSampleFormVM
+
+@{
+    ViewData["FormAction"] = "CreateSamplePlant";
+    ViewData["Heading"] = "🌱 Thêm cây vào thư viện";
+}
+
+<partial name="_PlantSampleForm" model="Model" />

@@ -1,0 +1,193 @@
+@model HomePlant.ViewModels.PlantSampleFormVM
+
+@{
+    var formAction = (string)ViewData["FormAction"]!;
+    var heading = (string)ViewData["Heading"]!;
+}
+
+<style>
+    .form-card {
+        border: none;
+        border-radius: 18px;
+    }
+
+    .disease-row {
+        background: #f7faf7;
+        border: 1px solid #dfeee0;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+        position: relative;
+    }
+
+    .disease-remove {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+    }
+
+    .photo-dropzone {
+        cursor: pointer;
+        background: #f2f8f2;
+        border: 2px dashed #a5d6a7 !important;
+        color: #2e7d32;
+        border-radius: 14px;
+    }
+</style>
+
+<a asp-action="SamplePlants" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
+    ← Quay lại thư viện cây
+</a>
+
+<h1 class="fw-bold mb-4" style="color:#2e7d32;">@heading</h1>
+
+<form method="post" asp-action="@formAction" asp-route-id="@Model.Id" enctype="multipart/form-data" style="max-width:720px;">
+
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ExistingImageUrl" />
+
+    <div class="card form-card shadow-sm mb-3">
+        <div class="card-body">
+
+            <label for="Photo"
+                   id="photoDropzone"
+                   class="photo-dropzone d-flex flex-column align-items-center justify-content-center text-center p-4 mb-3"
+                   style="overflow:hidden;">
+                @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+                {
+                    <img id="photoPreview" src="@Model.ExistingImageUrl" style="max-height:200px;max-width:100%;object-fit:cover;" />
+                }
+                else
+                {
+                    <span id="photoPlaceholder" style="font-size:2rem;">+📷</span>
+                    <span id="photoPlaceholderText" class="mt-2">Chọn ảnh cho cây</span>
+                    <img id="photoPreview" class="d-none" style="max-height:200px;max-width:100%;object-fit:cover;" />
+                }
+            </label>
+            <input type="file" id="Photo" name="Photo" accept="image/*" class="d-none" />
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Tên cây</label>
+                <input asp-for="Name" class="form-control" placeholder="Ví dụ: Trầu Bà Xanh" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Tên khoa học</label>
+                <input asp-for="ScientificName" class="form-control" placeholder="Ví dụ: Epipremnum aureum" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Mô tả</label>
+                <textarea asp-for="Description" rows="3" class="form-control"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card form-card shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="fw-bold text-uppercase text-muted small mb-3">Hướng dẫn chăm sóc</h6>
+
+            <div class="mb-3">
+                <label class="form-label">☀️ Ánh sáng</label>
+                <input asp-for="Light" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">💧 Nước</label>
+                <input asp-for="Water" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">🌱 Đất</label>
+                <input asp-for="Soil" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">🧪 Phân bón</label>
+                <input asp-for="Fertilizer" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <div class="card form-card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-uppercase text-muted small mb-0">Bệnh thường gặp</h6>
+                <button type="button" id="addDisease" class="btn btn-outline-success btn-sm">+ Thêm bệnh</button>
+            </div>
+
+            <div id="diseaseContainer">
+                @for (var i = 0; i < Model.Diseases.Count; i++)
+                {
+                    <div class="disease-row">
+                        <button type="button" class="btn btn-sm btn-outline-danger disease-remove" onclick="this.parentElement.remove();">✕</button>
+                        <div class="mb-2">
+                            <label class="form-label small">Tên bệnh / hiện tượng</label>
+                            <input name="Diseases[@i].Issue" value="@Model.Diseases[i].Issue" class="form-control form-control-sm" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Nguyên nhân</label>
+                            <input name="Diseases[@i].Cause" value="@Model.Diseases[i].Cause" class="form-control form-control-sm" />
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small">Cách xử lý</label>
+                            <input name="Diseases[@i].Treatment" value="@Model.Diseases[i].Treatment" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
+        Lưu
+    </button>
+
+</form>
+
+<template id="diseaseRowTemplate">
+    <div class="disease-row">
+        <button type="button" class="btn btn-sm btn-outline-danger disease-remove" onclick="this.parentElement.remove();">✕</button>
+        <div class="mb-2">
+            <label class="form-label small">Tên bệnh / hiện tượng</label>
+            <input name="Diseases[__index__].Issue" class="form-control form-control-sm" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label small">Nguyên nhân</label>
+            <input name="Diseases[__index__].Cause" class="form-control form-control-sm" />
+        </div>
+        <div class="mb-0">
+            <label class="form-label small">Cách xử lý</label>
+            <input name="Diseases[__index__].Treatment" class="form-control form-control-sm" />
+        </div>
+    </div>
+</template>
+
+<script>
+    document.getElementById("Photo").addEventListener("change", function () {
+        var file = this.files && this.files[0];
+        var preview = document.getElementById("photoPreview");
+        var placeholder = document.getElementById("photoPlaceholder");
+        var placeholderText = document.getElementById("photoPlaceholderText");
+
+        if (!file) return;
+
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("d-none");
+
+        if (placeholder) placeholder.classList.add("d-none");
+        if (placeholderText) placeholderText.textContent = file.name;
+    });
+
+    var diseaseIndex = @Model.Diseases.Count;
+
+    document.getElementById("addDisease").addEventListener("click", function () {
+        var template = document.getElementById("diseaseRowTemplate").innerHTML;
+        var html = template.split("__index__").join(diseaseIndex);
+
+        var wrapper = document.createElement("div");
+        wrapper.innerHTML = html;
+
+        document.getElementById("diseaseContainer").appendChild(wrapper.firstElementChild);
+
+        diseaseIndex++;
+    });
+</script>

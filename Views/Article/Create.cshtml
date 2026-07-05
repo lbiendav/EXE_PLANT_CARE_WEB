@@ -1,0 +1,40 @@
+﻿@model HomePlant.Models.ArticleModel
+
+<h2>Create Article</h2>
+
+<form method="post">
+
+    <div class="mb-3">
+
+        <label>Title</label>
+
+        <input asp-for="Title"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Cover Image Url</label>
+
+        <input asp-for="CoverImage"
+               class="form-control" />
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Content</label>
+
+        <textarea asp-for="Content"
+                  rows="10"
+                  class="form-control">
+        </textarea>
+
+    </div>
+
+    <button class="btn btn-success">
+        Save
+    </button>
+
+</form>

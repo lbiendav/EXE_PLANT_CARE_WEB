@@ -1,0 +1,279 @@
+﻿@using Microsoft.AspNetCore.Http
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - HomePlant</title>
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+    <link rel="stylesheet"
+          href="~/HomePlant.styles.css"
+          asp-append-version="true" />
+
+    <style>
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f7faf7;
+        }
+
+        .custom-navbar {
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,.08);
+            padding: 12px 0;
+        }
+
+        .logo-text {
+            color: #2e7d32 !important;
+            font-weight: 700;
+            font-size: 28px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: #333 !important;
+            margin: 0 6px;
+            transition: .3s;
+        }
+
+            .nav-link:hover {
+                color: #2e7d32 !important;
+            }
+
+        .admin-link {
+            color: #d32f2f !important;
+            font-weight: 600;
+        }
+
+        .user-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        main {
+            min-height: 80vh;
+        }
+
+        .footer-custom {
+            background: white;
+            margin-top: 60px;
+            padding: 40px 0;
+            border-top: 1px solid #eee;
+        }
+
+            .footer-custom h5 {
+                color: #2e7d32;
+                font-weight: 700;
+            }
+
+            .footer-custom p {
+                color: #666;
+            }
+
+    </style>
+
+
+</head>
+
+<body>
+
+
+    <header>
+
+        <nav class="navbar navbar-expand-lg custom-navbar">
+
+            <div class="container">
+
+                <a class="navbar-brand logo-text"
+                   asp-controller="Home"
+                   asp-action="Index">
+
+                    HomePlant
+
+                </a>
+
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#navbarContent">
+
+                    <span class="navbar-toggler-icon"></span>
+
+                </button>
+
+                <div class="collapse navbar-collapse"
+                     id="navbarContent">
+
+                    <ul class="navbar-nav me-auto">
+
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               asp-controller="Home"
+                               asp-action="Index">
+                                Explore
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               asp-controller="Library"
+                               asp-action="Index">
+                                Plant Library
+                            </a>
+                        </li>
+
+                        @if (Context.Session.GetString("Email") != null)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Plant"
+                                   asp-action="Index">
+                                    My Garden
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                   asp-controller="Profile"
+                                   asp-action="Index">
+                                    Profile
+                                </a>
+                            </li>
+                        }
+
+                        @if (string.Equals(Context.Session.GetString("Role"), "admin", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link admin-link"
+                                   asp-controller="Admin"
+                                   asp-action="Dashboard">
+                                    🛠️ Quản lý
+                                </a>
+                            </li>
+                        }
+
+                    </ul>
+
+                    <ul class="navbar-nav align-items-center">
+
+                        @if (Context.Session.GetString("Email") == null)
+                        {
+                            <li class="nav-item">
+
+                                <a class="nav-link"
+                                   asp-controller="Account"
+                                   asp-action="Login">
+
+                                    Login
+
+                                </a>
+
+                            </li>
+
+                            <li class="nav-item">
+
+                                <a class="btn btn-success ms-2"
+                                   asp-controller="Account"
+                                   asp-action="Register">
+
+                                    Register
+
+                                </a>
+
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+
+                                <span class="user-badge">
+
+                                    @Context.Session.GetString("Email")
+
+                                </span>
+
+                            </li>
+
+                            <li class="nav-item">
+
+                                <a class="btn btn-outline-danger ms-3"
+                                   asp-controller="Account"
+                                   asp-action="Logout">
+
+                                    Logout
+
+                                </a>
+
+                            </li>
+                        }
+
+                    </ul>
+
+                </div>
+
+            </div>
+
+        </nav>
+
+    </header>
+
+    <div class="container mt-4">
+
+        <main role="main">
+
+            @RenderBody()
+
+        </main>
+
+    </div>
+
+    <footer class="footer-custom">
+
+        <div class="container text-center">
+
+            <h5>HomePlant</h5>
+
+            <p>
+                Smart Plant Care Platform
+            </p>
+
+            <small>
+                © 2026 HomePlant. All rights reserved.
+            </small>
+
+        </div>
+
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/js/site.js"
+            asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+    ```
+
+</body>
+</html>

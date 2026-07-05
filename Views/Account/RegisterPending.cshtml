@@ -1,0 +1,16 @@
+@model string
+
+<div class="text-center py-5" style="max-width:480px;margin:0 auto;">
+    <div style="font-size:3rem;">📧</div>
+
+    <h3 class="fw-bold mt-3" style="color:#2e7d32;">Kiểm tra email của bạn</h3>
+
+    <p class="text-muted mt-2">
+        Chúng tôi đã gửi một liên kết xác thực đến <strong>@Model</strong>.
+        Vui lòng nhấp vào liên kết đó để kích hoạt tài khoản trước khi đăng nhập.
+    </p>
+
+    <a asp-action="Login" class="btn btn-success fw-bold px-4 mt-3">
+        Quay lại đăng nhập
+    </a>
+</div>

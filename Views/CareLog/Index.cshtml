@@ -1,0 +1,56 @@
+﻿@model List<HomePlant.Models.CareLogModel>
+
+<h2>Care History</h2>
+
+<a asp-action="Create"
+   asp-route-plantId="@ViewBag.PlantId"
+   class="btn btn-success mb-3">
+    Add Log
+</a>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Note</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+
+                <td>
+                    @item.ActionType
+                </td>
+
+                <td>
+                    @item.Note
+                </td>
+
+                <td>
+                    @item.CreatedAt
+                </td>
+
+                <td>
+
+                    <a asp-action="Delete"
+                       asp-route-plantId="@ViewBag.PlantId"
+                       asp-route-id="@item.Id"
+                       class="btn btn-danger">
+                        Delete
+                    </a>
+
+                </td>
+
+            </tr>
+        }
+
+    </tbody>
+
+</table>

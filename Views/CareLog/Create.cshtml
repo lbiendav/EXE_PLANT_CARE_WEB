@@ -1,0 +1,52 @@
+﻿@model HomePlant.Models.CareLogModel
+
+<h2>Add Care Log</h2>
+
+<form method="post">
+
+    <input type="hidden"
+           name="plantId"
+           value="@ViewBag.PlantId" />
+
+    <div class="mb-3">
+
+        <label>Action Type</label>
+
+        <select asp-for="ActionType"
+                class="form-control">
+
+            <option value="Watering">
+                Watering
+            </option>
+
+            <option value="Fertilizing">
+                Fertilizing
+            </option>
+
+            <option value="Repotting">
+                Repotting
+            </option>
+
+            <option value="Observation">
+                Observation
+            </option>
+
+        </select>
+
+    </div>
+
+    <div class="mb-3">
+
+        <label>Note</label>
+
+        <textarea asp-for="Note"
+                  class="form-control">
+        </textarea>
+
+    </div>
+
+    <button class="btn btn-success">
+        Save
+    </button>
+
+</form>

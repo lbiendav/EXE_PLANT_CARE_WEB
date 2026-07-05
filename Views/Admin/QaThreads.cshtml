@@ -1,0 +1,63 @@
+@model List<HomePlant.Models.QaThreadModel>
+
+<style>
+    .thread-card {
+        border: none;
+        border-radius: 16px;
+    }
+
+    .thread-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+</style>
+
+<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
+    ← Quay lại Quản lý
+</a>
+
+<h1 class="fw-bold mb-4" style="color:#2e7d32;">❓ Quản lý câu hỏi chuyên gia</h1>
+
+<div class="row g-3">
+    @foreach (var thread in Model)
+    {
+        <div class="col-lg-6">
+            <div class="card thread-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="fw-bold mb-0">@thread.Title</h6>
+                        <span class="badge bg-@(thread.Status == "processing" ? "warning" : "success") text-dark">
+                            @thread.Status
+                        </span>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <img src="@(string.IsNullOrEmpty(thread.UserAvatar) ? "https://i.pravatar.cc/150" : thread.UserAvatar)"
+                             class="thread-avatar" />
+                        <small class="text-muted">@thread.UserName hỏi</small>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(thread.ExpertName))
+                    {
+                        <small class="text-muted d-block mb-2">Chuyên gia phụ trách: @thread.ExpertName</small>
+                    }
+
+                    <p class="small mb-2"><strong>Tin nhắn gần nhất:</strong> @thread.LastMessage</p>
+
+                    <small class="text-muted d-block mb-3">
+                        @thread.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                    </small>
+
+                    <a asp-action="DeleteQaThread"
+                       asp-route-id="@thread.Id"
+                       class="btn btn-outline-danger btn-sm w-100"
+                       onclick="return confirm('Xóa chủ đề hỏi đáp này?');">
+                        Xóa
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>

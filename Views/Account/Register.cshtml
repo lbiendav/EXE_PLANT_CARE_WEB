@@ -1,0 +1,38 @@
+﻿@model HomePlant.ViewModels.RegisterVM
+
+<h2>Register</h2>
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form method="post">
+
+    <div class="mb-3">
+        <label>Full Name</label>
+        <input asp-for="FullName"
+               class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <input asp-for="Email"
+               class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <input asp-for="Password"
+               type="password"
+               class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Phone</label>
+        <input asp-for="Phone"
+               class="form-control" />
+    </div>
+
+    <button class="btn btn-success">
+        Register
+    </button>
+
+</form>
