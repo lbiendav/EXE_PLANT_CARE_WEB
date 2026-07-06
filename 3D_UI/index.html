@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOME PLANT — Sanctuary</title>
+<meta name="description" content="HOME PLANT, an indoor plant studio. Sanctuary — our first plant-care guide. Twelve species for busy people.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230a0f0a'/%3E%3Cpath d='M16 25c0-8 2-13 9-16-1 8-3 14-9 16zm0 0c-.5-6-2-10-7-12 .8 6 2.5 10 7 12z' fill='%23a9c46c'/%3E%3C/svg%3E">
+<link rel="preload" href="assets/fonts/fraunces-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="is-loading">
+
+<!-- ═══════════════ LOADER ═══════════════ -->
+<div class="loader" id="loader" aria-hidden="true">
+  <p class="loader__mark">HOME&nbsp;PLANT</p>
+  <div class="loader__bar"><span class="loader__fill" id="loaderFill"></span></div>
+  <p class="loader__pct"><span id="loaderPct">0</span></p>
+  <p class="loader__note">an indoor plant studio</p>
+</div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="head">
+  <a class="head__mark" href="#top">HOME&nbsp;PLANT</a>
+  <p class="head__guide">Guide&nbsp;№&nbsp;01&nbsp;—&nbsp;Sanctuary</p>
+  <button class="head__cta" type="button">Join</button>
+</header>
+
+<main id="top">
+
+  <!-- ═══════════════ 1 · HERO ORBIT ═══════════════ -->
+  <section class="stage stage--hero" id="hero">
+    <div class="sticky">
+      <canvas class="stage__cv" id="cv-orbit"></canvas>
+      <div class="scrim scrim--hero"></div>
+
+      <div class="hero__ui">
+        <p class="hero__kicker" id="heroKicker">Indoor&nbsp;Plant&nbsp;Studio&nbsp;·&nbsp;Est.&nbsp;in&nbsp;stillness</p>
+        <h1 class="hero__title" aria-label="Home Plant">
+          <span class="hero__word hero__word--solid" data-split>HOME</span>
+          <span class="hero__word hero__word--hollow" data-split>PLANT</span>
+        </h1>
+        <p class="hero__sub" id="heroSub">Sanctuary — our first plant-care guide.<br>Twelve species for busy people.</p>
+
+        <div class="hero__cue" id="heroCue">
+          <span class="hero__cue-label">Scroll</span>
+          <span class="hero__cue-line"></span>
+        </div>
+
+        <div class="hero__deg" id="heroDeg" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><circle class="hero__deg-track" cx="22" cy="22" r="20"/><circle class="hero__deg-ring" id="degRing" cx="22" cy="22" r="20"/></svg>
+          <span id="degNum">000°</span>
+        </div>
+      </div>
+
+      <p class="hero__inter" id="heroInter">One plant. Every angle of care.</p>
+      <div class="veil" data-veil></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 2 · STORY ═══════════════ -->
+  <section class="story" id="story">
+    <span class="story__ghost" aria-hidden="true" data-parallax="-8">STILLNESS</span>
+    <div class="story__inner">
+      <p class="kicker reveal">The Studio</p>
+      <h2 class="story__title">
+        <span class="line"><span class="line__in">Growing</span></span>
+        <span class="line"><span class="line__in">in <em>stillness.</em></span></span>
+      </h2>
+      <div class="story__body">
+        <p class="line"><span class="line__in">A plant does not hurry.</span></p>
+        <p class="line"><span class="line__in">It listens — to light, to water,</span></p>
+        <p class="line"><span class="line__in">to the air of the room.</span></p>
+        <p class="line line--dim"><span class="line__in"><em>Sanctuary</em> is a guide to listening back.</span></p>
+      </div>
+      <div class="story__meta reveal">
+        <span>Twelve species</span><i></i><span>Four rituals</span><i></i><span>One quiet hour a week</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 3 · MACRO FLY-THROUGH ═══════════════ -->
+  <section class="stage stage--macro" id="macro">
+    <div class="sticky">
+      <canvas class="stage__cv" id="cv-macro"></canvas>
+      <div class="scrim scrim--macro"></div>
+
+      <header class="chapter">
+        <p class="kicker">The Surface</p>
+        <p class="chapter__note">closer&nbsp;—&nbsp;until the leaf becomes a landscape</p>
+      </header>
+
+      <nav class="macro__dots" aria-hidden="true">
+        <span class="macro__dot" data-dot="0"><i></i>Light</span>
+        <span class="macro__dot" data-dot="1"><i></i>Water</span>
+        <span class="macro__dot" data-dot="2"><i></i>Humidity</span>
+      </nav>
+
+      <aside class="station station--l" data-win="0.03,0.30" data-station="0">
+        <p class="station__no">01</p>
+        <h3 class="station__word">Light.</h3>
+        <p class="station__copy">The leaf drinks what the sun spills.<br>Bright — never direct.</p>
+      </aside>
+      <aside class="station station--r" data-win="0.37,0.64" data-station="1">
+        <p class="station__no">02</p>
+        <h3 class="station__word">Water.</h3>
+        <p class="station__copy">Dew, not flood.<br>Moisture that lingers, never pools.</p>
+      </aside>
+      <aside class="station station--l" data-win="0.71,0.97" data-station="2">
+        <p class="station__no">03</p>
+        <h3 class="station__word">Humidity.</h3>
+        <p class="station__copy">Air you can almost hold.<br>Sixty to seventy percent.</p>
+      </aside>
+
+      <div class="veil" data-veil></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 4 · EXPLODED ANATOMY ═══════════════ -->
+  <section class="stage stage--anatomy" id="anatomy">
+    <div class="sticky">
+      <canvas class="stage__cv" id="cv-explode"></canvas>
+      <div class="scrim scrim--anatomy"></div>
+
+      <header class="chapter">
+        <p class="kicker">Every layer, on purpose</p>
+        <h2 class="chapter__title">Anatomy of a<br>Potted&nbsp;Plant</h2>
+      </header>
+
+      <aside class="callout callout--l" data-win="0.04,0.18">
+        <p class="callout__no">01 · Vessel</p>
+        <h3>Raw terracotta</h3>
+        <p class="callout__copy">Unglazed clay breathes,<br>so the roots do too.</p>
+      </aside>
+
+      <aside class="callout callout--r" data-win="0.22,0.38">
+        <p class="callout__no">02 · Substrate</p>
+        <h3>Three draining layers</h3>
+        <p class="callout__copy">Gravel, then grit,<br>then living soil.</p>
+        <p class="callout__spec"><b>3-layer</b> draining substrate</p>
+      </aside>
+
+      <aside class="callout callout--l" data-win="0.42,0.58">
+        <p class="callout__no">03 · Roots</p>
+        <h3>Water, on request</h3>
+        <p class="callout__copy">Test with a fingertip, not a schedule.</p>
+        <p class="callout__spec">water when the top <b>3&nbsp;cm</b> runs dry</p>
+      </aside>
+
+      <aside class="callout callout--r" data-win="0.62,0.78">
+        <p class="callout__no">04 · Leaves</p>
+        <h3>Borrowed sun</h3>
+        <p class="callout__copy">Near the window, never on the sill.</p>
+        <p class="callout__spec">indirect light · <b>6–8&nbsp;h</b>/day</p>
+      </aside>
+
+      <aside class="callout callout--l callout--last" data-win="0.82,0.94">
+        <p class="callout__no">05 · Air</p>
+        <h3>A soft climate</h3>
+        <p class="callout__copy">Mist, or a humidifier nearby.</p>
+        <p class="callout__spec">humidity <b>60–70%</b></p>
+      </aside>
+
+      <p class="anatomy__done" data-win="0.9,0.99">Complete. <span>— one Monstera, assembled</span></p>
+
+      <div class="veil" data-veil></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 5 · ATMOSPHERE ═══════════════ -->
+  <section class="stage stage--atmos" id="atmos">
+    <div class="sticky">
+      <canvas class="stage__cv" id="cv-atmos"></canvas>
+      <div class="scrim scrim--atmos"></div>
+      <div class="atmos__center">
+        <p class="kicker atmos__k" data-win="0.18,1">The Guide</p>
+        <h2 class="atmos__title" data-win="0.24,1"><em>Sanctuary</em></h2>
+        <p class="atmos__sub" data-win="0.34,1">A corner of the room that breathes.</p>
+      </div>
+      <div class="veil" data-veil></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ 6 · COLLECTION ═══════════════ -->
+  <section class="collection" id="collection">
+    <div class="collection__head">
+      <p class="kicker reveal">The Collection</p>
+      <h2 class="collection__title">
+        <span class="line"><span class="line__in">Twelve species</span></span>
+        <span class="line"><span class="line__in">for <em>busy</em> people.</span></span>
+      </h2>
+      <p class="collection__note reveal">Chosen to forgive. Ranked by how much they ask of you — which is very little.</p>
+    </div>
+
+    <ul class="grid">
+      <li class="card"><span class="card__no">01</span><h3 class="card__name">Monstera</h3><p class="card__latin">Monstera deliciosa</p><p class="card__note">Forgives forgetfulness.</p><p class="card__care"><span>water · 9&nbsp;days</span><span>light · medium</span></p></li>
+      <li class="card"><span class="card__no">02</span><h3 class="card__name">ZZ Plant</h3><p class="card__latin">Zamioculcas zamiifolia</p><p class="card__note">Thrives on neglect.</p><p class="card__care"><span>water · 14&nbsp;days</span><span>light · low</span></p></li>
+      <li class="card"><span class="card__no">03</span><h3 class="card__name">Snake Plant</h3><p class="card__latin">Sansevieria trifasciata</p><p class="card__note">Sleeps standing up.</p><p class="card__care"><span>water · 14&nbsp;days</span><span>light · low</span></p></li>
+      <li class="card"><span class="card__no">04</span><h3 class="card__name">Pothos</h3><p class="card__latin">Epipremnum aureum</p><p class="card__note">Grows toward any light it finds.</p><p class="card__care"><span>water · 7&nbsp;days</span><span>light · low</span></p></li>
+      <li class="card"><span class="card__no">05</span><h3 class="card__name">Heartleaf</h3><p class="card__latin">Philodendron hederaceum</p><p class="card__note">Soft-hearted, low-effort.</p><p class="card__care"><span>water · 7&nbsp;days</span><span>light · medium</span></p></li>
+      <li class="card"><span class="card__no">06</span><h3 class="card__name">Cast-Iron Plant</h3><p class="card__latin">Aspidistra elatior</p><p class="card__note">The name is a promise.</p><p class="card__care"><span>water · 10&nbsp;days</span><span>light · low</span></p></li>
+      <li class="card"><span class="card__no">07</span><h3 class="card__name">Chinese Evergreen</h3><p class="card__latin">Aglaonema commutatum</p><p class="card__note">Patient in dim corners.</p><p class="card__care"><span>water · 8&nbsp;days</span><span>light · low</span></p></li>
+      <li class="card"><span class="card__no">08</span><h3 class="card__name">Dragon Tree</h3><p class="card__latin">Dracaena marginata</p><p class="card__note">Slow, upright, unbothered.</p><p class="card__care"><span>water · 12&nbsp;days</span><span>light · medium</span></p></li>
+      <li class="card"><span class="card__no">09</span><h3 class="card__name">Peace Lily</h3><p class="card__latin">Spathiphyllum wallisii</p><p class="card__note">Tells you when it’s thirsty.</p><p class="card__care"><span>water · 6&nbsp;days</span><span>light · medium</span></p></li>
+      <li class="card"><span class="card__no">10</span><h3 class="card__name">Wax Plant</h3><p class="card__latin">Hoya carnosa</p><p class="card__note">Blooms for the patient.</p><p class="card__care"><span>water · 10&nbsp;days</span><span>light · bright</span></p></li>
+      <li class="card"><span class="card__no">11</span><h3 class="card__name">Rubber Plant</h3><p class="card__latin">Ficus elastica</p><p class="card__note">Broad leaves, few demands.</p><p class="card__care"><span>water · 9&nbsp;days</span><span>light · medium</span></p></li>
+      <li class="card"><span class="card__no">12</span><h3 class="card__name">Spider Plant</h3><p class="card__latin">Chlorophytum comosum</p><p class="card__note">Multiplies, quietly.</p><p class="card__care"><span>water · 7&nbsp;days</span><span>light · medium</span></p></li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════ 7 · CTA ═══════════════ -->
+  <section class="cta" id="subscribe">
+    <div class="cta__inner">
+      <p class="kicker reveal">The Schedule</p>
+      <h2 class="cta__title">
+        <span class="line"><span class="line__in">Care,</span></span>
+        <span class="line"><span class="line__in">on <em>Sundays.</em></span></span>
+      </h2>
+      <p class="cta__copy reveal">What to water, What to mist,<br>What to leave alone.<br>No worries.</p>
+      <p class="cta__fine reveal">Join now for free.</p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p class="foot__mark">HOME&nbsp;PLANT</p>
+    <p class="foot__mid">Guide № 01 — <em>Sanctuary</em> · twelve species for busy people</p>
+    <p class="foot__right">© 2026 · made in stillness</p>
+  </footer>
+
+</main>
+
+<div class="grain" aria-hidden="true"></div>
+
+<script src="assets/js/vendor/gsap.min.js"></script>
+<script src="assets/js/vendor/ScrollTrigger.min.js"></script>
+<script src="assets/js/vendor/lenis.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

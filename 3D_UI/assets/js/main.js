@@ -1,0 +1,357 @@
+/* ═══════════════════════════════════════════════════════════════
+   HOME PLANT — Sanctuary
+   scroll-scrubbed frame sequences · Lenis · GSAP ScrollTrigger
+   ═══════════════════════════════════════════════════════════════ */
+(() => {
+  'use strict';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  // smooth in/out window: 0 outside [a,b], eases to 1 inside
+  const win = (p, a, b, f = 0.18) => {
+    if (p <= a || p >= b) return 0;
+    const t = (p - a) / (b - a);
+    const edge = Math.min(t, 1 - t) / f;
+    return clamp01(edge);
+  };
+
+  /* ── global image loading queue (bounded concurrency) ────── */
+  const queue = (() => {
+    const tasks = [];
+    let running = 0;
+    const MAX = 14;
+    const pump = () => {
+      while (running < MAX && tasks.length) {
+        const t = tasks.shift();
+        running++;
+        t().finally(() => { running--; pump(); });
+      }
+    };
+    return {
+      push(fn, priority = false) {
+        priority ? tasks.unshift(fn) : tasks.push(fn);
+        pump();
+      }
+    };
+  })();
+
+  /* ── frame sequence ───────────────────────────────────────── */
+  class Sequence {
+    constructor(folder, count) {
+      this.folder = folder;
+      this.count = count;
+      this.imgs = new Array(count).fill(null);
+      this.ok = new Array(count).fill(false);
+      this.queued = new Array(count).fill(false);
+      this.onFrame = null;   // callback(index) when a frame lands
+      this.loaded = 0;
+    }
+    src(i) {
+      return `render_output/${this.folder}/frame_${String(i + 1).padStart(4, '0')}.webp`;
+    }
+    request(i, priority) {
+      if (this.queued[i]) return Promise.resolve();
+      this.queued[i] = true;
+      return new Promise((resolve) => {
+        queue.push(() => new Promise((done) => {
+          const img = new Image();
+          img.decoding = 'async';
+          img.onload = () => {
+            this.imgs[i] = img;
+            this.ok[i] = true;
+            this.loaded++;
+            if (this.onFrame) this.onFrame(i);
+            resolve(); done();
+          };
+          img.onerror = () => { resolve(); done(); };
+          img.src = this.src(i);
+        }), priority);
+      });
+    }
+    // load every `step`-th frame; returns promise for that pass
+    pass(step, priority = false) {
+      const jobs = [];
+      for (let i = 0; i < this.count; i += step) jobs.push(this.request(i, priority));
+      jobs.push(this.request(this.count - 1, priority));
+      return Promise.all(jobs);
+    }
+    // nearest decoded frame to ideal index — scrub never goes blank
+    frameAt(p) {
+      const ideal = Math.round(clamp01(p) * (this.count - 1));
+      if (this.ok[ideal]) return this.imgs[ideal];
+      for (let d = 1; d < this.count; d++) {
+        if (ideal - d >= 0 && this.ok[ideal - d]) return this.imgs[ideal - d];
+        if (ideal + d < this.count && this.ok[ideal + d]) return this.imgs[ideal + d];
+      }
+      return null;
+    }
+  }
+
+  const seqs = {
+    orbit:   new Sequence('orbit_sequence', 240),
+    macro:   new Sequence('macro_sequence', 240),
+    explode: new Sequence('exploded_sequence', 240),
+    atmos:   new Sequence('atmosphere_sequence', 121),
+  };
+
+  /* ── canvas stage: sticky canvas + lerped scrub ───────────── */
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  class Stage {
+    constructor(sectionSel, canvasSel, seq, opts = {}) {
+      this.section = document.querySelector(sectionSel);
+      this.canvas = document.querySelector(canvasSel);
+      this.ctx = this.canvas.getContext('2d');
+      this.seq = seq;
+      this.target = 0;       // scroll-driven frame progress
+      this.current = 0;      // lerped render progress
+      this.lastDrawn = null;
+      this.active = false;
+      this.everDrawn = false;
+      this.onProgress = opts.onProgress || null;
+      this.veil = this.section.querySelector('[data-veil]');
+      this.fadeIn = opts.fadeIn !== false;
+      this.fadeOut = opts.fadeOut !== false;
+
+      this.resize();
+      seq.onFrame = (i) => {
+        const ideal = Math.round(this.current * (seq.count - 1));
+        if (!this.everDrawn || Math.abs(i - ideal) < 4) this.draw(true);
+      };
+    }
+    resize() {
+      const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
+      this.canvas.width = Math.round(w * DPR);
+      this.canvas.height = Math.round(h * DPR);
+      this.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      this.ctx.imageSmoothingEnabled = true;
+      this.ctx.imageSmoothingQuality = 'high';
+      this.draw(true);
+    }
+    draw(force = false) {
+      const img = this.seq.frameAt(this.current);
+      if (!img) return;
+      if (!force && img === this.lastDrawn) return;
+      const cw = this.canvas.clientWidth, ch = this.canvas.clientHeight;
+      const ir = img.naturalWidth / img.naturalHeight, cr = cw / ch;
+      let dw, dh;
+      if (cr > ir) { dw = cw; dh = cw / ir; } else { dh = ch; dw = ch * ir; }
+      this.ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      this.lastDrawn = img;
+      this.everDrawn = true;
+    }
+    tick() {
+      const d = this.target - this.current;
+      if (Math.abs(d) > 0.00025) {
+        this.current += d * (reduceMotion ? 1 : 0.16);
+        this.draw();
+      }
+      // veil: dip to black at stage edges for cinematic handoff
+      if (this.veil) {
+        const p = this.target;
+        const head = this.fadeIn ? 1 - clamp01(p / 0.045) : 0;
+        const tail = this.fadeOut ? clamp01((p - 0.98) / 0.02) : 0;
+        this.veil.style.opacity = Math.max(head, tail).toFixed(3);
+      }
+    }
+  }
+
+  /* ── windowed elements (stations / callouts / atmos text) ── */
+  function bindWindows(sectionEl, progress) {
+    const els = sectionEl.querySelectorAll('[data-win]');
+    els.forEach((el) => {
+      const [a, b] = el.dataset.win.split(',').map(Number);
+      const on = progress >= a && progress <= b;
+      el.classList.toggle('is-on', on);
+    });
+  }
+
+  /* ═══ boot ═══════════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', () => {
+
+    /* split hero words into chars */
+    document.querySelectorAll('[data-split]').forEach((el) => {
+      const chars = el.textContent.split('');
+      el.textContent = '';
+      chars.forEach((c) => {
+        const s = document.createElement('span');
+        s.className = 'ch';
+        s.textContent = c;
+        el.appendChild(s);
+      });
+    });
+
+    /* Lenis smooth scroll */
+    const lenis = new Lenis({
+      lerp: reduceMotion ? 1 : 0.085,
+      smoothWheel: !reduceMotion,
+      wheelMultiplier: 0.9,
+    });
+    window.__lenis = lenis; // exposed for programmatic control / testing
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((t) => lenis.raf(t * 1000));
+    gsap.ticker.lagSmoothing(0);
+
+    /* stages */
+    const heroUI = {
+      kicker: document.getElementById('heroKicker'),
+      title: document.querySelector('.hero__title'),
+      sub: document.getElementById('heroSub'),
+      cue: document.getElementById('heroCue'),
+      deg: document.getElementById('heroDeg'),
+      degNum: document.getElementById('degNum'),
+      degRing: document.getElementById('degRing'),
+      inter: document.getElementById('heroInter'),
+    };
+    const RING = 125.66;
+
+    const stages = [
+      new Stage('#hero', '#cv-orbit', seqs.orbit, {
+        fadeIn: false,
+        onProgress(p, stage) {
+          // title block drifts up + fades as orbit begins
+          const leave = clamp01((p - 0.02) / 0.3);
+          gsap.set(heroUI.title, { y: -leave * 130, opacity: 1 - leave, filter: `blur(${leave * 6}px)` });
+          gsap.set([heroUI.kicker, heroUI.sub], { opacity: (1 - clamp01(p / 0.14)) * stage._introDone });
+          gsap.set(heroUI.cue, { opacity: (1 - clamp01(p / 0.08)) * stage._introDone });
+          // degree readout
+          const deg = Math.round(p * 360);
+          heroUI.degNum.textContent = String(deg).padStart(3, '0') + '°';
+          heroUI.degRing.style.strokeDashoffset = (RING * (1 - p)).toFixed(2);
+          gsap.set(heroUI.deg, { opacity: stage._introDone * (p < 0.94 ? 1 : 1 - clamp01((p - 0.94) / 0.05)) });
+          // interstitial line mid-orbit
+          const w = win(p, 0.4, 0.68, 0.25);
+          heroUI.inter.style.opacity = w.toFixed(3);
+          gsap.set(heroUI.inter, { letterSpacing: `${(1 - w) * 0.14 + 0.02}em` });
+        },
+      }),
+      new Stage('#macro', '#cv-macro', seqs.macro, {
+        onProgress(p) {
+          bindWindows(document.getElementById('macro'), p);
+          document.querySelectorAll('.macro__dot').forEach((d, i) => {
+            const st = document.querySelector(`.station[data-station="${i}"]`);
+            d.classList.toggle('is-on', st.classList.contains('is-on'));
+          });
+        },
+      }),
+      new Stage('#anatomy', '#cv-explode', seqs.explode, {
+        onProgress(p) { bindWindows(document.getElementById('anatomy'), p); },
+      }),
+      new Stage('#atmos', '#cv-atmos', seqs.atmos, {
+        onProgress(p) { bindWindows(document.getElementById('atmos'), p); },
+      }),
+    ];
+    stages[0]._introDone = 0;
+
+    stages.forEach((stage) => {
+      ScrollTrigger.create({
+        trigger: stage.section,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate(self) {
+          stage.target = self.progress;
+          if (stage.onProgress) stage.onProgress(self.progress, stage);
+        },
+        onToggle(self) { stage.active = self.isActive; },
+      });
+    });
+
+    // render loop: lerp active (or near) stages
+    gsap.ticker.add(() => stages.forEach((s) => { if (s.active || !s.everDrawn) s.tick(); }));
+
+    let rT;
+    window.addEventListener('resize', () => {
+      clearTimeout(rT);
+      rT = setTimeout(() => { stages.forEach((s) => s.resize()); ScrollTrigger.refresh(); }, 150);
+    });
+
+    /* text reveals (story / collection / cta) */
+    document.querySelectorAll('.line__in').forEach((el) => {
+      gsap.to(el, {
+        y: 0,
+        duration: 1.15,
+        ease: 'power3.out',
+        scrollTrigger: { trigger: el.parentElement, start: 'top 88%', once: true },
+      });
+    });
+    document.querySelectorAll('.reveal').forEach((el) => {
+      gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 1.1,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: el, start: 'top 90%', once: true },
+      });
+    });
+    gsap.utils.toArray('.card').forEach((card, i) => {
+      gsap.to(card, {
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        ease: 'power2.out',
+        delay: (i % 4) * 0.08,
+        scrollTrigger: { trigger: card, start: 'top 92%', once: true },
+      });
+    });
+    document.querySelectorAll('[data-parallax]').forEach((el) => {
+      gsap.to(el, {
+        yPercent: Number(el.dataset.parallax),
+        ease: 'none',
+        scrollTrigger: { trigger: el.parentElement, start: 'top bottom', end: 'bottom top', scrub: true },
+      });
+    });
+
+    /* ── loader: priority pass on orbit, then reveal ────────── */
+    const fill = document.getElementById('loaderFill');
+    const pct = document.getElementById('loaderPct');
+    const PRIORITY_TOTAL = Math.ceil(240 / 6) + 1;
+    const lerpPct = { v: 0 };
+
+    const updateLoader = () => {
+      const done = Math.min(seqs.orbit.loaded, PRIORITY_TOTAL);
+      const target = Math.round((done / PRIORITY_TOTAL) * 100);
+      gsap.to(lerpPct, {
+        v: target, duration: 0.4, ease: 'power1.out', overwrite: true,
+        onUpdate: () => {
+          pct.textContent = Math.round(lerpPct.v);
+          fill.style.width = lerpPct.v + '%';
+        },
+      });
+    };
+    const rawOnFrame = seqs.orbit.onFrame;
+    seqs.orbit.onFrame = (i) => { rawOnFrame && rawOnFrame(i); updateLoader(); };
+
+    const heroIntro = () => {
+      document.body.classList.remove('is-loading');
+      const tl = gsap.timeline({ delay: 0.55, onComplete: () => { stages[0]._introDone = 1; } });
+      tl.to('.hero__word--solid .ch', {
+        opacity: 1, y: 0, duration: 1.3, ease: 'power4.out', stagger: 0.055,
+      })
+        .to('.hero__word--hollow .ch', {
+          opacity: 1, y: 0, duration: 1.3, ease: 'power4.out', stagger: 0.055,
+        }, 0.18)
+        .to('#heroKicker', { opacity: 1, duration: 1, ease: 'power2.out' }, 0.9)
+        .to('#heroSub', { opacity: 1, duration: 1, ease: 'power2.out' }, 1.05)
+        .to('#heroCue', { opacity: 1, duration: 1 }, 1.3)
+        .to('#heroDeg', { opacity: 1, duration: 1, onComplete: () => { stages[0]._introDone = 1; } }, 1.3);
+      if (reduceMotion) tl.progress(1);
+    };
+
+    // load choreography: hero coarse first (awaited), everything else after
+    seqs.orbit.pass(6, true).then(() => {
+      heroIntro();
+      seqs.macro.pass(8);
+      seqs.explode.pass(8);
+      seqs.atmos.pass(6);
+      seqs.orbit.pass(2).then(() => seqs.orbit.pass(1));
+      seqs.macro.pass(2).then(() => seqs.macro.pass(1));
+      seqs.explode.pass(2).then(() => seqs.explode.pass(1));
+      seqs.atmos.pass(1);
+    });
+
+    ScrollTrigger.refresh();
+  });
+})();
