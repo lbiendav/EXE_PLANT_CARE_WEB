@@ -1,20 +1,20 @@
-﻿@model HomePlant.ViewModels.LoginVM
+@model HomePlant.ViewModels.LoginVM
 
-<h2>Login</h2>
+<h2>@Localizer["Auth_Login_Title"]</h2>
 
 <div asp-validation-summary="All" class="text-danger"></div>
 
 <form method="post">
 
     <div class="mb-3">
-        <label>Email</label>
+        <label>@Localizer["Auth_Email"]</label>
 
         <input asp-for="Email"
                class="form-control" />
     </div>
 
     <div class="mb-3">
-        <label>Password</label>
+        <label>@Localizer["Auth_Password"]</label>
 
         <input asp-for="Password"
                type="password"
@@ -22,7 +22,7 @@
     </div>
 
     <button class="btn btn-primary">
-        Login
+        @Localizer["Auth_Login_Btn"]
     </button>
 
 </form>

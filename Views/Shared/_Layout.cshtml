@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http
+
 
 <!DOCTYPE html>
 
@@ -130,7 +131,7 @@
                             <a class="nav-link"
                                asp-controller="Home"
                                asp-action="Index">
-                                Explore
+                                @Localizer["Explore"]
                             </a>
                         </li>
 
@@ -138,7 +139,7 @@
                             <a class="nav-link"
                                asp-controller="Library"
                                asp-action="Index">
-                                Plant Library
+                                @Localizer["Plant_Library"]
                             </a>
                         </li>
 
@@ -148,7 +149,7 @@
                                 <a class="nav-link"
                                    asp-controller="Plant"
                                    asp-action="Index">
-                                    My Garden
+                                    @Localizer["My_Garden"]
                                 </a>
                             </li>
 
@@ -156,7 +157,7 @@
                                 <a class="nav-link"
                                    asp-controller="Profile"
                                    asp-action="Index">
-                                    Profile
+                                    @Localizer["Profile"]
                                 </a>
                             </li>
                         }
@@ -167,7 +168,7 @@
                                 <a class="nav-link admin-link"
                                    asp-controller="Admin"
                                    asp-action="Dashboard">
-                                    🛠️ Quản lý
+                                    🛠️ @Localizer["Manage"]
                                 </a>
                             </li>
                         }
@@ -175,6 +176,42 @@
                     </ul>
 
                     <ul class="navbar-nav align-items-center">
+
+                        <li class="nav-item dropdown me-2">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarLanguageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                🌐 @Localizer["Language"]
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarLanguageDropdown">
+                                <li>
+                                    <form asp-controller="Language" asp-action="SetLanguage" method="post" class="d-inline">
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <input type="hidden" name="culture" value="vi" />
+                                        <button type="submit" class="dropdown-item">Tiếng Việt</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-controller="Language" asp-action="SetLanguage" method="post" class="d-inline">
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <input type="hidden" name="culture" value="en" />
+                                        <button type="submit" class="dropdown-item">English</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-controller="Language" asp-action="SetLanguage" method="post" class="d-inline">
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <input type="hidden" name="culture" value="fr" />
+                                        <button type="submit" class="dropdown-item">Français</button>
+                                    </form>
+                                </li>
+                                <li>
+                                    <form asp-controller="Language" asp-action="SetLanguage" method="post" class="d-inline">
+                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                                        <input type="hidden" name="culture" value="ja" />
+                                        <button type="submit" class="dropdown-item">日本語</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
 
                         @if (Context.Session.GetString("Email") == null)
                         {
@@ -184,7 +221,7 @@
                                    asp-controller="Account"
                                    asp-action="Login">
 
-                                    Login
+                                    @Localizer["Login"]
 
                                 </a>
 
@@ -196,7 +233,7 @@
                                    asp-controller="Account"
                                    asp-action="Register">
 
-                                    Register
+                                    @Localizer["Register"]
 
                                 </a>
 
@@ -220,7 +257,7 @@
                                    asp-controller="Account"
                                    asp-action="Logout">
 
-                                    Logout
+                                    @Localizer["Logout"]
 
                                 </a>
 

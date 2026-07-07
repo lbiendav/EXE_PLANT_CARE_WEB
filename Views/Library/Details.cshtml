@@ -1,4 +1,4 @@
-﻿@model HomePlant.Models.PlantSampleModel
+@model HomePlant.Models.PlantSampleModel
 
 <div class="container py-5">
 
@@ -19,7 +19,7 @@
 
             <span class="badge bg-success mb-3">
 
-                Plant Information
+                @Localizer["Library_Details_PlantInfo"]
 
             </span>
 
@@ -41,7 +41,7 @@
 
                     <h5 class="fw-bold">
 
-                        Description
+                        @Localizer["Library_Details_Description"]
 
                     </h5>
 
@@ -63,7 +63,7 @@
 
         <h2 class="fw-bold mb-4">
 
-            Care Guide
+            @Localizer["Library_Details_CareGuide"]
 
         </h2>
 
@@ -76,7 +76,7 @@
                     <div class="card-body">
 
                         <h5>
-                            ☀️ Ánh sáng
+                            @Localizer["Library_Details_Light"]
                         </h5>
 
                         <p>
@@ -96,7 +96,7 @@
                     <div class="card-body">
 
                         <h5>
-                            💧 Tưới nước
+                            @Localizer["Library_Details_Water"]
                         </h5>
 
                         <p>
@@ -116,7 +116,7 @@
                     <div class="card-body">
 
                         <h5>
-                            🌱 Đất trồng
+                            @Localizer["Library_Details_Soil"]
                         </h5>
 
                         <p>
@@ -136,7 +136,7 @@
                     <div class="card-body">
 
                         <h5>
-                            🌿 Phân bón
+                            @Localizer["Library_Details_Fertilizer"]
                         </h5>
 
                         <p>
@@ -157,7 +157,7 @@
 
         <h2 class="fw-bold mb-4">
 
-            Common Diseases
+            @Localizer["Library_Details_CommonDiseases"]
 
         </h2>
 
@@ -177,7 +177,7 @@
 
                     <h6 class="fw-bold">
 
-                        Nguyên nhân
+                        @Localizer["Library_Details_Cause"]
 
                     </h6>
 
@@ -189,7 +189,7 @@
 
                     <h6 class="fw-bold">
 
-                        Cách xử lý
+                        @Localizer["Library_Details_Treatment"]
 
                     </h6>
 
@@ -212,7 +212,7 @@
            asp-action="Index"
            class="btn btn-outline-success btn-lg">
 
-            ← Quay lại thư viện
+            @Localizer["Library_Details_BackToLibrary"]
 
         </a>
 

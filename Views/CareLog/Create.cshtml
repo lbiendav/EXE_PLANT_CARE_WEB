@@ -1,6 +1,6 @@
-﻿@model HomePlant.Models.CareLogModel
+@model HomePlant.Models.CareLogModel
 
-<h2>Add Care Log</h2>
+<h2>@Localizer["CareLog_Create_Title"]</h2>
 
 <form method="post">
 
@@ -10,25 +10,25 @@
 
     <div class="mb-3">
 
-        <label>Action Type</label>
+        <label>@Localizer["CareLog_Create_ActionType"]</label>
 
         <select asp-for="ActionType"
                 class="form-control">
 
             <option value="Watering">
-                Watering
+                @Localizer["CareLog_Create_ActionWatering"]
             </option>
 
             <option value="Fertilizing">
-                Fertilizing
+                @Localizer["CareLog_Create_ActionFertilizing"]
             </option>
 
             <option value="Repotting">
-                Repotting
+                @Localizer["CareLog_Create_ActionRepotting"]
             </option>
 
             <option value="Observation">
-                Observation
+                @Localizer["CareLog_Create_ActionObservation"]
             </option>
 
         </select>
@@ -37,7 +37,7 @@
 
     <div class="mb-3">
 
-        <label>Note</label>
+        <label>@Localizer["CareLog_Create_Note"]</label>
 
         <textarea asp-for="Note"
                   class="form-control">
@@ -46,7 +46,7 @@
     </div>
 
     <button class="btn btn-success">
-        Save
+        @Localizer["CareLog_Create_SaveButton"]
     </button>
 
 </form>

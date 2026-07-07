@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Explore" xml:space="preserve">
+    <value>Explore</value>
+  </data>
+  <data name="Plant_Library" xml:space="preserve">
+    <value>Plant Library</value>
+  </data>
+  <data name="My_Garden" xml:space="preserve">
+    <value>My Garden</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Manage" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="Home_Hero_Title" xml:space="preserve">
+    <value>Bring Nature Into Your Home</value>
+  </data>
+  <data name="Home_Hero_Desc" xml:space="preserve">
+    <value>Explore hundreds of plants, care guides, and manage your personal garden.</value>
+  </data>
+  <data name="Home_Explore_Btn" xml:space="preserve">
+    <value>Explore Plant Library</value>
+  </data>
+  <data name="Home_CareGuide_Title" xml:space="preserve">
+    <value>Care Guides</value>
+  </data>
+  <data name="Home_ReadMore" xml:space="preserve">
+    <value>Read more</value>
+  </data>
+  <data name="Home_Why_Title" xml:space="preserve">
+    <value>Why choose HomePlant?</value>
+  </data>
+  <data name="Home_Why_Desc" xml:space="preserve">
+    <value>HomePlant helps beginners easily care for plants through a rich library of knowledge, disease handling guides, and personal garden management.</value>
+  </data>
+  <data name="Auth_Login_Title" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="Auth_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Auth_Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="Auth_Login_Btn" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="Auth_Register_Title" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Auth_FullName" xml:space="preserve">
+    <value>Full Name</value>
+  </data>
+  <data name="Auth_Phone" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Auth_Register_Btn" xml:space="preserve">
+    <value>Register</value>
+  </data>
+  <data name="Plant_Create_Title" xml:space="preserve">
+    <value>Add New Plant</value>
+  </data>
+  <data name="Plant_Create_PhotoPlaceholder" xml:space="preserve">
+    <value>Tap to add photo</value>
+  </data>
+  <data name="Plant_Create_NicknamePlaceholder" xml:space="preserve">
+    <value>Nickname (e.g., Desk Succulent)</value>
+  </data>
+  <data name="Plant_Create_TemplateOption" xml:space="preserve">
+    <value>Plant Type (From Library)</value>
+  </data>
+  <data name="Plant_Create_HealthStatusLabel" xml:space="preserve">
+    <value>Health Status</value>
+  </data>
+  <data name="Plant_Create_StatusHealthy" xml:space="preserve">
+    <value>Healthy</value>
+  </data>
+  <data name="Plant_Create_StatusAttention" xml:space="preserve">
+    <value>Needs Attention</value>
+  </data>
+  <data name="Plant_Create_StatusSick" xml:space="preserve">
+    <value>Sick</value>
+  </data>
+  <data name="Plant_Create_SaveButton" xml:space="preserve">
+    <value>SAVE TO GARDEN</value>
+  </data>
+  <data name="Plant_Details_BackToGarden" xml:space="preserve">
+    <value>← Back to Garden</value>
+  </data>
+  <data name="Plant_Details_LightLabel" xml:space="preserve">
+    <value>☀️ Light</value>
+  </data>
+  <data name="Plant_Details_WaterLabel" xml:space="preserve">
+    <value>💧 Water</value>
+  </data>
+  <data name="Plant_Details_SoilLabel" xml:space="preserve">
+    <value>🌱 Soil</value>
+  </data>
+  <data name="Plant_Details_Subtitle" xml:space="preserve">
+    <value>Details of the plant in your garden</value>
+  </data>
+  <data name="Plant_Details_GeneralInfo" xml:space="preserve">
+    <value>General Information</value>
+  </data>
+  <data name="Plant_Details_PlantId" xml:space="preserve">
+    <value>Plant ID</value>
+  </data>
+  <data name="Plant_Details_FirestoreId" xml:space="preserve">
+    <value>Firestore Document ID</value>
+  </data>
+  <data name="Plant_Details_TemplateId" xml:space="preserve">
+    <value>Template ID</value>
+  </data>
+  <data name="Plant_Details_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Plant_Details_CreatedAt" xml:space="preserve">
+    <value>Created At</value>
+  </data>
+  <data name="Plant_Details_PlantedAt" xml:space="preserve">
+    <value>Planted At</value>
+  </data>
+  <data name="Plant_Details_CareSchedule" xml:space="preserve">
+    <value>Care Schedule</value>
+  </data>
+  <data name="Plant_Details_LastWatered" xml:space="preserve">
+    <value>💧 Last Watered</value>
+  </data>
+  <data name="Plant_Details_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Plant_Details_WateringFrequency" xml:space="preserve">
+    <value>Watering Frequency</value>
+  </data>
+  <data name="Plant_Details_DaysPerTime" xml:space="preserve">
+    <value>days/time</value>
+  </data>
+  <data name="Plant_Details_NotSet" xml:space="preserve">
+    <value>Not set</value>
+  </data>
+  <data name="Plant_Details_LastFertilized" xml:space="preserve">
+    <value>🌱 Last Fertilized</value>
+  </data>
+  <data name="Plant_Details_FertilizingFrequency" xml:space="preserve">
+    <value>Fertilizing Frequency</value>
+  </data>
+  <data name="Plant_Details_LastRepotted" xml:space="preserve">
+    <value>🪴 Last Repotted</value>
+  </data>
+  <data name="Plant_Details_RepottingFrequency" xml:space="preserve">
+    <value>Repotting Frequency</value>
+  </data>
+  <data name="Plant_Details_ViewCareHistory" xml:space="preserve">
+    <value>View Care History</value>
+  </data>
+  <data name="Plant_Index_Title" xml:space="preserve">
+    <value>🌿 My Garden</value>
+  </data>
+  <data name="Plant_Index_Subtitle" xml:space="preserve">
+    <value>All the plants you are caring for</value>
+  </data>
+  <data name="Plant_Index_AddNewPlant" xml:space="preserve">
+    <value>+ Add New Plant</value>
+  </data>
+  <data name="Plant_Index_EmptyTitle" xml:space="preserve">
+    <value>Your garden is empty</value>
+  </data>
+  <data name="Plant_Index_EmptySubtitle" xml:space="preserve">
+    <value>Let's add your first plant to the garden!</value>
+  </data>
+  <data name="Plant_Index_EmptyAddButton" xml:space="preserve">
+    <value>Add New Plant</value>
+  </data>
+  <data name="Plant_Index_UnknownPlantType" xml:space="preserve">
+    <value>Unknown plant type</value>
+  </data>
+  <data name="Plant_Index_PlantedAt" xml:space="preserve">
+    <value>Planted At</value>
+  </data>
+  <data name="Plant_Index_LastWatered" xml:space="preserve">
+    <value>💧 Last Watered</value>
+  </data>
+  <data name="Plant_Index_None" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="Plant_Index_WateringFrequency" xml:space="preserve">
+    <value>Watering Frequency</value>
+  </data>
+  <data name="Plant_Index_DaysPerTime" xml:space="preserve">
+    <value>days/time</value>
+  </data>
+  <data name="Plant_Index_LastFertilized" xml:space="preserve">
+    <value>🌱 Last Fertilized</value>
+  </data>
+  <data name="Plant_Index_FertilizingFrequency" xml:space="preserve">
+    <value>Fertilizing Frequency</value>
+  </data>
+  <data name="Plant_Index_LastRepotted" xml:space="preserve">
+    <value>🪴 Last Repotted</value>
+  </data>
+  <data name="Plant_Index_RepottingFrequency" xml:space="preserve">
+    <value>Repotting Frequency</value>
+  </data>
+  <data name="Plant_Index_ViewDetails" xml:space="preserve">
+    <value>View Details</value>
+  </data>
+  <data name="Plant_Index_DeleteConfirm" xml:space="preserve">
+    <value>Remove this plant from the garden?</value>
+  </data>
+  <data name="Plant_Index_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="CareLog_Create_Title" xml:space="preserve">
+    <value>Add Care Log</value>
+  </data>
+  <data name="CareLog_Create_ActionType" xml:space="preserve">
+    <value>Action Type</value>
+  </data>
+  <data name="CareLog_Create_ActionWatering" xml:space="preserve">
+    <value>Watering</value>
+  </data>
+  <data name="CareLog_Create_ActionFertilizing" xml:space="preserve">
+    <value>Fertilizing</value>
+  </data>
+  <data name="CareLog_Create_ActionRepotting" xml:space="preserve">
+    <value>Repotting</value>
+  </data>
+  <data name="CareLog_Create_ActionObservation" xml:space="preserve">
+    <value>Observation</value>
+  </data>
+  <data name="CareLog_Create_Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="CareLog_Create_SaveButton" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="CareLog_Index_Title" xml:space="preserve">
+    <value>Care History</value>
+  </data>
+  <data name="CareLog_Index_AddLog" xml:space="preserve">
+    <value>Add Log</value>
+  </data>
+  <data name="CareLog_Index_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="CareLog_Index_Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="CareLog_Index_Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="CareLog_Index_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Profile_Index_PersonalInfo" xml:space="preserve">
+    <value>Personal Information</value>
+  </data>
+  <data name="Profile_Index_FullName" xml:space="preserve">
+    <value>Full Name</value>
+  </data>
+  <data name="Profile_Index_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Profile_Index_Phone" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Profile_Index_Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="Profile_Index_EditProfile" xml:space="preserve">
+    <value>Edit Profile</value>
+  </data>
+  <data name="Profile_Index_ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="Library_Index_Title" xml:space="preserve">
+    <value>Plant Library</value>
+  </data>
+  <data name="Library_Index_Subtitle" xml:space="preserve">
+    <value>Explore our plant collection and care guides</value>
+  </data>
+  <data name="Library_Index_SearchPlaceholder" xml:space="preserve">
+    <value>🔍 Search plants...</value>
+  </data>
+  <data name="Library_Index_ViewDetails" xml:space="preserve">
+    <value>View Details</value>
+  </data>
+  <data name="Library_Details_PlantInfo" xml:space="preserve">
+    <value>Plant Information</value>
+  </data>
+  <data name="Library_Details_Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Library_Details_CareGuide" xml:space="preserve">
+    <value>Care Guide</value>
+  </data>
+  <data name="Library_Details_Light" xml:space="preserve">
+    <value>☀️ Light</value>
+  </data>
+  <data name="Library_Details_Water" xml:space="preserve">
+    <value>💧 Water</value>
+  </data>
+  <data name="Library_Details_Soil" xml:space="preserve">
+    <value>🌱 Soil</value>
+  </data>
+  <data name="Library_Details_Fertilizer" xml:space="preserve">
+    <value>🌿 Fertilizer</value>
+  </data>
+  <data name="Library_Details_CommonDiseases" xml:space="preserve">
+    <value>Common Diseases</value>
+  </data>
+  <data name="Library_Details_Cause" xml:space="preserve">
+    <value>Cause</value>
+  </data>
+  <data name="Library_Details_Treatment" xml:space="preserve">
+    <value>Treatment</value>
+  </data>
+  <data name="Library_Details_BackToLibrary" xml:space="preserve">
+    <value>← Back to Library</value>
+  </data>
+</root>

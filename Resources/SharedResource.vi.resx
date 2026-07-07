@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="Explore" xml:space="preserve">
+    <value>Khám phá</value>
+  </data>
+  <data name="Plant_Library" xml:space="preserve">
+    <value>Thư viện cây</value>
+  </data>
+  <data name="My_Garden" xml:space="preserve">
+    <value>Khu vườn của tôi</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>Hồ sơ</value>
+  </data>
+  <data name="Manage" xml:space="preserve">
+    <value>Quản lý</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>Đăng ký</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Home_Hero_Title" xml:space="preserve">
+    <value>Mang Thiên Nhiên Vào Ngôi Nhà Của Bạn</value>
+  </data>
+  <data name="Home_Hero_Desc" xml:space="preserve">
+    <value>Khám phá hàng trăm loại cây cảnh, cẩm nang chăm sóc và quản lý khu vườn của bạn.</value>
+  </data>
+  <data name="Home_Explore_Btn" xml:space="preserve">
+    <value>Khám phá thư viện cây</value>
+  </data>
+  <data name="Home_CareGuide_Title" xml:space="preserve">
+    <value>Cẩm nang chăm sóc</value>
+  </data>
+  <data name="Home_ReadMore" xml:space="preserve">
+    <value>Đọc thêm</value>
+  </data>
+  <data name="Home_Why_Title" xml:space="preserve">
+    <value>Tại sao chọn HomePlant?</value>
+  </data>
+  <data name="Home_Why_Desc" xml:space="preserve">
+    <value>HomePlant giúp người mới bắt đầu dễ dàng chăm sóc cây cảnh thông qua thư viện kiến thức phong phú, hướng dẫn xử lý bệnh và quản lý khu vườn cá nhân.</value>
+  </data>
+  <data name="Auth_Login_Title" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Auth_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Auth_Password" xml:space="preserve">
+    <value>Mật khẩu</value>
+  </data>
+  <data name="Auth_Login_Btn" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Auth_Register_Title" xml:space="preserve">
+    <value>Đăng ký</value>
+  </data>
+  <data name="Auth_FullName" xml:space="preserve">
+    <value>Họ và Tên</value>
+  </data>
+  <data name="Auth_Phone" xml:space="preserve">
+    <value>Số điện thoại</value>
+  </data>
+  <data name="Auth_Register_Btn" xml:space="preserve">
+    <value>Đăng ký</value>
+  </data>
+  <data name="Plant_Create_Title" xml:space="preserve">
+    <value>Thêm Cây Mới</value>
+  </data>
+  <data name="Plant_Create_PhotoPlaceholder" xml:space="preserve">
+    <value>Chạm để thêm ảnh</value>
+  </data>
+  <data name="Plant_Create_NicknamePlaceholder" xml:space="preserve">
+    <value>Biệt danh (VD: Sen đá để bàn)</value>
+  </data>
+  <data name="Plant_Create_TemplateOption" xml:space="preserve">
+    <value>Loại cây (Từ Thư viện)</value>
+  </data>
+  <data name="Plant_Create_HealthStatusLabel" xml:space="preserve">
+    <value>Tình trạng sức khỏe</value>
+  </data>
+  <data name="Plant_Create_StatusHealthy" xml:space="preserve">
+    <value>Khỏe mạnh</value>
+  </data>
+  <data name="Plant_Create_StatusAttention" xml:space="preserve">
+    <value>Cần chú ý</value>
+  </data>
+  <data name="Plant_Create_StatusSick" xml:space="preserve">
+    <value>Bệnh</value>
+  </data>
+  <data name="Plant_Create_SaveButton" xml:space="preserve">
+    <value>LƯU VÀO VƯỜN</value>
+  </data>
+  <data name="Plant_Details_BackToGarden" xml:space="preserve">
+    <value>← Trở về Vườn</value>
+  </data>
+  <data name="Plant_Details_LightLabel" xml:space="preserve">
+    <value>☀️ Ánh sáng</value>
+  </data>
+  <data name="Plant_Details_WaterLabel" xml:space="preserve">
+    <value>💧 Nước</value>
+  </data>
+  <data name="Plant_Details_SoilLabel" xml:space="preserve">
+    <value>🌱 Đất</value>
+  </data>
+  <data name="Plant_Details_Subtitle" xml:space="preserve">
+    <value>Chi tiết cây trong vườn của bạn</value>
+  </data>
+  <data name="Plant_Details_GeneralInfo" xml:space="preserve">
+    <value>Thông tin chung</value>
+  </data>
+  <data name="Plant_Details_PlantId" xml:space="preserve">
+    <value>Mã Cây</value>
+  </data>
+  <data name="Plant_Details_FirestoreId" xml:space="preserve">
+    <value>ID Tài liệu</value>
+  </data>
+  <data name="Plant_Details_TemplateId" xml:space="preserve">
+    <value>Mã Mẫu</value>
+  </data>
+  <data name="Plant_Details_Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Plant_Details_CreatedAt" xml:space="preserve">
+    <value>Tạo lúc</value>
+  </data>
+  <data name="Plant_Details_PlantedAt" xml:space="preserve">
+    <value>Trồng lúc</value>
+  </data>
+  <data name="Plant_Details_CareSchedule" xml:space="preserve">
+    <value>Lịch chăm sóc</value>
+  </data>
+  <data name="Plant_Details_LastWatered" xml:space="preserve">
+    <value>💧 Lần tưới cuối</value>
+  </data>
+  <data name="Plant_Details_None" xml:space="preserve">
+    <value>Không có</value>
+  </data>
+  <data name="Plant_Details_WateringFrequency" xml:space="preserve">
+    <value>Tần suất tưới</value>
+  </data>
+  <data name="Plant_Details_DaysPerTime" xml:space="preserve">
+    <value>ngày/lần</value>
+  </data>
+  <data name="Plant_Details_NotSet" xml:space="preserve">
+    <value>Chưa đặt</value>
+  </data>
+  <data name="Plant_Details_LastFertilized" xml:space="preserve">
+    <value>🌱 Lần bón phân cuối</value>
+  </data>
+  <data name="Plant_Details_FertilizingFrequency" xml:space="preserve">
+    <value>Tần suất bón phân</value>
+  </data>
+  <data name="Plant_Details_LastRepotted" xml:space="preserve">
+    <value>🪴 Lần thay chậu cuối</value>
+  </data>
+  <data name="Plant_Details_RepottingFrequency" xml:space="preserve">
+    <value>Tần suất thay chậu</value>
+  </data>
+  <data name="Plant_Details_ViewCareHistory" xml:space="preserve">
+    <value>Xem lịch sử chăm sóc</value>
+  </data>
+  <data name="Plant_Index_Title" xml:space="preserve">
+    <value>🌿 Khu vườn của tôi</value>
+  </data>
+  <data name="Plant_Index_Subtitle" xml:space="preserve">
+    <value>Tất cả các cây bạn đang chăm sóc</value>
+  </data>
+  <data name="Plant_Index_AddNewPlant" xml:space="preserve">
+    <value>+ Thêm cây mới</value>
+  </data>
+  <data name="Plant_Index_EmptyTitle" xml:space="preserve">
+    <value>Vườn của bạn đang trống</value>
+  </data>
+  <data name="Plant_Index_EmptySubtitle" xml:space="preserve">
+    <value>Hãy thêm cây đầu tiên vào vườn!</value>
+  </data>
+  <data name="Plant_Index_EmptyAddButton" xml:space="preserve">
+    <value>Thêm Cây Mới</value>
+  </data>
+  <data name="Plant_Index_UnknownPlantType" xml:space="preserve">
+    <value>Loại cây không xác định</value>
+  </data>
+  <data name="Plant_Index_PlantedAt" xml:space="preserve">
+    <value>Trồng lúc</value>
+  </data>
+  <data name="Plant_Index_LastWatered" xml:space="preserve">
+    <value>💧 Lần tưới cuối</value>
+  </data>
+  <data name="Plant_Index_None" xml:space="preserve">
+    <value>Không có</value>
+  </data>
+  <data name="Plant_Index_WateringFrequency" xml:space="preserve">
+    <value>Tần suất tưới</value>
+  </data>
+  <data name="Plant_Index_DaysPerTime" xml:space="preserve">
+    <value>ngày/lần</value>
+  </data>
+  <data name="Plant_Index_LastFertilized" xml:space="preserve">
+    <value>🌱 Lần bón phân cuối</value>
+  </data>
+  <data name="Plant_Index_FertilizingFrequency" xml:space="preserve">
+    <value>Tần suất bón phân</value>
+  </data>
+  <data name="Plant_Index_LastRepotted" xml:space="preserve">
+    <value>🪴 Lần thay chậu cuối</value>
+  </data>
+  <data name="Plant_Index_RepottingFrequency" xml:space="preserve">
+    <value>Tần suất thay chậu</value>
+  </data>
+  <data name="Plant_Index_ViewDetails" xml:space="preserve">
+    <value>Xem chi tiết</value>
+  </data>
+  <data name="Plant_Index_DeleteConfirm" xml:space="preserve">
+    <value>Xóa cây này khỏi vườn?</value>
+  </data>
+  <data name="Plant_Index_Delete" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="CareLog_Create_Title" xml:space="preserve">
+    <value>Thêm Nhật ký chăm sóc</value>
+  </data>
+  <data name="CareLog_Create_ActionType" xml:space="preserve">
+    <value>Loại hành động</value>
+  </data>
+  <data name="CareLog_Create_ActionWatering" xml:space="preserve">
+    <value>Tưới nước</value>
+  </data>
+  <data name="CareLog_Create_ActionFertilizing" xml:space="preserve">
+    <value>Bón phân</value>
+  </data>
+  <data name="CareLog_Create_ActionRepotting" xml:space="preserve">
+    <value>Thay chậu</value>
+  </data>
+  <data name="CareLog_Create_ActionObservation" xml:space="preserve">
+    <value>Quan sát</value>
+  </data>
+  <data name="CareLog_Create_Note" xml:space="preserve">
+    <value>Ghi chú</value>
+  </data>
+  <data name="CareLog_Create_SaveButton" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="CareLog_Index_Title" xml:space="preserve">
+    <value>Lịch sử chăm sóc</value>
+  </data>
+  <data name="CareLog_Index_AddLog" xml:space="preserve">
+    <value>Thêm nhật ký</value>
+  </data>
+  <data name="CareLog_Index_Type" xml:space="preserve">
+    <value>Loại</value>
+  </data>
+  <data name="CareLog_Index_Note" xml:space="preserve">
+    <value>Ghi chú</value>
+  </data>
+  <data name="CareLog_Index_Date" xml:space="preserve">
+    <value>Ngày</value>
+  </data>
+  <data name="CareLog_Index_Delete" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Profile_Index_PersonalInfo" xml:space="preserve">
+    <value>Thông tin cá nhân</value>
+  </data>
+  <data name="Profile_Index_FullName" xml:space="preserve">
+    <value>Họ và Tên</value>
+  </data>
+  <data name="Profile_Index_Email" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="Profile_Index_Phone" xml:space="preserve">
+    <value>Số điện thoại</value>
+  </data>
+  <data name="Profile_Index_Role" xml:space="preserve">
+    <value>Vai trò</value>
+  </data>
+  <data name="Profile_Index_EditProfile" xml:space="preserve">
+    <value>Chỉnh sửa hồ sơ</value>
+  </data>
+  <data name="Profile_Index_ChangePassword" xml:space="preserve">
+    <value>Đổi mật khẩu</value>
+  </data>
+  <data name="Library_Index_Title" xml:space="preserve">
+    <value>Thư Viện Cây</value>
+  </data>
+  <data name="Library_Index_Subtitle" xml:space="preserve">
+    <value>Khám phá bộ sưu tập cây cảnh và hướng dẫn chăm sóc</value>
+  </data>
+  <data name="Library_Index_SearchPlaceholder" xml:space="preserve">
+    <value>🔍 Tìm kiếm cây...</value>
+  </data>
+  <data name="Library_Index_ViewDetails" xml:space="preserve">
+    <value>Xem chi tiết</value>
+  </data>
+  <data name="Library_Details_PlantInfo" xml:space="preserve">
+    <value>Thông tin Cây</value>
+  </data>
+  <data name="Library_Details_Description" xml:space="preserve">
+    <value>Mô tả</value>
+  </data>
+  <data name="Library_Details_CareGuide" xml:space="preserve">
+    <value>Hướng dẫn chăm sóc</value>
+  </data>
+  <data name="Library_Details_Light" xml:space="preserve">
+    <value>☀️ Ánh sáng</value>
+  </data>
+  <data name="Library_Details_Water" xml:space="preserve">
+    <value>💧 Tưới nước</value>
+  </data>
+  <data name="Library_Details_Soil" xml:space="preserve">
+    <value>🌱 Đất trồng</value>
+  </data>
+  <data name="Library_Details_Fertilizer" xml:space="preserve">
+    <value>🌿 Phân bón</value>
+  </data>
+  <data name="Library_Details_CommonDiseases" xml:space="preserve">
+    <value>Các bệnh thường gặp</value>
+  </data>
+  <data name="Library_Details_Cause" xml:space="preserve">
+    <value>Nguyên nhân</value>
+  </data>
+  <data name="Library_Details_Treatment" xml:space="preserve">
+    <value>Cách xử lý</value>
+  </data>
+  <data name="Library_Details_BackToLibrary" xml:space="preserve">
+    <value>← Quay lại thư viện</value>
+  </data>
+</root>

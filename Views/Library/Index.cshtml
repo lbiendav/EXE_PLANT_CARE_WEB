@@ -1,14 +1,14 @@
-﻿@model List<HomePlant.Models.PlantSampleModel>
+@model List<HomePlant.Models.PlantSampleModel>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
 
         <h1 class="fw-bold">
-            Plant Library
+            @Localizer["Library_Index_Title"]
         </h1>
 
         <p class="text-muted">
-            Khám phá bộ sưu tập cây cảnh và hướng dẫn chăm sóc
+            @Localizer["Library_Index_Subtitle"]
         </p>
 
     </div>
@@ -20,7 +20,7 @@
         <input type="text"
                id="searchInput"
                class="form-control form-control-lg"
-               placeholder="🔍 Tìm kiếm cây..." />
+               placeholder="@Localizer["Library_Index_SearchPlaceholder"]" />
 
     </div>
 </div>
@@ -53,7 +53,7 @@
                            asp-route-id="@plant.Id"
                            class="btn btn-success w-100">
 
-                            Xem chi tiết
+                            @Localizer["Library_Index_ViewDetails"]
 
                         </a>
 

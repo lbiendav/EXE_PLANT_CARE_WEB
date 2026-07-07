@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Explore" xml:space="preserve">
+    <value>探検</value>
+  </data>
+  <data name="Plant_Library" xml:space="preserve">
+    <value>植物図鑑</value>
+  </data>
+  <data name="My_Garden" xml:space="preserve">
+    <value>マイガーデン</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>プロフィール</value>
+  </data>
+  <data name="Manage" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Register" xml:space="preserve">
+    <value>登録</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>ログアウト</value>
+  </data>
+  <data name="Home_Hero_Title" xml:space="preserve">
+    <value>自然を家に取り入れる</value>
+  </data>
+  <data name="Home_Hero_Desc" xml:space="preserve">
+    <value>何百もの植物、お手入れガイドを探索し、あなたの庭を管理しましょう。</value>
+  </data>
+  <data name="Home_Explore_Btn" xml:space="preserve">
+    <value>植物図鑑を見る</value>
+  </data>
+  <data name="Home_CareGuide_Title" xml:space="preserve">
+    <value>お手入れガイド</value>
+  </data>
+  <data name="Home_ReadMore" xml:space="preserve">
+    <value>続きを読む</value>
+  </data>
+  <data name="Home_Why_Title" xml:space="preserve">
+    <value>HomePlantを選ぶ理由</value>
+  </data>
+  <data name="Home_Why_Desc" xml:space="preserve">
+    <value>HomePlantは、豊富な知識ライブラリを通じて、初心者が簡単に植物の世話をするのを助けます。</value>
+  </data>
+  <data name="Auth_Login_Title" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Auth_Email" xml:space="preserve">
+    <value>メール</value>
+  </data>
+  <data name="Auth_Password" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
+  <data name="Auth_Login_Btn" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Auth_Register_Title" xml:space="preserve">
+    <value>登録</value>
+  </data>
+  <data name="Auth_FullName" xml:space="preserve">
+    <value>氏名</value>
+  </data>
+  <data name="Auth_Phone" xml:space="preserve">
+    <value>電話</value>
+  </data>
+  <data name="Auth_Register_Btn" xml:space="preserve">
+    <value>登録</value>
+  </data>
+  <data name="Plant_Create_Title" xml:space="preserve">
+    <value>新しい植物を追加</value>
+  </data>
+  <data name="Plant_Create_PhotoPlaceholder" xml:space="preserve">
+    <value>タップして写真を追加</value>
+  </data>
+  <data name="Plant_Create_NicknamePlaceholder" xml:space="preserve">
+    <value>ニックネーム</value>
+  </data>
+  <data name="Plant_Create_TemplateOption" xml:space="preserve">
+    <value>植物の種類</value>
+  </data>
+  <data name="Plant_Create_HealthStatusLabel" xml:space="preserve">
+    <value>健康状態</value>
+  </data>
+  <data name="Plant_Create_StatusHealthy" xml:space="preserve">
+    <value>健康</value>
+  </data>
+  <data name="Plant_Create_StatusAttention" xml:space="preserve">
+    <value>注意が必要</value>
+  </data>
+  <data name="Plant_Create_StatusSick" xml:space="preserve">
+    <value>病気</value>
+  </data>
+  <data name="Plant_Create_SaveButton" xml:space="preserve">
+    <value>保存する</value>
+  </data>
+  <data name="Plant_Details_BackToGarden" xml:space="preserve">
+    <value>← 庭に戻る</value>
+  </data>
+  <data name="Plant_Details_LightLabel" xml:space="preserve">
+    <value>☀️ 光</value>
+  </data>
+  <data name="Plant_Details_WaterLabel" xml:space="preserve">
+    <value>💧 水</value>
+  </data>
+  <data name="Plant_Details_SoilLabel" xml:space="preserve">
+    <value>🌱 土</value>
+  </data>
+  <data name="Plant_Details_Subtitle" xml:space="preserve">
+    <value>植物の詳細</value>
+  </data>
+  <data name="Plant_Details_GeneralInfo" xml:space="preserve">
+    <value>一般情報</value>
+  </data>
+  <data name="Plant_Details_PlantId" xml:space="preserve">
+    <value>植物ID</value>
+  </data>
+  <data name="Plant_Details_FirestoreId" xml:space="preserve">
+    <value>ドキュメントID</value>
+  </data>
+  <data name="Plant_Details_TemplateId" xml:space="preserve">
+    <value>テンプレートID</value>
+  </data>
+  <data name="Plant_Details_Status" xml:space="preserve">
+    <value>ステータス</value>
+  </data>
+  <data name="Plant_Details_CreatedAt" xml:space="preserve">
+    <value>作成日時</value>
+  </data>
+  <data name="Plant_Details_PlantedAt" xml:space="preserve">
+    <value>植えた日時</value>
+  </data>
+  <data name="Plant_Details_CareSchedule" xml:space="preserve">
+    <value>ケアスケジュール</value>
+  </data>
+  <data name="Plant_Details_LastWatered" xml:space="preserve">
+    <value>💧 最後に水をやった日</value>
+  </data>
+  <data name="Plant_Details_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="Plant_Details_WateringFrequency" xml:space="preserve">
+    <value>水やりの頻度</value>
+  </data>
+  <data name="Plant_Details_DaysPerTime" xml:space="preserve">
+    <value>日/回</value>
+  </data>
+  <data name="Plant_Details_NotSet" xml:space="preserve">
+    <value>未設定</value>
+  </data>
+  <data name="Plant_Details_LastFertilized" xml:space="preserve">
+    <value>🌱 最後に肥料をやった日</value>
+  </data>
+  <data name="Plant_Details_FertilizingFrequency" xml:space="preserve">
+    <value>肥料の頻度</value>
+  </data>
+  <data name="Plant_Details_LastRepotted" xml:space="preserve">
+    <value>🪴 最後に植え替えた日</value>
+  </data>
+  <data name="Plant_Details_RepottingFrequency" xml:space="preserve">
+    <value>植え替えの頻度</value>
+  </data>
+  <data name="Plant_Details_ViewCareHistory" xml:space="preserve">
+    <value>ケア履歴を表示</value>
+  </data>
+  <data name="Plant_Index_Title" xml:space="preserve">
+    <value>🌿 マイガーデン</value>
+  </data>
+  <data name="Plant_Index_Subtitle" xml:space="preserve">
+    <value>お世話している植物</value>
+  </data>
+  <data name="Plant_Index_AddNewPlant" xml:space="preserve">
+    <value>+ 新しい植物を追加</value>
+  </data>
+  <data name="Plant_Index_EmptyTitle" xml:space="preserve">
+    <value>庭は空です</value>
+  </data>
+  <data name="Plant_Index_EmptySubtitle" xml:space="preserve">
+    <value>最初の植物を追加しましょう！</value>
+  </data>
+  <data name="Plant_Index_EmptyAddButton" xml:space="preserve">
+    <value>新しい植物を追加</value>
+  </data>
+  <data name="Plant_Index_UnknownPlantType" xml:space="preserve">
+    <value>不明な種類</value>
+  </data>
+  <data name="Plant_Index_PlantedAt" xml:space="preserve">
+    <value>植えた日時</value>
+  </data>
+  <data name="Plant_Index_LastWatered" xml:space="preserve">
+    <value>💧 最後に水をやった日</value>
+  </data>
+  <data name="Plant_Index_None" xml:space="preserve">
+    <value>なし</value>
+  </data>
+  <data name="Plant_Index_WateringFrequency" xml:space="preserve">
+    <value>頻度</value>
+  </data>
+  <data name="Plant_Index_DaysPerTime" xml:space="preserve">
+    <value>日/回</value>
+  </data>
+  <data name="Plant_Index_LastFertilized" xml:space="preserve">
+    <value>🌱 最後に肥料をやった日</value>
+  </data>
+  <data name="Plant_Index_FertilizingFrequency" xml:space="preserve">
+    <value>頻度</value>
+  </data>
+  <data name="Plant_Index_LastRepotted" xml:space="preserve">
+    <value>🪴 最後に植え替えた日</value>
+  </data>
+  <data name="Plant_Index_RepottingFrequency" xml:space="preserve">
+    <value>頻度</value>
+  </data>
+  <data name="Plant_Index_ViewDetails" xml:space="preserve">
+    <value>詳細を表示</value>
+  </data>
+  <data name="Plant_Index_DeleteConfirm" xml:space="preserve">
+    <value>この植物を削除しますか？</value>
+  </data>
+  <data name="Plant_Index_Delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="CareLog_Create_Title" xml:space="preserve">
+    <value>ケアログを追加</value>
+  </data>
+  <data name="CareLog_Create_ActionType" xml:space="preserve">
+    <value>アクションの種類</value>
+  </data>
+  <data name="CareLog_Create_ActionWatering" xml:space="preserve">
+    <value>水やり</value>
+  </data>
+  <data name="CareLog_Create_ActionFertilizing" xml:space="preserve">
+    <value>肥料</value>
+  </data>
+  <data name="CareLog_Create_ActionRepotting" xml:space="preserve">
+    <value>植え替え</value>
+  </data>
+  <data name="CareLog_Create_ActionObservation" xml:space="preserve">
+    <value>観察</value>
+  </data>
+  <data name="CareLog_Create_Note" xml:space="preserve">
+    <value>メモ</value>
+  </data>
+  <data name="CareLog_Create_SaveButton" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="CareLog_Index_Title" xml:space="preserve">
+    <value>ケア履歴</value>
+  </data>
+  <data name="CareLog_Index_AddLog" xml:space="preserve">
+    <value>ログ追加</value>
+  </data>
+  <data name="CareLog_Index_Type" xml:space="preserve">
+    <value>種類</value>
+  </data>
+  <data name="CareLog_Index_Note" xml:space="preserve">
+    <value>メモ</value>
+  </data>
+  <data name="CareLog_Index_Date" xml:space="preserve">
+    <value>日付</value>
+  </data>
+  <data name="CareLog_Index_Delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Profile_Index_PersonalInfo" xml:space="preserve">
+    <value>個人情報</value>
+  </data>
+  <data name="Profile_Index_FullName" xml:space="preserve">
+    <value>氏名</value>
+  </data>
+  <data name="Profile_Index_Email" xml:space="preserve">
+    <value>メール</value>
+  </data>
+  <data name="Profile_Index_Phone" xml:space="preserve">
+    <value>電話</value>
+  </data>
+  <data name="Profile_Index_Role" xml:space="preserve">
+    <value>役割</value>
+  </data>
+  <data name="Profile_Index_EditProfile" xml:space="preserve">
+    <value>プロフィール編集</value>
+  </data>
+  <data name="Profile_Index_ChangePassword" xml:space="preserve">
+    <value>パスワード変更</value>
+  </data>
+  <data name="Library_Index_Title" xml:space="preserve">
+    <value>植物図鑑</value>
+  </data>
+  <data name="Library_Index_Subtitle" xml:space="preserve">
+    <value>植物コレクションとお手入れガイドを見る</value>
+  </data>
+  <data name="Library_Index_SearchPlaceholder" xml:space="preserve">
+    <value>🔍 植物を検索...</value>
+  </data>
+  <data name="Library_Index_ViewDetails" xml:space="preserve">
+    <value>詳細を表示</value>
+  </data>
+  <data name="Library_Details_PlantInfo" xml:space="preserve">
+    <value>植物情報</value>
+  </data>
+  <data name="Library_Details_Description" xml:space="preserve">
+    <value>説明</value>
+  </data>
+  <data name="Library_Details_CareGuide" xml:space="preserve">
+    <value>お手入れガイド</value>
+  </data>
+  <data name="Library_Details_Light" xml:space="preserve">
+    <value>☀️ 光</value>
+  </data>
+  <data name="Library_Details_Water" xml:space="preserve">
+    <value>💧 水</value>
+  </data>
+  <data name="Library_Details_Soil" xml:space="preserve">
+    <value>🌱 土</value>
+  </data>
+  <data name="Library_Details_Fertilizer" xml:space="preserve">
+    <value>🌿 肥料</value>
+  </data>
+  <data name="Library_Details_CommonDiseases" xml:space="preserve">
+    <value>よくある病気</value>
+  </data>
+  <data name="Library_Details_Cause" xml:space="preserve">
+    <value>原因</value>
+  </data>
+  <data name="Library_Details_Treatment" xml:space="preserve">
+    <value>処理方法</value>
+  </data>
+  <data name="Library_Details_BackToLibrary" xml:space="preserve">
+    <value>← 図鑑に戻る</value>
+  </data>
+</root>

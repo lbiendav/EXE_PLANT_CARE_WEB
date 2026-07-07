@@ -65,12 +65,12 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h1 class="fw-bold mb-0" style="color:#2e7d32;">🌿 Vườn của tôi</h1>
-        <p class="text-muted mb-0">Tất cả những cây bạn đang chăm sóc</p>
+        <h1 class="fw-bold mb-0" style="color:#2e7d32;">@Localizer["Plant_Index_Title"]</h1>
+        <p class="text-muted mb-0">@Localizer["Plant_Index_Subtitle"]</p>
     </div>
 
     <a asp-action="Create" class="btn btn-success btn-lg fw-bold px-4">
-        + Thêm cây mới
+        @Localizer["Plant_Index_AddNewPlant"]
     </a>
 </div>
 
@@ -78,9 +78,9 @@
 {
     <div class="empty-garden text-center py-5">
         <div style="font-size:3rem;">🌱</div>
-        <h4 class="fw-bold mt-2" style="color:#2e7d32;">Vườn của bạn còn trống</h4>
-        <p class="text-muted">Hãy thêm cây đầu tiên của bạn vào vườn nhé!</p>
-        <a asp-action="Create" class="btn btn-success fw-bold px-4">Thêm cây mới</a>
+        <h4 class="fw-bold mt-2" style="color:#2e7d32;">@Localizer["Plant_Index_EmptyTitle"]</h4>
+        <p class="text-muted">@Localizer["Plant_Index_EmptySubtitle"]</p>
+        <a asp-action="Create" class="btn btn-success fw-bold px-4">@Localizer["Plant_Index_EmptyAddButton"]</a>
     </div>
 }
 else
@@ -113,43 +113,43 @@ else
                         }
                         else
                         {
-                            <small class="text-muted fst-italic mb-2">Không rõ loại cây</small>
+                            <small class="text-muted fst-italic mb-2">@Localizer["Plant_Index_UnknownPlantType"]</small>
                         }
 
                         <div class="mb-3">
                             <div class="fact-row">
-                                <span class="fact-label">Ngày trồng</span>
+                                <span class="fact-label">@Localizer["Plant_Index_PlantedAt"]</span>
                                 <span class="fact-value">@plant.PlantedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">💧 Tưới nước gần nhất</span>
+                                <span class="fact-label">@Localizer["Plant_Index_LastWatered"]</span>
                                 <span class="fact-value">
-                                    @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
+                                    @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : Localizer["Plant_Index_None"].Value)
                                 </span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">Tần suất tưới</span>
-                                <span class="fact-value">@(plant.WateringFrequency.HasValue ? $"{plant.WateringFrequency} ngày/lần" : "—")</span>
+                                <span class="fact-label">@Localizer["Plant_Index_WateringFrequency"]</span>
+                                <span class="fact-value">@(plant.WateringFrequency.HasValue ? $"{plant.WateringFrequency} {Localizer["Plant_Index_DaysPerTime"].Value}" : "—")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">🌱 Bón phân gần nhất</span>
+                                <span class="fact-label">@Localizer["Plant_Index_LastFertilized"]</span>
                                 <span class="fact-value">
-                                    @(plant.LastFertilized.HasValue ? plant.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
+                                    @(plant.LastFertilized.HasValue ? plant.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : Localizer["Plant_Index_None"].Value)
                                 </span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">Tần suất bón phân</span>
-                                <span class="fact-value">@(plant.FertilizingFrequency.HasValue ? $"{plant.FertilizingFrequency} ngày/lần" : "—")</span>
+                                <span class="fact-label">@Localizer["Plant_Index_FertilizingFrequency"]</span>
+                                <span class="fact-value">@(plant.FertilizingFrequency.HasValue ? $"{plant.FertilizingFrequency} {Localizer["Plant_Index_DaysPerTime"].Value}" : "—")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">🪴 Thay chậu gần nhất</span>
+                                <span class="fact-label">@Localizer["Plant_Index_LastRepotted"]</span>
                                 <span class="fact-value">
-                                    @(plant.LastRepotted.HasValue ? plant.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
+                                    @(plant.LastRepotted.HasValue ? plant.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : Localizer["Plant_Index_None"].Value)
                                 </span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">Tần suất thay chậu</span>
-                                <span class="fact-value">@(plant.RepottingFrequency.HasValue ? $"{plant.RepottingFrequency} ngày/lần" : "—")</span>
+                                <span class="fact-label">@Localizer["Plant_Index_RepottingFrequency"]</span>
+                                <span class="fact-value">@(plant.RepottingFrequency.HasValue ? $"{plant.RepottingFrequency} {Localizer["Plant_Index_DaysPerTime"].Value}" : "—")</span>
                             </div>
                         </div>
 
@@ -157,14 +157,14 @@ else
                             <a asp-action="Details"
                                asp-route-id="@plant.Id"
                                class="btn btn-success btn-sm flex-fill fw-semibold">
-                                Xem chi tiết
+                                @Localizer["Plant_Index_ViewDetails"]
                             </a>
 
                             <a asp-action="Delete"
                                asp-route-id="@plant.Id"
                                class="btn btn-outline-danger btn-sm flex-fill"
-                               onclick="return confirm('Xóa cây này khỏi vườn?');">
-                                Xóa
+                               onclick="return confirm('@Localizer["Plant_Index_DeleteConfirm"]');">
+                                @Localizer["Plant_Index_Delete"]
                             </a>
                         </div>
 
