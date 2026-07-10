@@ -1,60 +1,73 @@
-﻿@model List<HomePlant.Models.ArticleModel>
+@model List<HomePlant.Models.ArticleModel>
 
-<h2>Plant Articles</h2>
+@{
+    ViewData["Title"] = "Bài viết";
+}
 
-<a asp-action="Create"
-   class="btn btn-success mb-3">
-    Create Article
-</a>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Cẩm nang</span>
+        <h1 class="mb-0">Bài viết chăm cây</h1>
+    </div>
 
-<table class="table table-bordered">
+    <a asp-action="Create" class="btn btn-success">
+        + Viết bài mới
+    </a>
+</div>
 
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Views</th>
-            <th>Tags</th>
-            <th></th>
-        </tr>
-    </thead>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
 
-    <tbody>
+            <thead>
+                <tr>
+                    <th>Tiêu đề</th>
+                    <th>Lượt xem</th>
+                    <th>Thẻ</th>
+                    <th></th>
+                </tr>
+            </thead>
 
-        @foreach (var item in Model)
-        {
-            <tr>
+            <tbody>
 
-                <td>@item.Title</td>
+                @foreach (var item in Model)
+                {
+                    <tr>
 
-                <td>@item.Views</td>
+                        <td class="fw-semibold">@item.Title</td>
 
-                <td>@string.Join(", ", item.Tags)</td>
+                        <td class="text-muted">@item.Views</td>
 
-                <td>
+                        <td class="text-muted">@string.Join(", ", item.Tags)</td>
 
-                    <a asp-action="Details"
-                       asp-route-id="@item.Id"
-                       class="btn btn-primary">
-                        View
-                    </a>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <a asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-outline-success btn-sm">
+                                    Xem
+                                </a>
 
-                    <a asp-action="Edit"
-                       asp-route-id="@item.Id"
-                       class="btn btn-warning">
-                        Edit
-                    </a>
+                                <a asp-action="Edit"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-outline-primary btn-sm">
+                                    Sửa
+                                </a>
 
-                    <a asp-action="Delete"
-                       asp-route-id="@item.Id"
-                       class="btn btn-danger">
-                        Delete
-                    </a>
+                                <a asp-action="Delete"
+                                   asp-route-id="@item.Id"
+                                   class="btn btn-outline-danger btn-sm"
+                                   onclick="return confirm('Xóa bài viết này?');">
+                                    Xóa
+                                </a>
+                            </div>
+                        </td>
 
-                </td>
+                    </tr>
+                }
 
-            </tr>
-        }
+            </tbody>
 
-    </tbody>
-
-</table>
+        </table>
+    </div>
+</div>

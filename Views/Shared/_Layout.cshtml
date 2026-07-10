@@ -1,19 +1,12 @@
-﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http
 
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - HomePlant</title>
-
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet">
 
     <link rel="stylesheet"
           href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -25,78 +18,11 @@
     <link rel="stylesheet"
           href="~/HomePlant.styles.css"
           asp-append-version="true" />
-
-    <style>
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: #f7faf7;
-        }
-
-        .custom-navbar {
-            background: white;
-            box-shadow: 0 2px 20px rgba(0,0,0,.08);
-            padding: 12px 0;
-        }
-
-        .logo-text {
-            color: #2e7d32 !important;
-            font-weight: 700;
-            font-size: 28px;
-        }
-
-        .nav-link {
-            font-weight: 500;
-            color: #333 !important;
-            margin: 0 6px;
-            transition: .3s;
-        }
-
-            .nav-link:hover {
-                color: #2e7d32 !important;
-            }
-
-        .admin-link {
-            color: #d32f2f !important;
-            font-weight: 600;
-        }
-
-        .user-badge {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 8px 14px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        main {
-            min-height: 80vh;
-        }
-
-        .footer-custom {
-            background: white;
-            margin-top: 60px;
-            padding: 40px 0;
-            border-top: 1px solid #eee;
-        }
-
-            .footer-custom h5 {
-                color: #2e7d32;
-                font-weight: 700;
-            }
-
-            .footer-custom p {
-                color: #666;
-            }
-
-    </style>
-
-
 </head>
 
 <body>
 
+    <div class="grain"></div>
 
     <header>
 
@@ -107,18 +33,14 @@
                 <a class="navbar-brand logo-text"
                    asp-controller="Home"
                    asp-action="Index">
-
                     HomePlant
-
                 </a>
 
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#navbarContent">
-
                     <span class="navbar-toggler-icon"></span>
-
                 </button>
 
                 <div class="collapse navbar-collapse"
@@ -130,7 +52,7 @@
                             <a class="nav-link"
                                asp-controller="Home"
                                asp-action="Index">
-                                Explore
+                                Khám phá
                             </a>
                         </li>
 
@@ -138,7 +60,7 @@
                             <a class="nav-link"
                                asp-controller="Library"
                                asp-action="Index">
-                                Plant Library
+                                Thư viện cây
                             </a>
                         </li>
 
@@ -148,7 +70,7 @@
                                 <a class="nav-link"
                                    asp-controller="Plant"
                                    asp-action="Index">
-                                    My Garden
+                                    Vườn của tôi
                                 </a>
                             </li>
 
@@ -156,7 +78,7 @@
                                 <a class="nav-link"
                                    asp-controller="Profile"
                                    asp-action="Index">
-                                    Profile
+                                    Hồ sơ
                                 </a>
                             </li>
                         }
@@ -167,63 +89,47 @@
                                 <a class="nav-link admin-link"
                                    asp-controller="Admin"
                                    asp-action="Dashboard">
-                                    🛠️ Quản lý
+                                    Quản trị
                                 </a>
                             </li>
                         }
 
                     </ul>
 
-                    <ul class="navbar-nav align-items-center">
+                    <ul class="navbar-nav align-items-lg-center">
 
                         @if (Context.Session.GetString("Email") == null)
                         {
                             <li class="nav-item">
-
                                 <a class="nav-link"
                                    asp-controller="Account"
                                    asp-action="Login">
-
-                                    Login
-
+                                    Đăng nhập
                                 </a>
-
                             </li>
 
                             <li class="nav-item">
-
-                                <a class="btn btn-success ms-2"
+                                <a class="btn btn-success btn-sm ms-lg-3"
                                    asp-controller="Account"
                                    asp-action="Register">
-
-                                    Register
-
+                                    Đăng ký
                                 </a>
-
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-
                                 <span class="user-badge">
-
                                     @Context.Session.GetString("Email")
-
                                 </span>
-
                             </li>
 
                             <li class="nav-item">
-
-                                <a class="btn btn-outline-danger ms-3"
+                                <a class="btn btn-outline-danger btn-sm ms-lg-3"
                                    asp-controller="Account"
                                    asp-action="Logout">
-
-                                    Logout
-
+                                    Đăng xuất
                                 </a>
-
                             </li>
                         }
 
@@ -237,7 +143,7 @@
 
     </header>
 
-    <div class="container mt-4">
+    <div class="container mt-5 main-wrap">
 
         <main role="main">
 
@@ -249,17 +155,17 @@
 
     <footer class="footer-custom">
 
-        <div class="container text-center">
+        <div class="container d-flex flex-wrap justify-content-between align-items-baseline gap-3">
 
-            <h5>HomePlant</h5>
+            <span class="foot-mark">HomePlant</span>
 
-            <p>
-                Smart Plant Care Platform
-            </p>
+            <span class="foot-mid">
+                Chăm cây <em>trong nhà</em>, có nhịp có mùa.
+            </span>
 
-            <small>
-                © 2026 HomePlant. All rights reserved.
-            </small>
+            <span class="foot-right">
+                © 2026 HomePlant
+            </span>
 
         </div>
 
@@ -273,7 +179,6 @@
             asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-    ```
 
 </body>
 </html>

@@ -1,37 +1,31 @@
 @model List<HomePlant.Models.CommunityPostModel>
 
+@{
+    ViewData["Title"] = "Quản lý bài đăng cộng đồng";
+}
+
 <style>
-    .post-card {
-        border: none;
-        border-radius: 16px;
-    }
-
-    .post-avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
     .post-image {
         height: 160px;
         width: 100%;
         object-fit: cover;
-        border-radius: 10px;
     }
 </style>
 
-<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại Quản lý
+<a asp-action="Dashboard" class="back-link">
+    ← Quản trị
 </a>
 
-<h1 class="fw-bold mb-4" style="color:#2e7d32;">💬 Quản lý bài đăng cộng đồng</h1>
+<div class="mb-4">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">Bài đăng cộng đồng</h1>
+</div>
 
 <div class="row g-3">
     @foreach (var post in Model)
     {
         <div class="col-lg-4 col-md-6">
-            <div class="card post-card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <img src="@(string.IsNullOrEmpty(post.AuthorAvatar) ? "https://i.pravatar.cc/150" : post.AuthorAvatar)"

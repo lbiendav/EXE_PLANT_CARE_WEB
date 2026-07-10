@@ -1,8 +1,19 @@
-﻿@model HomePlant.Models.CareLogModel
+@model HomePlant.Models.CareLogModel
 
-<h2>Add Care Log</h2>
+@{
+    ViewData["Title"] = "Ghi nhật ký chăm sóc";
+}
 
-<form method="post">
+<a asp-action="Index" asp-route-plantId="@ViewBag.PlantId" class="back-link">
+    ← Lịch sử chăm sóc
+</a>
+
+<div class="mb-4">
+    <span class="kicker">Nhật ký</span>
+    <h1>Ghi nhật ký chăm sóc</h1>
+</div>
+
+<form method="post" style="max-width:520px;">
 
     <input type="hidden"
            name="plantId"
@@ -10,43 +21,30 @@
 
     <div class="mb-3">
 
-        <label>Action Type</label>
+        <label class="form-label">Hoạt động</label>
 
-        <select asp-for="ActionType"
-                class="form-control">
-
-            <option value="Watering">
-                Watering
-            </option>
-
-            <option value="Fertilizing">
-                Fertilizing
-            </option>
-
-            <option value="Repotting">
-                Repotting
-            </option>
-
-            <option value="Observation">
-                Observation
-            </option>
-
+        <select asp-for="ActionType" class="form-select">
+            <option value="Watering">Tưới nước</option>
+            <option value="Fertilizing">Bón phân</option>
+            <option value="Repotting">Thay chậu</option>
+            <option value="Observation">Quan sát</option>
         </select>
 
     </div>
 
-    <div class="mb-3">
+    <div class="mb-4">
 
-        <label>Note</label>
+        <label class="form-label">Ghi chú</label>
 
         <textarea asp-for="Note"
-                  class="form-control">
-        </textarea>
+                  rows="4"
+                  class="form-control"
+                  placeholder="Hôm nay cây thế nào?"></textarea>
 
     </div>
 
     <button class="btn btn-success">
-        Save
+        Lưu nhật ký
     </button>
 
 </form>

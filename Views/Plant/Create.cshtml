@@ -1,15 +1,26 @@
 @model HomePlant.ViewModels.PlantCreateVM
 
-<h2 class="fw-bold mb-4">Thêm cây mới</h2>
+@{
+    ViewData["Title"] = "Thêm cây mới";
+}
 
-<form method="post" enctype="multipart/form-data" style="max-width:500px;">
+<a asp-action="Index" class="back-link">
+    ← Vườn của tôi
+</a>
+
+<div class="mb-4">
+    <span class="kicker">Trang mới trong nhật ký</span>
+    <h1>Thêm cây mới</h1>
+</div>
+
+<form method="post" enctype="multipart/form-data" style="max-width:520px;">
 
     <div class="mb-3">
         <label for="Photo"
                id="photoDropzone"
-               class="d-flex flex-column align-items-center justify-content-center text-center border rounded-3 p-5"
-               style="cursor:pointer;background:#f2f8f2;border-color:#a5d6a7 !important;color:#2e7d32;overflow:hidden;">
-            <span id="photoPlaceholder" style="font-size:2rem;">+📷</span>
+               class="photo-dropzone d-flex flex-column align-items-center justify-content-center text-center p-5"
+               style="overflow:hidden;">
+            <span id="photoPlaceholder" style="font-size:1.6rem;">＋</span>
             <span id="photoPlaceholderText" class="mt-2">Chạm để thêm ảnh</span>
             <img id="photoPreview" class="d-none" style="max-height:220px;max-width:100%;object-fit:cover;" />
         </label>
@@ -17,32 +28,34 @@
     </div>
 
     <div class="mb-3">
+        <label class="form-label" asp-for="Nickname">Tên gọi</label>
         <input asp-for="Nickname"
-               class="form-control form-control-lg"
-               placeholder="Tên gọi (Ví dụ: Bé Sen Đá Góc Bàn)" />
-        <span asp-validation-for="Nickname" class="text-danger"></span>
+               class="form-control"
+               placeholder="Ví dụ: Bé Sen Đá Góc Bàn" />
+        <span asp-validation-for="Nickname" class="text-danger small"></span>
     </div>
 
     <div class="mb-3">
+        <label class="form-label" asp-for="PlantSampleId">Loại cây (từ thư viện)</label>
         <select asp-for="PlantSampleId"
                 asp-items="ViewBag.PlantSamples"
-                class="form-control form-control-lg">
-            <option value="">Loại cây (Từ Thư viện)</option>
+                class="form-select">
+            <option value="">Chọn loại cây</option>
         </select>
-        <span asp-validation-for="PlantSampleId" class="text-danger"></span>
+        <span asp-validation-for="PlantSampleId" class="text-danger small"></span>
     </div>
 
     <div class="mb-4">
-        <label class="text-muted small mb-1">Trạng thái sức khỏe</label>
-        <select asp-for="CurrentStatus" class="form-control form-control-lg">
+        <label class="form-label" asp-for="CurrentStatus">Trạng thái sức khỏe</label>
+        <select asp-for="CurrentStatus" class="form-select">
             <option>Khỏe mạnh</option>
             <option>Cần chú ý</option>
             <option>Bị bệnh</option>
         </select>
     </div>
 
-    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
-        LƯU VÀO VƯỜN
+    <button type="submit" class="btn btn-success btn-lg w-100">
+        Lưu vào vườn
     </button>
 
 </form>

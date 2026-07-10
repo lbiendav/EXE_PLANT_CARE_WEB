@@ -1,17 +1,28 @@
-﻿@model HomePlant.Models.ArticleModel
+@model HomePlant.Models.ArticleModel
 
-<h2>
-    @Model.Title
-</h2>
-
-<hr />
-
-@if (!string.IsNullOrEmpty(Model.CoverImage))
-{
-    <img src="@Model.CoverImage"
-         class="img-fluid mb-3" />
+@{
+    ViewData["Title"] = Model.Title;
 }
 
-<div>
-    @Html.Raw(Model.Content)
-</div>
+<a asp-action="Index" class="back-link">
+    ← Bài viết
+</a>
+
+<article style="max-width:760px;margin:0 auto;">
+
+    <span class="kicker">Cẩm nang</span>
+
+    <h1 class="mb-4">@Model.Title</h1>
+
+    @if (!string.IsNullOrEmpty(Model.CoverImage))
+    {
+        <img src="@Model.CoverImage"
+             class="img-fluid mb-4 w-100"
+             alt="@Model.Title" />
+    }
+
+    <div class="article-content">
+        @Html.Raw(Model.Content)
+    </div>
+
+</article>

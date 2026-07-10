@@ -1,56 +1,66 @@
-﻿@model List<HomePlant.Models.CareLogModel>
+@model List<HomePlant.Models.CareLogModel>
 
-<h2>Care History</h2>
+@{
+    ViewData["Title"] = "Lịch sử chăm sóc";
+}
 
-<a asp-action="Create"
-   asp-route-plantId="@ViewBag.PlantId"
-   class="btn btn-success mb-3">
-    Add Log
+<a asp-controller="Plant" asp-action="Details" asp-route-id="@ViewBag.PlantId" class="back-link">
+    ← Chi tiết cây
 </a>
 
-<table class="table table-bordered">
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Nhật ký</span>
+        <h1 class="mb-0">Lịch sử chăm sóc</h1>
+    </div>
 
-    <thead>
-        <tr>
-            <th>Type</th>
-            <th>Note</th>
-            <th>Date</th>
-            <th></th>
-        </tr>
-    </thead>
+    <a asp-action="Create"
+       asp-route-plantId="@ViewBag.PlantId"
+       class="btn btn-success">
+        + Ghi nhật ký
+    </a>
+</div>
 
-    <tbody>
+<div class="card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
 
-        @foreach (var item in Model)
-        {
-            <tr>
+            <thead>
+                <tr>
+                    <th>Hoạt động</th>
+                    <th>Ghi chú</th>
+                    <th>Ngày</th>
+                    <th></th>
+                </tr>
+            </thead>
 
-                <td>
-                    @item.ActionType
-                </td>
+            <tbody>
 
-                <td>
-                    @item.Note
-                </td>
+                @foreach (var item in Model)
+                {
+                    <tr>
 
-                <td>
-                    @item.CreatedAt
-                </td>
+                        <td>@item.ActionType</td>
 
-                <td>
+                        <td>@item.Note</td>
 
-                    <a asp-action="Delete"
-                       asp-route-plantId="@ViewBag.PlantId"
-                       asp-route-id="@item.Id"
-                       class="btn btn-danger">
-                        Delete
-                    </a>
+                        <td class="text-muted">@item.CreatedAt</td>
 
-                </td>
+                        <td class="text-end">
+                            <a asp-action="Delete"
+                               asp-route-plantId="@ViewBag.PlantId"
+                               asp-route-id="@item.Id"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Xóa bản ghi này?');">
+                                Xóa
+                            </a>
+                        </td>
 
-            </tr>
-        }
+                    </tr>
+                }
 
-    </tbody>
+            </tbody>
 
-</table>
+        </table>
+    </div>
+</div>

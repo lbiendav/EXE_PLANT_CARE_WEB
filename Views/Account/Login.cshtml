@@ -1,28 +1,85 @@
-﻿@model HomePlant.ViewModels.LoginVM
+@model HomePlant.ViewModels.LoginVM
+@{
+    ViewData["Title"] = "Đăng nhập";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng nhập — HomePlant</title>
+    <partial name="_AuthStyles" />
+</head>
+<body class="auth-body">
+    <div class="auth-grain"></div>
 
-<h2>Login</h2>
+    <main class="auth-split">
 
-<div asp-validation-summary="All" class="text-danger"></div>
+        <aside class="auth-aside">
+            <a class="auth-mark" asp-controller="Home" asp-action="Index">HomePlant</a>
 
-<form method="post">
+            <div>
+                <p class="auth-kicker">Vườn trong nhà</p>
+                <h2>Khu vườn vẫn <em>đợi bạn</em>.</h2>
+                <p class="auth-aside__copy">
+                    Đăng nhập để mở lại nhật ký chăm cây, xem lịch tưới hôm nay
+                    và tiếp tục nơi bạn đã dừng lại.
+                </p>
+            </div>
 
-    <div class="mb-3">
-        <label>Email</label>
+            <ul class="auth-perks">
+                <li>Nhật ký chăm cây cá nhân</li>
+                <li>Nhắc lịch tưới &amp; bón phân</li>
+                <li>Thư viện hàng trăm loài cây</li>
+            </ul>
+        </aside>
 
-        <input asp-for="Email"
-               class="form-control" />
-    </div>
+        <section class="auth-panel">
+            <div class="auth-panel__inner">
+                <h1 class="auth-title">Đăng nhập</h1>
+                <p class="auth-sub">Mở cuốn nhật ký của bạn.</p>
 
-    <div class="mb-3">
-        <label>Password</label>
+                <div asp-validation-summary="All" class="auth-alert"></div>
 
-        <input asp-for="Password"
-               type="password"
-               class="form-control" />
-    </div>
+                <form method="post">
+                    <div class="auth-field">
+                        <label asp-for="Email">Email</label>
+                        <div class="auth-input">
+                            <input asp-for="Email" placeholder="you@example.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="auth-err"></span>
+                    </div>
 
-    <button class="btn btn-primary">
-        Login
-    </button>
+                    <div class="auth-field">
+                        <label asp-for="Password">Mật khẩu</label>
+                        <div class="auth-input">
+                            <input asp-for="Password" type="password" id="pwd" placeholder="••••••••" autocomplete="current-password" />
+                            <button type="button" class="auth-toggle" onclick="togglePwd('pwd', this)" aria-label="Hiện mật khẩu">Hiện</button>
+                        </div>
+                        <span asp-validation-for="Password" class="auth-err"></span>
+                    </div>
 
-</form>
+                    <button class="auth-btn" type="submit">Đăng nhập</button>
+                </form>
+
+                <p class="auth-foot">
+                    Chưa có tài khoản?
+                    <a asp-action="Register">Đăng ký ngay</a>
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function togglePwd(id, btn) {
+            const el = document.getElementById(id);
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            btn.textContent = show ? 'Ẩn' : 'Hiện';
+            btn.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+        }
+    </script>
+</body>
+</html>

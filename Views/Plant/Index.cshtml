@@ -1,86 +1,41 @@
 @model List<HomePlant.ViewModels.GardenItemVM>
 
+@{
+    ViewData["Title"] = "Vườn của tôi";
+}
+
 <style>
-    .garden-card {
-        border: none;
-        border-radius: 18px;
-        overflow: hidden;
-        transition: transform .2s ease, box-shadow .2s ease;
-    }
-
-    .garden-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 28px rgba(0,0,0,.12) !important;
-    }
-
-    .garden-card .garden-img-wrap {
-        position: relative;
-    }
-
     .garden-card img {
         height: 210px;
         width: 100%;
         object-fit: cover;
     }
 
-    .status-pill {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        padding: 4px 12px;
-        border-radius: 999px;
-        font-size: .75rem;
-        font-weight: 600;
-        color: #fff;
-        box-shadow: 0 2px 6px rgba(0,0,0,.25);
-    }
-
-    .fact-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: .82rem;
-        padding: 4px 0;
-        border-bottom: 1px dashed #e7e7e7;
-    }
-
-    .fact-row:last-child {
-        border-bottom: none;
-    }
-
-    .fact-label {
-        color: #7a8a7a;
-    }
-
-    .fact-value {
-        font-weight: 600;
-        color: #2e2e2e;
-    }
-
-    .empty-garden {
-        border: 2px dashed #a5d6a7;
-        border-radius: 20px;
-        background: #f5faf5;
+    .garden-img-wrap {
+        position: relative;
+        overflow: hidden;
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-5">
     <div>
-        <h1 class="fw-bold mb-0" style="color:#2e7d32;">🌿 Vườn của tôi</h1>
-        <p class="text-muted mb-0">Tất cả những cây bạn đang chăm sóc</p>
+        <span class="kicker">Nhật ký làm vườn</span>
+        <h1 class="mb-0">Vườn của tôi</h1>
+        <p class="text-muted mb-0 mt-2">Tất cả những cây bạn đang chăm sóc</p>
     </div>
 
-    <a asp-action="Create" class="btn btn-success btn-lg fw-bold px-4">
+    <a asp-action="Create" class="btn btn-success">
         + Thêm cây mới
     </a>
 </div>
 
 @if (Model.Count == 0)
 {
-    <div class="empty-garden text-center py-5">
-        <div style="font-size:3rem;">🌱</div>
-        <h4 class="fw-bold mt-2" style="color:#2e7d32;">Vườn của bạn còn trống</h4>
+    <div class="empty-garden text-center py-5 px-4">
+        <span class="kicker d-block mb-3">Trang đầu tiên</span>
+        <h3>Vườn của bạn còn trống</h3>
         <p class="text-muted">Hãy thêm cây đầu tiên của bạn vào vườn nhé!</p>
-        <a asp-action="Create" class="btn btn-success fw-bold px-4">Thêm cây mới</a>
+        <a asp-action="Create" class="btn btn-success mt-2">Thêm cây mới</a>
     </div>
 }
 else
@@ -92,10 +47,11 @@ else
             var template = item.Template;
 
             <div class="col-lg-4 col-md-6">
-                <div class="card garden-card shadow-sm h-100">
+                <div class="card garden-card h-100">
 
                     <div class="garden-img-wrap">
-                        <img src="@(string.IsNullOrEmpty(plant.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : plant.ImageUrl)" />
+                        <img src="@(string.IsNullOrEmpty(plant.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : plant.ImageUrl)"
+                             alt="@plant.CustomName" />
                         <span class="status-pill bg-@plant.StatusColorClass">
                             @plant.DisplayStatus
                         </span>
@@ -107,13 +63,13 @@ else
 
                         @if (template != null)
                         {
-                            <small class="text-muted fst-italic mb-2">
+                            <small class="text-muted fst-italic mb-3">
                                 @template.Name · @template.ScientificName
                             </small>
                         }
                         else
                         {
-                            <small class="text-muted fst-italic mb-2">Không rõ loại cây</small>
+                            <small class="text-muted fst-italic mb-3">Không rõ loại cây</small>
                         }
 
                         <div class="mb-3">
@@ -122,7 +78,7 @@ else
                                 <span class="fact-value">@plant.PlantedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">💧 Tưới nước gần nhất</span>
+                                <span class="fact-label">Tưới nước gần nhất</span>
                                 <span class="fact-value">
                                     @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
                                 </span>
@@ -132,7 +88,7 @@ else
                                 <span class="fact-value">@(plant.WateringFrequency.HasValue ? $"{plant.WateringFrequency} ngày/lần" : "—")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">🌱 Bón phân gần nhất</span>
+                                <span class="fact-label">Bón phân gần nhất</span>
                                 <span class="fact-value">
                                     @(plant.LastFertilized.HasValue ? plant.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
                                 </span>
@@ -142,7 +98,7 @@ else
                                 <span class="fact-value">@(plant.FertilizingFrequency.HasValue ? $"{plant.FertilizingFrequency} ngày/lần" : "—")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">🪴 Thay chậu gần nhất</span>
+                                <span class="fact-label">Thay chậu gần nhất</span>
                                 <span class="fact-value">
                                     @(plant.LastRepotted.HasValue ? plant.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
                                 </span>
@@ -156,7 +112,7 @@ else
                         <div class="mt-auto d-flex gap-2">
                             <a asp-action="Details"
                                asp-route-id="@plant.Id"
-                               class="btn btn-success btn-sm flex-fill fw-semibold">
+                               class="btn btn-outline-success btn-sm flex-fill">
                                 Xem chi tiết
                             </a>
 

@@ -5,48 +5,21 @@
     var heading = (string)ViewData["Heading"]!;
 }
 
-<style>
-    .form-card {
-        border: none;
-        border-radius: 18px;
-    }
-
-    .disease-row {
-        background: #f7faf7;
-        border: 1px solid #dfeee0;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 12px;
-        position: relative;
-    }
-
-    .disease-remove {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-    }
-
-    .photo-dropzone {
-        cursor: pointer;
-        background: #f2f8f2;
-        border: 2px dashed #a5d6a7 !important;
-        color: #2e7d32;
-        border-radius: 14px;
-    }
-</style>
-
-<a asp-action="SamplePlants" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại thư viện cây
+<a asp-action="SamplePlants" class="back-link">
+    ← Thư viện cây
 </a>
 
-<h1 class="fw-bold mb-4" style="color:#2e7d32;">@heading</h1>
+<div class="mb-4">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">@heading</h1>
+</div>
 
 <form method="post" asp-action="@formAction" asp-route-id="@Model.Id" enctype="multipart/form-data" style="max-width:720px;">
 
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="ExistingImageUrl" />
 
-    <div class="card form-card shadow-sm mb-3">
+    <div class="card mb-3">
         <div class="card-body">
 
             <label for="Photo"
@@ -59,7 +32,7 @@
                 }
                 else
                 {
-                    <span id="photoPlaceholder" style="font-size:2rem;">+📷</span>
+                    <span id="photoPlaceholder" style="font-size:1.6rem;">＋</span>
                     <span id="photoPlaceholderText" class="mt-2">Chọn ảnh cho cây</span>
                     <img id="photoPreview" class="d-none" style="max-height:200px;max-width:100%;object-fit:cover;" />
                 }
@@ -84,33 +57,33 @@
         </div>
     </div>
 
-    <div class="card form-card shadow-sm mb-3">
+    <div class="card mb-3">
         <div class="card-body">
-            <h6 class="fw-bold text-uppercase text-muted small mb-3">Hướng dẫn chăm sóc</h6>
+            <h6 class="kicker mb-3">Hướng dẫn chăm sóc</h6>
 
             <div class="mb-3">
-                <label class="form-label">☀️ Ánh sáng</label>
+                <label class="form-label">Ánh sáng</label>
                 <input asp-for="Light" class="form-control" />
             </div>
             <div class="mb-3">
-                <label class="form-label">💧 Nước</label>
+                <label class="form-label">Nước</label>
                 <input asp-for="Water" class="form-control" />
             </div>
             <div class="mb-3">
-                <label class="form-label">🌱 Đất</label>
+                <label class="form-label">Đất</label>
                 <input asp-for="Soil" class="form-control" />
             </div>
             <div class="mb-3">
-                <label class="form-label">🧪 Phân bón</label>
+                <label class="form-label">Phân bón</label>
                 <input asp-for="Fertilizer" class="form-control" />
             </div>
         </div>
     </div>
 
-    <div class="card form-card shadow-sm mb-3">
+    <div class="card mb-3">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold text-uppercase text-muted small mb-0">Bệnh thường gặp</h6>
+                <h6 class="kicker mb-0">Bệnh thường gặp</h6>
                 <button type="button" id="addDisease" class="btn btn-outline-success btn-sm">+ Thêm bệnh</button>
             </div>
 
@@ -137,7 +110,7 @@
         </div>
     </div>
 
-    <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">
+    <button type="submit" class="btn btn-success btn-lg w-100">
         Lưu
     </button>
 

@@ -1,154 +1,77 @@
-﻿<div class="container py-5">
+@{
+    ViewData["Title"] = "Hồ sơ";
+}
 
-    <div class="row">
+<div class="mb-4">
+    <span class="kicker">Tài khoản</span>
+    <h1>Hồ sơ của bạn</h1>
+</div>
 
-        <div class="col-lg-4">
+<div class="row g-4">
 
-            <div class="card border-0 shadow-sm">
+    <div class="col-lg-4">
 
-                <div class="card-body text-center">
+        <div class="card">
+            <div class="card-body text-center p-4">
 
-                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                         width="140"
-                         class="mb-3" />
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                     width="110"
+                     class="mb-3 rounded-circle"
+                     alt="Ảnh đại diện" />
 
-                    <h3 class="fw-bold">
+                <h4 class="fw-bold mb-1">@ViewBag.Name</h4>
 
-                        @ViewBag.Name
+                <p class="text-muted mb-3">@ViewBag.Email</p>
 
-                    </h3>
-
-                    <p class="text-muted">
-
-                        @ViewBag.Email
-
-                    </p>
-
-                    <span class="badge bg-success">
-
-                        @ViewBag.Role
-
-                    </span>
-
-                </div>
+                <span class="badge bg-success">@ViewBag.Role</span>
 
             </div>
-
-        </div>
-
-        <div class="col-lg-8">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h3 class="fw-bold mb-4">
-
-                        Personal Information
-
-                    </h3>
-
-                    <div class="row mb-3">
-
-                        <div class="col-md-4">
-
-                            <strong>
-                                Full Name
-                            </strong>
-
-                        </div>
-
-                        <div class="col-md-8">
-
-                            @ViewBag.Name
-
-                        </div>
-
-                    </div>
-
-                    <hr />
-
-                    <div class="row mb-3">
-
-                        <div class="col-md-4">
-
-                            <strong>
-                                Email
-                            </strong>
-
-                        </div>
-
-                        <div class="col-md-8">
-
-                            @ViewBag.Email
-
-                        </div>
-
-                    </div>
-
-                    <hr />
-
-                    <div class="row mb-3">
-
-                        <div class="col-md-4">
-
-                            <strong>
-                                Phone
-                            </strong>
-
-                        </div>
-
-                        <div class="col-md-8">
-
-                            @ViewBag.Phone
-
-                        </div>
-
-                    </div>
-
-                    <hr />
-
-                    <div class="row mb-3">
-
-                        <div class="col-md-4">
-
-                            <strong>
-                                Role
-                            </strong>
-
-                        </div>
-
-                        <div class="col-md-8">
-
-                            @ViewBag.Role
-
-                        </div>
-
-                    </div>
-
-                    <hr />
-
-                    <div class="mt-4">
-
-                        <a class="btn btn-success">
-
-                            Edit Profile
-
-                        </a>
-
-                        <a class="btn btn-outline-primary ms-2">
-
-                            Change Password
-
-                        </a>
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
 
     </div>
+
+    <div class="col-lg-8">
+
+        <div class="card">
+            <div class="card-body p-4">
+
+                <h6 class="kicker mb-3">Thông tin cá nhân</h6>
+
+                <div class="field-row">
+                    <span class="field-label">Họ và tên</span>
+                    <span class="field-value">@ViewBag.Name</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Email</span>
+                    <span class="field-value">@ViewBag.Email</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Số điện thoại</span>
+                    <span class="field-value">@ViewBag.Phone</span>
+                </div>
+
+                <div class="field-row">
+                    <span class="field-label">Vai trò</span>
+                    <span class="field-value">@ViewBag.Role</span>
+                </div>
+
+                <div class="mt-4 d-flex flex-wrap gap-2">
+
+                    <a class="btn btn-success btn-sm">
+                        Sửa hồ sơ
+                    </a>
+
+                    <a class="btn btn-outline-success btn-sm">
+                        Đổi mật khẩu
+                    </a>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
 </div>

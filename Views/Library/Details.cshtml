@@ -1,221 +1,123 @@
-﻿@model HomePlant.Models.PlantSampleModel
+@model HomePlant.Models.PlantSampleModel
 
-<div class="container py-5">
+@{
+    ViewData["Title"] = Model.Name;
+}
 
-    <div class="row g-5">
+<a asp-controller="Library" asp-action="Index" class="back-link">
+    ← Thư viện cây
+</a>
 
-        <div class="col-lg-5">
+<div class="row g-5">
 
-            <div class="detail-image">
+    <div class="col-lg-5">
 
-                <img src="@Model.Image"
-                     class="img-fluid w-100 rounded-4 shadow-lg" />
-
-            </div>
-
-        </div>
-
-        <div class="col-lg-7">
-
-            <span class="badge bg-success mb-3">
-
-                Plant Information
-
-            </span>
-
-            <h1 class="fw-bold">
-
-                @Model.Name
-
-            </h1>
-
-            <h4 class="text-muted mb-4">
-
-                @Model.ScientificName
-
-            </h4>
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-body">
-
-                    <h5 class="fw-bold">
-
-                        Description
-
-                    </h5>
-
-                    <p class="mb-0">
-
-                        @Model.Description
-
-                    </p>
-
-                </div>
-
-            </div>
-
+        <div class="detail-image">
+            <img src="@Model.Image"
+                 class="img-fluid w-100"
+                 alt="@Model.Name" />
         </div>
 
     </div>
 
-    <div class="mt-5">
+    <div class="col-lg-7">
 
-        <h2 class="fw-bold mb-4">
+        <span class="kicker">Hồ sơ loài cây</span>
 
-            Care Guide
+        <h1>@Model.Name</h1>
 
-        </h2>
+        <p class="text-muted fst-italic fs-5 mb-4">
+            @Model.ScientificName
+        </p>
 
-        <div class="row">
-
-            <div class="col-md-6 mb-3">
-
-                <div class="card border-0 shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <h5>
-                            ☀️ Ánh sáng
-                        </h5>
-
-                        <p>
-                            @Model.Care.Light
-                        </p>
-
-                    </div>
-
-                </div>
-
+        <div class="card">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-2">Mô tả</h5>
+                <p class="mb-0 text-muted">@Model.Description</p>
             </div>
-
-            <div class="col-md-6 mb-3">
-
-                <div class="card border-0 shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <h5>
-                            💧 Tưới nước
-                        </h5>
-
-                        <p>
-                            @Model.Care.Water
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-6 mb-3">
-
-                <div class="card border-0 shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <h5>
-                            🌱 Đất trồng
-                        </h5>
-
-                        <p>
-                            @Model.Care.Soil
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="col-md-6 mb-3">
-
-                <div class="card border-0 shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <h5>
-                            🌿 Phân bón
-                        </h5>
-
-                        <p>
-                            @Model.Care.Fertilizer
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
         </div>
 
     </div>
 
-    <div class="mt-5">
+</div>
 
-        <h2 class="fw-bold mb-4">
+<div class="mt-5">
 
-            Common Diseases
+    <span class="kicker">Chăm sóc</span>
+    <h2 class="mb-4">Hướng dẫn chăm sóc</h2>
 
-        </h2>
+    <div class="row g-3">
 
-        @foreach (var disease in Model.Diseases)
-        {
-            <div class="card border-0 shadow-sm mb-4">
-
-                <div class="card-body">
-
-                    <h4 class="text-danger fw-bold">
-
-                        @disease.Issue
-
-                    </h4>
-
-                    <hr />
-
-                    <h6 class="fw-bold">
-
-                        Nguyên nhân
-
-                    </h6>
-
-                    <p>
-
-                        @disease.Cause
-
-                    </p>
-
-                    <h6 class="fw-bold">
-
-                        Cách xử lý
-
-                    </h6>
-
-                    <p>
-
-                        @disease.Treatment
-
-                    </p>
-
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2">Ánh sáng</h5>
+                    <p class="mb-0 text-muted">@Model.Care.Light</p>
                 </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2">Tưới nước</h5>
+                    <p class="mb-0 text-muted">@Model.Care.Water</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2">Đất trồng</h5>
+                    <p class="mb-0 text-muted">@Model.Care.Soil</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2">Phân bón</h5>
+                    <p class="mb-0 text-muted">@Model.Care.Fertilizer</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="mt-5">
+
+    <span class="kicker">Phòng bệnh</span>
+    <h2 class="mb-4">Bệnh thường gặp</h2>
+
+    @foreach (var disease in Model.Diseases)
+    {
+        <div class="card mb-3">
+            <div class="card-body p-4">
+
+                <h4 class="text-danger fw-bold">@disease.Issue</h4>
+
+                <hr />
+
+                <h6 class="fw-bold">Nguyên nhân</h6>
+                <p class="text-muted">@disease.Cause</p>
+
+                <h6 class="fw-bold">Cách xử lý</h6>
+                <p class="text-muted mb-0">@disease.Treatment</p>
 
             </div>
-        }
+        </div>
+    }
 
-    </div>
+</div>
 
-    <div class="mt-4">
-
-        <a asp-controller="Library"
-           asp-action="Index"
-           class="btn btn-outline-success btn-lg">
-
-            ← Quay lại thư viện
-
-        </a>
-
-    </div>
-
+<div class="mt-4">
+    <a asp-controller="Library"
+       asp-action="Index"
+       class="btn btn-outline-success">
+        ← Quay lại thư viện
+    </a>
 </div>

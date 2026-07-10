@@ -27,7 +27,7 @@
   <a class="head__mark" href="#top">HOME&nbsp;PLANT</a>
   <p class="head__guide" data-i18n="head.guide">Cẩm&nbsp;nang&nbsp;№&nbsp;01&nbsp;—&nbsp;Sanctuary</p>
   <div class="head__right">
-    <a class="head__cta" href="http://localhost:5056/" data-i18n="head.join">Tham gia</a>
+    <button class="head__cta" type="button" data-i18n="head.join">Tham gia</button>
   </div>
   <div class="lang">
     <button class="head__lang" id="langToggle" type="button" aria-label="Chuyển ngôn ngữ / Switch language">
@@ -174,27 +174,6 @@
       <p class="anatomy__done" data-win="0.9,0.99" data-i18n="anat.done">Hoàn chỉnh. <span>— một chậu Monstera, ghép lại</span></p>
 
       <div class="veil" data-veil></div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ 4b · RITUAL INTERLUDE ═══════════════ -->
-  <section class="story" id="ritual">
-    <span class="story__ghost" aria-hidden="true" data-parallax="-8" data-i18n="ritual.ghost">NGHI THỨC</span>
-    <div class="story__inner">
-      <p class="kicker reveal" data-i18n="ritual.kicker">Nghi thức</p>
-      <h2 class="story__title">
-        <span class="line"><span class="line__in" data-i18n="ritual.t1">Hiểu cây,</span></span>
-        <span class="line"><span class="line__in" data-i18n="ritual.t2">rồi mới <em>chăm cây.</em></span></span>
-      </h2>
-      <div class="story__body">
-        <p class="line"><span class="line__in" data-i18n="ritual.b1">Tháo rời để hiểu — ghép lại để thương.</span></p>
-        <p class="line"><span class="line__in" data-i18n="ritual.b2">Mỗi lớp đất, mỗi chiếc rễ đều có lý do.</span></p>
-        <p class="line"><span class="line__in" data-i18n="ritual.b3">Việc còn lại chỉ là lặp lại, thật đều.</span></p>
-        <p class="line line--dim"><span class="line__in" data-i18n="ritual.b4">Và <em>Sanctuary</em> biến sự lặp lại thành nghi thức.</span></p>
-      </div>
-      <div class="story__meta reveal">
-        <span data-i18n="ritual.m1">Năm lớp</span><i></i><span data-i18n="ritual.m2">Một chậu cây</span><i></i><span data-i18n="ritual.m3">Nghi thức mỗi tuần</span>
-      </div>
     </div>
   </section>
 

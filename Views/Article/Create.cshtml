@@ -1,40 +1,39 @@
-﻿@model HomePlant.Models.ArticleModel
+@model HomePlant.Models.ArticleModel
 
-<h2>Create Article</h2>
+@{
+    ViewData["Title"] = "Viết bài mới";
+}
 
-<form method="post">
+<a asp-action="Index" class="back-link">
+    ← Bài viết
+</a>
+
+<div class="mb-4">
+    <span class="kicker">Cẩm nang</span>
+    <h1>Viết bài mới</h1>
+</div>
+
+<form method="post" style="max-width:720px;">
 
     <div class="mb-3">
-
-        <label>Title</label>
-
-        <input asp-for="Title"
-               class="form-control" />
-
+        <label class="form-label">Tiêu đề</label>
+        <input asp-for="Title" class="form-control" />
     </div>
 
     <div class="mb-3">
-
-        <label>Cover Image Url</label>
-
-        <input asp-for="CoverImage"
-               class="form-control" />
-
+        <label class="form-label">Ảnh bìa (URL)</label>
+        <input asp-for="CoverImage" class="form-control" placeholder="https://…" />
     </div>
 
-    <div class="mb-3">
-
-        <label>Content</label>
-
+    <div class="mb-4">
+        <label class="form-label">Nội dung</label>
         <textarea asp-for="Content"
                   rows="10"
-                  class="form-control">
-        </textarea>
-
+                  class="form-control"></textarea>
     </div>
 
     <button class="btn btn-success">
-        Save
+        Đăng bài
     </button>
 
 </form>

@@ -1,42 +1,31 @@
 @model List<HomePlant.Models.AiDiagnosisModel>
 
-<style>
-    .diag-card {
-        border: none;
-        border-radius: 16px;
-        overflow: hidden;
-    }
+@{
+    ViewData["Title"] = "Quản lý chẩn đoán AI";
+}
 
+<style>
     .diag-card img {
         height: 160px;
         width: 100%;
         object-fit: cover;
     }
-
-    .confidence-bar {
-        height: 8px;
-        border-radius: 4px;
-        background: #e9ecef;
-        overflow: hidden;
-    }
-
-    .confidence-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #43a047, #1b5e20);
-    }
 </style>
 
-<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại Quản lý
+<a asp-action="Dashboard" class="back-link">
+    ← Quản trị
 </a>
 
-<h1 class="fw-bold mb-4" style="color:#2e7d32;">🩺 Quản lý chẩn đoán AI</h1>
+<div class="mb-4">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">Chẩn đoán AI</h1>
+</div>
 
 <div class="row g-3">
     @foreach (var d in Model)
     {
         <div class="col-lg-4 col-md-6">
-            <div class="card diag-card shadow-sm h-100">
+            <div class="card diag-card h-100">
                 @if (!string.IsNullOrEmpty(d.UploadedImageUrl))
                 {
                     <img src="@d.UploadedImageUrl" />

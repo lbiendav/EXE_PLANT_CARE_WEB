@@ -1,18 +1,10 @@
 @model List<HomePlant.Models.PlantSampleModel>
 
+@{
+    ViewData["Title"] = "Quản lý thư viện cây";
+}
+
 <style>
-    .admin-card {
-        border: none;
-        border-radius: 16px;
-        overflow: hidden;
-        transition: transform .18s ease, box-shadow .18s ease;
-    }
-
-    .admin-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 26px rgba(0,0,0,.12) !important;
-    }
-
     .admin-card img {
         height: 170px;
         width: 100%;
@@ -20,14 +12,17 @@
     }
 </style>
 
-<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại Quản lý
+<a asp-action="Dashboard" class="back-link">
+    ← Quản trị
 </a>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="fw-bold mb-0" style="color:#2e7d32;">📚 Quản lý thư viện cây</h1>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Quản trị</span>
+        <h1 class="mb-0">Thư viện cây</h1>
+    </div>
 
-    <a asp-action="CreateSamplePlant" class="btn btn-success fw-bold px-4">
+    <a asp-action="CreateSamplePlant" class="btn btn-success">
         + Thêm cây mới
     </a>
 </div>
@@ -36,7 +31,7 @@
     @foreach (var p in Model)
     {
         <div class="col-lg-3 col-md-4 col-sm-6">
-            <div class="card admin-card shadow-sm h-100">
+            <div class="card admin-card h-100">
                 <img src="@(string.IsNullOrEmpty(p.Image) ? "https://i.ibb.co/MkMj38WM/plant.png" : p.Image)" />
 
                 <div class="card-body d-flex flex-column">
@@ -47,7 +42,7 @@
                     <div class="mt-auto d-flex gap-2">
                         <a asp-action="EditSamplePlant"
                            asp-route-id="@p.Id"
-                           class="btn btn-outline-primary btn-sm flex-fill">
+                           class="btn btn-outline-success btn-sm flex-fill">
                             Sửa
                         </a>
 

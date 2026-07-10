@@ -1,18 +1,10 @@
 @model List<HomePlant.Models.PlantTemplateModel>
 
+@{
+    ViewData["Title"] = "Quản lý mẫu cây";
+}
+
 <style>
-    .admin-card {
-        border: none;
-        border-radius: 16px;
-        overflow: hidden;
-        transition: transform .18s ease, box-shadow .18s ease;
-    }
-
-    .admin-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 26px rgba(0,0,0,.12) !important;
-    }
-
     .admin-card img {
         height: 170px;
         width: 100%;
@@ -20,17 +12,20 @@
     }
 </style>
 
-<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại Quản lý
+<a asp-action="Dashboard" class="back-link">
+    ← Quản trị
 </a>
 
-<h1 class="fw-bold mb-4" style="color:#2e7d32;">🌿 Quản lý mẫu cây (Templates)</h1>
+<div class="mb-4">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">Mẫu cây (Templates)</h1>
+</div>
 
 <div class="row g-4">
     @foreach (var t in Model)
     {
         <div class="col-lg-3 col-md-4 col-sm-6">
-            <div class="card admin-card shadow-sm h-100">
+            <div class="card admin-card h-100">
                 <img src="@(string.IsNullOrEmpty(t.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : t.ImageUrl)" />
 
                 <div class="card-body d-flex flex-column">

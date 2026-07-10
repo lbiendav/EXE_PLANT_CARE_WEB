@@ -1,38 +1,115 @@
-﻿@model HomePlant.ViewModels.RegisterVM
+@model HomePlant.ViewModels.RegisterVM
+@{
+    ViewData["Title"] = "Đăng ký";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký — HomePlant</title>
+    <partial name="_AuthStyles" />
+</head>
+<body class="auth-body">
+    <div class="auth-grain"></div>
 
-<h2>Register</h2>
+    <main class="auth-split">
 
-<div asp-validation-summary="All" class="text-danger"></div>
+        <aside class="auth-aside">
+            <a class="auth-mark" asp-controller="Home" asp-action="Index">HomePlant</a>
 
-<form method="post">
+            <div>
+                <p class="auth-kicker">Vườn trong nhà</p>
+                <h2>Gieo <em>hạt đầu tiên</em>.</h2>
+                <p class="auth-aside__copy">
+                    Tạo tài khoản miễn phí để lưu giữ bộ sưu tập cây,
+                    ghi nhật ký chăm sóc và nhận nhắc lịch tưới đúng lúc.
+                </p>
+            </div>
 
-    <div class="mb-3">
-        <label>Full Name</label>
-        <input asp-for="FullName"
-               class="form-control" />
-    </div>
+            <ul class="auth-perks">
+                <li>Hoàn toàn miễn phí</li>
+                <li>Quản lý cây không giới hạn</li>
+                <li>Đồng bộ mọi thiết bị</li>
+            </ul>
+        </aside>
 
-    <div class="mb-3">
-        <label>Email</label>
-        <input asp-for="Email"
-               class="form-control" />
-    </div>
+        <section class="auth-panel">
+            <div class="auth-panel__inner">
+                <h1 class="auth-title">Tạo tài khoản</h1>
+                <p class="auth-sub">Chỉ mất chưa đầy một phút.</p>
 
-    <div class="mb-3">
-        <label>Password</label>
-        <input asp-for="Password"
-               type="password"
-               class="form-control" />
-    </div>
+                <div asp-validation-summary="All" class="auth-alert"></div>
 
-    <div class="mb-3">
-        <label>Phone</label>
-        <input asp-for="Phone"
-               class="form-control" />
-    </div>
+                <form method="post">
+                    <div class="auth-field">
+                        <label asp-for="FullName">Họ và tên</label>
+                        <div class="auth-input">
+                            <input asp-for="FullName" placeholder="Nguyễn Văn A" autocomplete="name" />
+                        </div>
+                        <span asp-validation-for="FullName" class="auth-err"></span>
+                    </div>
 
-    <button class="btn btn-success">
-        Register
-    </button>
+                    <div class="auth-field">
+                        <label asp-for="Email">Email</label>
+                        <div class="auth-input">
+                            <input asp-for="Email" placeholder="you@example.com" autocomplete="email" />
+                        </div>
+                        <span asp-validation-for="Email" class="auth-err"></span>
+                    </div>
 
-</form>
+                    <div class="auth-field">
+                        <label asp-for="Password">Mật khẩu</label>
+                        <div class="auth-input">
+                            <input asp-for="Password" type="password" id="pwd" placeholder="••••••••" autocomplete="new-password" oninput="pwdStrength(this.value)" />
+                            <button type="button" class="auth-toggle" onclick="togglePwd('pwd', this)" aria-label="Hiện mật khẩu">Hiện</button>
+                        </div>
+                        <div class="auth-meter"><span id="meterBar"></span></div>
+                        <span asp-validation-for="Password" class="auth-err"></span>
+                    </div>
+
+                    <div class="auth-field">
+                        <label asp-for="Phone">Số điện thoại <small>(tuỳ chọn)</small></label>
+                        <div class="auth-input">
+                            <input asp-for="Phone" placeholder="09xx xxx xxx" autocomplete="tel" />
+                        </div>
+                        <span asp-validation-for="Phone" class="auth-err"></span>
+                    </div>
+
+                    <button class="auth-btn" type="submit">Đăng ký</button>
+                </form>
+
+                <p class="auth-foot">
+                    Đã có tài khoản?
+                    <a asp-action="Login">Đăng nhập</a>
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function togglePwd(id, btn) {
+            const el = document.getElementById(id);
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            btn.textContent = show ? 'Ẩn' : 'Hiện';
+            btn.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+        }
+        function pwdStrength(v) {
+            let s = 0;
+            if (v.length >= 6) s++;
+            if (v.length >= 10) s++;
+            if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
+            if (/\d/.test(v)) s++;
+            if (/[^A-Za-z0-9]/.test(v)) s++;
+            const pct = [0, 25, 45, 65, 85, 100][s];
+            const col = s <= 1 ? '#e69f70' : s <= 3 ? '#dad7c8' : '#d0ea90';
+            const bar = document.getElementById('meterBar');
+            bar.style.width = pct + '%';
+            bar.style.background = col;
+        }
+    </script>
+</body>
+</html>

@@ -1,34 +1,27 @@
 @model List<HomePlant.Models.QaThreadModel>
 
-<style>
-    .thread-card {
-        border: none;
-        border-radius: 16px;
-    }
+@{
+    ViewData["Title"] = "Quản lý câu hỏi chuyên gia";
+}
 
-    .thread-avatar {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-</style>
-
-<a asp-action="Dashboard" class="text-decoration-none text-success fw-semibold mb-3 d-inline-block">
-    ← Quay lại Quản lý
+<a asp-action="Dashboard" class="back-link">
+    ← Quản trị
 </a>
 
-<h1 class="fw-bold mb-4" style="color:#2e7d32;">❓ Quản lý câu hỏi chuyên gia</h1>
+<div class="mb-4">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">Câu hỏi chuyên gia</h1>
+</div>
 
 <div class="row g-3">
     @foreach (var thread in Model)
     {
         <div class="col-lg-6">
-            <div class="card thread-card shadow-sm h-100">
+            <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="fw-bold mb-0">@thread.Title</h6>
-                        <span class="badge bg-@(thread.Status == "processing" ? "warning" : "success") text-dark">
+                        <span class="badge bg-@(thread.Status == "processing" ? "warning" : "success")">
                             @thread.Status
                         </span>
                     </div>

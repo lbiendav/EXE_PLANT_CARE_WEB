@@ -1,117 +1,68 @@
 @model HomePlant.ViewModels.AdminDashboardVM
 
-<style>
-    .admin-stat-card {
-        border: none;
-        border-radius: 18px;
-        padding: 24px;
-        color: #fff;
-        text-decoration: none;
-        display: block;
-        transition: transform .18s ease, box-shadow .18s ease;
-        box-shadow: 0 6px 18px rgba(0,0,0,.08);
-    }
+@{
+    ViewData["Title"] = "Quản trị";
+}
 
-    .admin-stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 14px 30px rgba(0,0,0,.18);
-        color: #fff;
-    }
-
-    .admin-stat-card .stat-icon {
-        font-size: 1.8rem;
-        opacity: .9;
-    }
-
-    .admin-stat-card .stat-number {
-        font-size: 2.2rem;
-        font-weight: 800;
-        line-height: 1;
-        margin: 10px 0 4px;
-    }
-
-    .admin-stat-card .stat-label {
-        font-size: .92rem;
-        opacity: .92;
-        font-weight: 600;
-    }
-
-    .bg-grad-green { background: linear-gradient(135deg, #43a047, #1b5e20); }
-    .bg-grad-blue { background: linear-gradient(135deg, #42a5f5, #1565c0); }
-    .bg-grad-teal { background: linear-gradient(135deg, #26a69a, #00695c); }
-    .bg-grad-orange { background: linear-gradient(135deg, #ffa726, #e65100); }
-    .bg-grad-purple { background: linear-gradient(135deg, #ab47bc, #6a1b9a); }
-    .bg-grad-pink { background: linear-gradient(135deg, #ec407a, #ad1457); }
-    .bg-grad-cyan { background: linear-gradient(135deg, #26c6da, #00838f); }
-    .bg-grad-red { background: linear-gradient(135deg, #ef5350, #b71c1c); }
-</style>
-
-<div class="mb-4">
-    <h1 class="fw-bold mb-0" style="color:#2e7d32;">🛠️ Quản lý hệ thống</h1>
-    <p class="text-muted mb-0">Toàn bộ dữ liệu HomePlant trên Firestore</p>
+<div class="mb-5">
+    <span class="kicker">Quản trị</span>
+    <h1 class="mb-0">Toàn cảnh hệ thống</h1>
+    <p class="text-muted mb-0 mt-2">Toàn bộ dữ liệu HomePlant trên Firestore</p>
 </div>
 
-<div class="row g-4">
+<div class="row g-3">
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="Users" class="admin-stat-card bg-grad-green">
-            <div class="stat-icon">👤</div>
+        <a asp-action="Users" class="admin-stat-card">
             <div class="stat-number">@Model.UserCount</div>
             <div class="stat-label">Người dùng</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-controller="Article" asp-action="Index" class="admin-stat-card bg-grad-blue">
-            <div class="stat-icon">📰</div>
+        <a asp-controller="Article" asp-action="Index" class="admin-stat-card">
             <div class="stat-number">@Model.ArticleCount</div>
             <div class="stat-label">Bài viết</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="PlantTemplates" class="admin-stat-card bg-grad-teal">
-            <div class="stat-icon">🌿</div>
+        <a asp-action="PlantTemplates" class="admin-stat-card">
             <div class="stat-number">@Model.PlantTemplateCount</div>
-            <div class="stat-label">Mẫu cây (Templates)</div>
+            <div class="stat-label">Mẫu cây</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="SamplePlants" class="admin-stat-card bg-grad-cyan">
-            <div class="stat-icon">📚</div>
+        <a asp-action="SamplePlants" class="admin-stat-card">
             <div class="stat-number">@Model.SamplePlantCount</div>
             <div class="stat-label">Thư viện cây</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <div class="admin-stat-card bg-grad-purple">
-            <div class="stat-icon">🪴</div>
+        <div class="admin-stat-card">
             <div class="stat-number">@Model.GardenPlantCount</div>
-            <div class="stat-label">Cây trong vườn (tất cả user)</div>
+            <div class="stat-label">Cây trong vườn</div>
         </div>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="CommunityPosts" class="admin-stat-card bg-grad-pink">
-            <div class="stat-icon">💬</div>
+        <a asp-action="CommunityPosts" class="admin-stat-card">
             <div class="stat-number">@Model.CommunityPostCount</div>
             <div class="stat-label">Bài đăng cộng đồng</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="QaThreads" class="admin-stat-card bg-grad-orange">
-            <div class="stat-icon">❓</div>
+        <a asp-action="QaThreads" class="admin-stat-card">
             <div class="stat-number">@Model.QaThreadCount</div>
             <div class="stat-label">Câu hỏi chuyên gia</div>
         </a>
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
-        <a asp-action="AiDiagnoses" class="admin-stat-card bg-grad-red">
-            <div class="stat-icon">🩺</div>
+        <a asp-action="AiDiagnoses" class="admin-stat-card">
             <div class="stat-number">@Model.AiDiagnosisCount</div>
             <div class="stat-label">Chẩn đoán AI</div>
         </a>

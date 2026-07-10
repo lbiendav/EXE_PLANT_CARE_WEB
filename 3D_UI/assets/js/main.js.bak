@@ -99,7 +99,7 @@
   };
 
   /* ── canvas stage: sticky canvas + lerped scrub ───────────── */
-  const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
   class Stage {
     constructor(sectionSel, canvasSel, seq, opts = {}) {
@@ -129,7 +129,7 @@
       this.canvas.height = Math.round(h * DPR);
       this.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       this.ctx.imageSmoothingEnabled = true;
-      this.ctx.imageSmoothingQuality = 'medium';
+      this.ctx.imageSmoothingQuality = 'high';
       this.draw(true);
     }
     draw(force = false) {
@@ -144,15 +144,10 @@
       this.lastDrawn = img;
       this.everDrawn = true;
     }
-    tick(ratio = 1) {
+    tick() {
       const d = this.target - this.current;
-      if (Math.abs(d) > 0.00012) {
-        // frame-rate independent easing: same feel at 60 / 120 Hz, tighter tracking
-        const k = reduceMotion ? 1 : 1 - Math.pow(1 - 0.32, ratio);
-        this.current += d * k;
-        this.draw();
-      } else if (this.current !== this.target) {
-        this.current = this.target;
+      if (Math.abs(d) > 0.00025) {
+        this.current += d * (reduceMotion ? 1 : 0.16);
         this.draw();
       }
       // veil: dip to black at stage edges for cinematic handoff
@@ -200,9 +195,9 @@
 
     /* Lenis smooth scroll */
     const lenis = new Lenis({
-      lerp: reduceMotion ? 1 : 0.1,
+      lerp: reduceMotion ? 1 : 0.085,
       smoothWheel: !reduceMotion,
-      wheelMultiplier: 1.0,
+      wheelMultiplier: 0.9,
     });
     window.__lenis = lenis; // exposed for programmatic control / testing
     lenis.on('scroll', ScrollTrigger.update);
@@ -275,7 +270,7 @@
     });
 
     // render loop: lerp active (or near) stages
-    gsap.ticker.add(() => { const r = gsap.ticker.deltaRatio(); stages.forEach((s) => { if (s.active || !s.everDrawn) s.tick(r); }); });
+    gsap.ticker.add(() => stages.forEach((s) => { if (s.active || !s.everDrawn) s.tick(); }));
 
     let rT;
     window.addEventListener('resize', () => {
