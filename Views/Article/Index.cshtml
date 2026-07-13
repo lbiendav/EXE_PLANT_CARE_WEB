@@ -10,9 +10,12 @@
         <h1 class="mb-0">Bài viết chăm cây</h1>
     </div>
 
-    <a asp-action="Create" class="btn btn-success">
-        + Viết bài mới
-    </a>
+    @if (ViewBag.IsAdmin)
+    {
+        <a asp-action="Create" class="btn btn-success">
+            + Viết bài mới
+        </a>
+    }
 </div>
 
 <div class="card">
@@ -48,18 +51,21 @@
                                     Xem
                                 </a>
 
-                                <a asp-action="Edit"
-                                   asp-route-id="@item.Id"
-                                   class="btn btn-outline-primary btn-sm">
-                                    Sửa
-                                </a>
+                                @if (ViewBag.IsAdmin)
+                                {
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Sửa
+                                    </a>
 
-                                <a asp-action="Delete"
-                                   asp-route-id="@item.Id"
-                                   class="btn btn-outline-danger btn-sm"
-                                   onclick="return confirm('Xóa bài viết này?');">
-                                    Xóa
-                                </a>
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-outline-danger btn-sm"
+                                       onclick="return confirm('Xóa bài viết này?');">
+                                        Xóa
+                                    </a>
+                                }
                             </div>
                         </td>
 

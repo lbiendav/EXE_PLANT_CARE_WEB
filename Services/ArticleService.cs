@@ -65,7 +65,7 @@ public class ArticleService
     {
         var snapshot = await _db
         .Collection("articles")
-        .OrderByDescending("CreatedAt")
+        .OrderByDescending("createdAt")
         .Limit(count)
         .GetSnapshotAsync();
         return snapshot.Documents

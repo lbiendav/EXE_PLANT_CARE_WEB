@@ -134,6 +134,15 @@ public class FirebaseAuthService
         string email,
         string password)
     {
+        try
+        {
+            await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
+        }
+        catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.UserNotFound)
+        {
+            return new SignInResult { Success = false, AccountNotFound = true };
+        }
+
         var http = _httpClientFactory.CreateClient();
 
         var response = await http.PostAsJsonAsync(
@@ -165,6 +174,48 @@ public class FirebaseAuthService
         return new SignInResult { Success = true, User = user };
     }
 
+    public async Task<bool> SendPasswordResetEmail(
+        string email)
+    {
+        var http = _httpClientFactory.CreateClient();
+
+        var request = _httpContextAccessor.HttpContext!.Request;
+        var continueUrl = $"{request.Scheme}://{request.Host}/Account/Login";
+
+        var response = await http.PostAsJsonAsync(
+            $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_apiKey}",
+            new
+            {
+                requestType = "PASSWORD_RESET",
+                email,
+                continueUrl,
+                canHandleCodeInApp = false
+            });
+
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> ChangePassword(
+        string uid,
+        string email,
+        string currentPassword,
+        string newPassword)
+    {
+        var verify = await SignInWithPassword(email, currentPassword);
+
+        if (!verify.Success)
+            return false;
+
+        await FirebaseAuth.DefaultInstance.UpdateUserAsync(
+            new UserRecordArgs
+            {
+                Uid = uid,
+                Password = newPassword
+            });
+
+        return true;
+    }
+
     public async Task<UserModel?> GetUser(
         string uid)
     {
@@ -194,6 +245,8 @@ public class SignInResult
     public bool IsLocked { get; set; }
 
     public bool EmailNotVerified { get; set; }
+
+    public bool AccountNotFound { get; set; }
 
     public UserModel? User { get; set; }
 }

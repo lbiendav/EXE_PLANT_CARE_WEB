@@ -1,4 +1,5 @@
 using Google.Cloud.Firestore;
+using HomePlant.Filters;
 using HomePlant.Models;
 using HomePlant.Services;
 using HomePlant.ViewModels;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HomePlant.Controllers;
 
+[AdminOnly]
 public class AdminController : Controller
 {
     private readonly UserService _userService;
@@ -40,21 +42,8 @@ public class AdminController : Controller
         _imgBbService = imgBbService;
     }
 
-    private IActionResult? RequireAdmin()
-    {
-        var role = HttpContext.Session.GetString("Role");
-
-        if (!string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
-            return RedirectToAction("Login", "Account");
-
-        return null;
-    }
-
     public async Task<IActionResult> Dashboard()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var users = await _userService.GetAll();
         var articles = await _articleService.GetAll();
         var templates = await _templateService.GetAll();
@@ -81,9 +70,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> Users()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var users = await _userService.GetAll();
 
         return View(users);
@@ -91,9 +77,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> Ban(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _userService.BanUser(id);
 
         return RedirectToAction(nameof(Users));
@@ -101,9 +84,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> UnBan(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _userService.UnBanUser(id);
 
         return RedirectToAction(nameof(Users));
@@ -111,9 +91,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> PlantTemplates()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var templates = await _templateService.GetAll();
 
         return View(templates);
@@ -121,9 +98,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> DeletePlantTemplate(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _templateService.Delete(id);
 
         return RedirectToAction(nameof(PlantTemplates));
@@ -131,9 +105,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> SamplePlants()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var samples = await _samplePlantService.GetAll();
 
         return View(samples);
@@ -141,9 +112,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> DeleteSamplePlant(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _samplePlantService.Delete(id);
 
         return RedirectToAction(nameof(SamplePlants));
@@ -151,9 +119,6 @@ public class AdminController : Controller
 
     public IActionResult CreateSamplePlant()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         return View(new PlantSampleFormVM());
     }
 
@@ -161,9 +126,6 @@ public class AdminController : Controller
     public async Task<IActionResult> CreateSamplePlant(
         PlantSampleFormVM vm)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
             ModelState.AddModelError(nameof(vm.Name), "Vui lòng nhập tên cây");
@@ -194,9 +156,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> EditSamplePlant(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var plant = await _samplePlantService.GetById(id);
 
         if (plant == null)
@@ -224,9 +183,6 @@ public class AdminController : Controller
         string id,
         PlantSampleFormVM vm)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         if (string.IsNullOrWhiteSpace(vm.Name))
         {
             ModelState.AddModelError(nameof(vm.Name), "Vui lòng nhập tên cây");
@@ -270,9 +226,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> CommunityPosts()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var posts = await _communityPostService.GetAll();
 
         return View(posts);
@@ -280,9 +233,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> DeleteCommunityPost(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _communityPostService.Delete(id);
 
         return RedirectToAction(nameof(CommunityPosts));
@@ -290,9 +240,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> QaThreads()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var threads = await _qaThreadService.GetAll();
 
         return View(threads);
@@ -300,9 +247,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> DeleteQaThread(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _qaThreadService.Delete(id);
 
         return RedirectToAction(nameof(QaThreads));
@@ -310,9 +254,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> AiDiagnoses()
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         var diagnoses = await _aiDiagnosisService.GetAll();
 
         return View(diagnoses);
@@ -320,9 +261,6 @@ public class AdminController : Controller
 
     public async Task<IActionResult> DeleteAiDiagnosis(string id)
     {
-        if (RequireAdmin() is IActionResult redirect)
-            return redirect;
-
         await _aiDiagnosisService.Delete(id);
 
         return RedirectToAction(nameof(AiDiagnoses));

@@ -52,6 +52,24 @@ public class AccountController : Controller
     }
 
     [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ForgotPassword(
+        ForgotPasswordVM vm)
+    {
+        if (!ModelState.IsValid)
+            return View(vm);
+
+        await _authService.SendPasswordResetEmail(vm.Email);
+
+        return View("ForgotPasswordSent", vm.Email);
+    }
+
+    [HttpGet]
     public async Task<IActionResult> VerifyEmail(
         string uid)
     {
@@ -75,6 +93,15 @@ public class AccountController : Controller
         var result =
             await _authService
             .SignInWithPassword(vm.Email, vm.Password);
+
+        if (result.AccountNotFound)
+        {
+            ModelState.AddModelError(
+                "",
+                "Tài khoản không tồn tại.");
+
+            return View(vm);
+        }
 
         if (result.IsLocked)
         {
@@ -131,6 +158,10 @@ public class AccountController : Controller
         HttpContext.Session.SetString(
             "Phone",
             user.Phone ?? "");
+
+        HttpContext.Session.SetString(
+            "AvatarUrl",
+            user.AvatarUrl ?? "");
     }
 
     public IActionResult Logout()

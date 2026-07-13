@@ -2,6 +2,7 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using HomePlant.Services;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -66,6 +67,21 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+var landingPageProvider = new PhysicalFileProvider(
+    Path.Combine(builder.Environment.ContentRootPath, "3D_UI"));
+
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = landingPageProvider,
+    RequestPath = ""
+});
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = landingPageProvider,
+    RequestPath = ""
+});
+
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -74,6 +90,6 @@ app.UseSession();
 
 app.MapControllerRoute(
 name: "default",
-pattern: "{controller=Home}/{action=Index}/{id?}");
+pattern: "{controller}/{action=Index}/{id?}");
 
 app.Run();

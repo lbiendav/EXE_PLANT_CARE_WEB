@@ -1,4 +1,5 @@
 ﻿using Google.Cloud.Firestore;
+using HomePlant.Filters;
 using HomePlant.Models;
 using HomePlant.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,11 @@ public class ArticleController : Controller
         var articles =
             await _service.GetAll();
 
+        ViewBag.IsAdmin = string.Equals(
+            HttpContext.Session.GetString("Role"),
+            "admin",
+            StringComparison.OrdinalIgnoreCase);
+
         return View(articles);
     }
 
@@ -32,6 +38,7 @@ public class ArticleController : Controller
         return View(article);
     }
 
+    [AdminOnly]
     public async Task<IActionResult> Delete(
         string id)
     {
@@ -40,11 +47,13 @@ public class ArticleController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [AdminOnly]
     public IActionResult Create()
     {
         return View();
     }
 
+    [AdminOnly]
     [HttpPost]
     public async Task<IActionResult> Create(
         ArticleModel article)
@@ -57,6 +66,7 @@ public class ArticleController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [AdminOnly]
     public async Task<IActionResult> Edit(
     string id)
     {
@@ -66,6 +76,7 @@ public class ArticleController : Controller
         return View(article);
     }
 
+    [AdminOnly]
     [HttpPost]
     public async Task<IActionResult> Edit(
         string id,

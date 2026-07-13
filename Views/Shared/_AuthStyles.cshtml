@@ -210,7 +210,7 @@
 
     /* ledger-rule fields: label above, single hairline below */
     .auth-field { margin-bottom: 30px; }
-    .auth-field > label {
+    .auth-field label {
         display: block;
         font-size: 11px;
         font-weight: 500;
@@ -220,7 +220,7 @@
         margin-bottom: 2px;
         transition: color 0.25s;
     }
-    .auth-field:focus-within > label { color: var(--green); }
+    .auth-field:focus-within label { color: var(--green); }
     .auth-field label small {
         font-size: 10px;
         letter-spacing: 0.2em;
@@ -320,6 +320,13 @@
         border-top: 1px solid var(--hair);
         font-size: 13px;
         color: var(--mute);
+    }
+    .auth-foot--split {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
     }
     .auth-foot a {
         color: var(--copper);

@@ -7,6 +7,11 @@
     <h1>Hồ sơ của bạn</h1>
 </div>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
 <div class="row g-4">
 
     <div class="col-lg-4">
@@ -14,7 +19,7 @@
         <div class="card">
             <div class="card-body text-center p-4">
 
-                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                <img src="@(string.IsNullOrEmpty((string)ViewBag.AvatarUrl) ? "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" : ViewBag.AvatarUrl)"
                      width="110"
                      class="mb-3 rounded-circle"
                      alt="Ảnh đại diện" />
@@ -59,11 +64,11 @@
 
                 <div class="mt-4 d-flex flex-wrap gap-2">
 
-                    <a class="btn btn-success btn-sm">
+                    <a asp-action="Edit" class="btn btn-success btn-sm">
                         Sửa hồ sơ
                     </a>
 
-                    <a class="btn btn-outline-success btn-sm">
+                    <a asp-action="ChangePassword" class="btn btn-outline-success btn-sm">
                         Đổi mật khẩu
                     </a>
 

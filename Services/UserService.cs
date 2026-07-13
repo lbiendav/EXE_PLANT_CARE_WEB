@@ -64,4 +64,25 @@ public class UserService
             .Document(id)
             .UpdateAsync("isLocked", false);
     }
+
+    public async Task UpdateProfile(
+        string uid,
+        string fullName,
+        string phone,
+        string? avatarUrl)
+    {
+        var updates = new Dictionary<string, object>
+        {
+            { "displayName", fullName },
+            { "phone", phone ?? "" }
+        };
+
+        if (!string.IsNullOrEmpty(avatarUrl))
+            updates["avatarUrl"] = avatarUrl;
+
+        await _db
+            .Collection("users")
+            .Document(uid)
+            .UpdateAsync(updates);
+    }
 }

@@ -1,0 +1,70 @@
+@model HomePlant.ViewModels.ProfileVM
+
+@{
+    ViewData["Title"] = "Sửa hồ sơ";
+}
+
+<a asp-action="Index" class="back-link">
+    ← Hồ sơ
+</a>
+
+<div class="mb-4">
+    <span class="kicker">Tài khoản</span>
+    <h1>Sửa hồ sơ</h1>
+</div>
+
+<div class="card" style="max-width:520px;">
+    <div class="card-body p-4">
+
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <form method="post" enctype="multipart/form-data">
+
+            <input type="hidden" asp-for="AvatarUrl" />
+
+            <div class="text-center mb-4">
+                <label for="avatar" style="cursor:pointer;">
+                    <img id="avatarPreview"
+                         src="@(string.IsNullOrEmpty(Model.AvatarUrl) ? "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" : Model.AvatarUrl)"
+                         width="110"
+                         class="rounded-circle"
+                         alt="Ảnh đại diện" />
+                    <div class="text-muted small mt-2">Chạm để đổi ảnh</div>
+                </label>
+                <input type="file" id="avatar" name="avatar" accept="image/*" class="d-none" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input value="@Model.Email" class="form-control" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Họ và tên</label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Số điện thoại</label>
+                <input asp-for="Phone" class="form-control" />
+            </div>
+
+            <button class="btn btn-success">
+                Lưu thay đổi
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+<script>
+    document.getElementById("avatar").addEventListener("change", function () {
+        var file = this.files && this.files[0];
+
+        if (!file) return;
+
+        document.getElementById("avatarPreview").src = URL.createObjectURL(file);
+    });
+</script>
