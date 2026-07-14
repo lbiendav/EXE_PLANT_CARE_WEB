@@ -19,13 +19,15 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
 
-var credentialPath = Path.Combine(
-builder.Environment.ContentRootPath,
-"Firebase",
-"firebase-key.json");
+var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_KEY");
+
+if (string.IsNullOrEmpty(firebaseJson))
+{
+    throw new Exception("FIREBASE_KEY not found");
+}
 
 var credential =
-GoogleCredential.FromFile(credentialPath);
+GoogleCredential.FromJson(firebaseJson);
 
 if (FirebaseApp.DefaultInstance == null)
 {
