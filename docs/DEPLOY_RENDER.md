@@ -15,13 +15,22 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Đóng gói giao diện 3D | Hoàn thành ở local | Publish HTML, CSS, JS, font và các frame; bỏ file `.bak` |
 | Publish và kiểm tra HTTP | Hoàn thành | Publish thành công; health, landing, login, assets trả 200; HTTP chuyển HTTPS 307 |
 | Kiểm tra Docker image | Hoàn thành | Linux amd64; sửa quyền đọc index.html; chạy bằng UID 1654, không nhúng secret |
-| Đẩy code lên GitHub | Đang thực hiện | Repository: `lbiendav/EXE_PLANT_CARE_WEB`; nhánh `staging` đã merge main mới |
-| Đăng nhập và tạo dịch vụ Render | Đang thực hiện | Đã đăng nhập workspace; đang kết nối GitHub |
+| Đẩy code lên GitHub | Hoàn thành | `origin/staging` đã có commit `613f7f2`; main không bị push thay đổi |
+| Form tạo dịch vụ Render | Đã điền, chưa submit | `homeplant-staging`, Docker, Singapore, Free $0/tháng, `/healthz`; chưa có service live |
+| Kết nối GitHub tự động | Chờ mã xác thực GitHub | Đã chọn chỉ repository này; GitHub yêu cầu mã ở Confirm access |
+| Nạp khóa vào Render | Chờ xác nhận chuyển secret | Chưa upload service account hoặc API key vào Render |
 | Firebase cho lần deploy đầu | Giữ project hiện tại | Chưa tạo/chuyển dữ liệu; có thể tách project staging về sau |
 | Domain và kiểm thử online | Chưa thực hiện | Chưa có URL public được xác nhận |
+| Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
 trong tài liệu này. Các mục “hoàn thành ở local” chưa đồng nghĩa đã chạy trên Render.
+
+Bước tiếp theo: xác nhận cho phép đưa credential Firebase và API key Firebase/ImgBB
+vào secrets/biến môi trường của Render `homeplant-staging` (hoặc tự nhập trên form),
+sau đó Deploy web service. Form hiện dùng Public Git Repository để lần deploy đầu
+không phụ thuộc việc hoàn tất xác thực GitHub. Chưa bấm Deploy, chưa có chi phí
+hosting được tạo bởi quá trình này.
 
 ## 2. Các thay đổi trong code và mục đích
 
@@ -216,6 +225,17 @@ Nếu tự host máy chủ trực tiếp, cần cấu hình KnownProxies/KnownNe
    Blueprint không chứa private key. Lần start đầu có thể thất bại cho đến khi thêm file.
 6. Save và deploy lại, sau đó hoàn tất Authorized domains và kiểm thử.
 
+### Phương án đã chuẩn bị khi GitHub còn chờ xác thực
+
+Repository hiện là public. Có thể chọn **Public Git Repository**, nhập
+`https://github.com/lbiendav/EXE_PLANT_CARE_WEB`, chọn nhánh `staging` và các giá trị
+ở mục 6. Form đang được chuẩn bị theo cách này, Auto-Deploy đặt **Off**.
+
+Mỗi lần cập nhật: push lên staging → Render → Manual Deploy → Deploy latest commit.
+Sau khi hoàn tất kết nối GitHub, kiểm tra kết nối repository trong Settings rồi
+bật On Commit. `render.yaml` vẫn là mẫu cho phương án có tự động deploy; import
+Blueprint không phải thao tác bắt buộc cho Web Service tạo thủ công này.
+
 ## 8. Kiểm thử online sau deploy
 
 - [ ] `/healthz` trả HTTP 200 và `{"status":"ok"}`. Đây chỉ là liveness, chưa chứng
@@ -236,7 +256,9 @@ người thực hiện chọn địa chỉ email của mình; không gửi tự 
 ## 9. Cập nhật ứng dụng và xử lý lỗi
 
 Sau mỗi phần tính năng chạy ổn: đưa thay đổi lên `staging`, chạy publish kiểm tra,
-push GitHub; Render tự build/deploy commit mới. Không cần tạo lại dịch vụ hay database.
+push GitHub. Khi đã kết nối GitHub và bật On Commit, Render tự build/deploy commit
+mới. Nếu dùng Public Git Repository với Auto-Deploy Off, chọn Manual Deploy →
+Deploy latest commit. Không cần tạo lại dịch vụ hay database.
 Khi bản mới lỗi, dùng Events/Deploys để rollback bản chạy tốt trước đó. Rollback
 code không khôi phục dữ liệu Firestore đã sửa.
 
@@ -258,6 +280,11 @@ Giới hạn hiện tại: đây là staging; chưa thay cơ chế session, chư
 mật/nghiệp vụ. Không dùng dữ liệu nhạy cảm cho bản thử nghiệm. .NET 9 hiện còn được
 hỗ trợ đến 10/11/2026; nên lên kế hoạch nâng .NET 10 LTS trước thời điểm đó, không
 gộp việc nâng major version vào lần deploy đầu này.
+
+Ghi nhận để xử lý trước production: file `firestore.rules` trong repository đang
+có `allow read, write: if true`. Chưa xác nhận đây là rules đang được áp dụng online.
+Firebase project còn đăng ký app Android/iOS, nên chưa tự thay rules chung trong
+lần deploy web này; cần rà soát quyền cho các client trước khi áp dụng rules mới.
 
 ## 10. Nhật ký thao tác thực tế
 
@@ -287,6 +314,17 @@ gộp việc nâng major version vào lần deploy đầu này.
 - 10/09/2026: kiểm tra lại image sau sửa quyền: `/healthz`, `/`, `/Account/Login`,
   frame 3D đều HTTP 200; HTTP thường redirect 307. Container chạy UID 1654,
   thư mục ứng dụng không chứa service account, appsettings local hoặc Seed.
+- 10/09/2026: push `staging` thành công, xác nhận remote ở `613f7f2`; chỉ có
+  `global.json` có sẵn vẫn untracked.
+- 10/09/2026: Firebase CLI nhận diện đúng project `home-plant-app-dav`; kiểm tra
+  bằng Admin SDK đọc Firestore và cấu hình Auth thành công. Không sửa dữ liệu.
+- 10/09/2026: Render đã đăng nhập. Authorize GitHub xong, chọn Only select
+  repositories → `EXE_PLANT_CARE_WEB`; bước Install đang chờ mã xác thực GitHub.
+- 10/09/2026: vì repository public, chuẩn bị phương án Public Git Repository;
+  điền tên `homeplant-staging`, staging, Docker, Singapore, Free, health `/healthz`,
+  Dockerfile `./Dockerfile`, build context `.`, Auto-Deploy Off và các biến không
+  chứa secret. Chưa upload khóa, chưa bấm Deploy; chờ xác nhận chuyển các khóa
+  vào đúng dịch vụ Render này hoặc người dùng tự nhập.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
