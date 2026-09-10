@@ -1,0 +1,29 @@
+# Deploy the staging branch. Add firebase-key.json as a Render Secret File
+# before the first successful start; see docs/DEPLOY_RENDER.md.
+services:
+  - type: web
+    name: homeplant-staging
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: staging
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Only enable behind Render's edge proxy, not on a directly exposed server.
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      - key: ASPNETCORE_HTTPS_PORT
+        value: "443"
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-key.json
+      - key: Firebase__ProjectId
+        sync: false
+      - key: Firebase__ApiKey
+        sync: false
+      - key: ImgBB__ApiKey
+        sync: false

@@ -15,6 +15,16 @@
   <ItemGroup>
     <Content Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Update="appsettings.Development.json;appsettings.Example.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+    <Content Remove="Firebase/**;Seed/**;3D_UI/**;docs/**" />
+    <None Remove="Firebase/**;Seed/**;3D_UI/**;docs/**" />
+    <Content Include="3D_UI/index.html;3D_UI/assets/**;3D_UI/render_output/**"
+             Exclude="**/*.bak;**/.DS_Store">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 

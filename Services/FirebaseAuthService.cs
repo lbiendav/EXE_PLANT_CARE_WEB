@@ -12,6 +12,7 @@ public class FirebaseAuthService
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly string _apiKey;
+    private readonly string? _publicBaseUrl;
 
     public FirebaseAuthService(
         FirestoreDb db,
@@ -22,7 +23,33 @@ public class FirebaseAuthService
         _db = db;
         _httpClientFactory = httpClientFactory;
         _httpContextAccessor = httpContextAccessor;
-        _apiKey = configuration["Firebase:ApiKey"];
+        _apiKey = configuration["Firebase:ApiKey"]
+            ?? throw new InvalidOperationException("Configure Firebase__ApiKey before using authentication.");
+        var configuredUrl = configuration["App:PublicBaseUrl"];
+        if (string.IsNullOrWhiteSpace(configuredUrl))
+            configuredUrl = configuration["RENDER_EXTERNAL_URL"];
+
+        if (!string.IsNullOrWhiteSpace(configuredUrl))
+        {
+            if (!Uri.TryCreate(configuredUrl, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+                || !string.IsNullOrEmpty(uri.UserInfo)
+                || !string.IsNullOrEmpty(uri.Query)
+                || !string.IsNullOrEmpty(uri.Fragment))
+                throw new InvalidOperationException("App__PublicBaseUrl must be an absolute HTTP(S) URL without credentials, query or fragment.");
+
+            _publicBaseUrl = uri.AbsoluteUri.TrimEnd('/');
+        }
+    }
+
+    private string BuildContinueUrl(string path)
+    {
+        if (_publicBaseUrl != null)
+            return _publicBaseUrl + path;
+
+        var request = _httpContextAccessor.HttpContext?.Request
+            ?? throw new InvalidOperationException("An HTTP request or App__PublicBaseUrl is required.");
+        return $"{request.Scheme}://{request.Host}{request.PathBase}{path}";
     }
 
     public async Task<string> Register(
@@ -75,8 +102,7 @@ public class FirebaseAuthService
         var signInResult = await signInResponse.Content
             .ReadFromJsonAsync<SignInWithPasswordResponse>();
 
-        var request = _httpContextAccessor.HttpContext!.Request;
-        var continueUrl = $"{request.Scheme}://{request.Host}/Account/VerifyEmail?uid={uid}";
+        var continueUrl = BuildContinueUrl($"/Account/VerifyEmail?uid={Uri.EscapeDataString(uid)}");
 
         var sendCodeResponse = await http.PostAsJsonAsync(
             $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_apiKey}",
@@ -179,8 +205,7 @@ public class FirebaseAuthService
     {
         var http = _httpClientFactory.CreateClient();
 
-        var request = _httpContextAccessor.HttpContext!.Request;
-        var continueUrl = $"{request.Scheme}://{request.Host}/Account/Login";
+        var continueUrl = BuildContinueUrl("/Account/Login");
 
         var response = await http.PostAsJsonAsync(
             $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_apiKey}",
