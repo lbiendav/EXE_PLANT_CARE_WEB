@@ -4,7 +4,8 @@ COPY HomePlant.csproj ./
 RUN dotnet restore HomePlant.csproj
 COPY . ./
 RUN dotnet publish HomePlant.csproj --configuration Release --no-restore \
-    --output /app/publish /p:UseAppHost=false
+    --output /app/publish /p:UseAppHost=false \
+    && chmod -R a+rX /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app

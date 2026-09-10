@@ -13,11 +13,11 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Nạp credential và cấu hình cổng | Hoàn thành ở local | Nhận `PORT`; hỗ trợ secret file/ADC; giữ khóa local khi Development |
 | URL trong email Firebase | Hoàn thành ở local | Ưu tiên `App__PublicBaseUrl`, tiếp theo `RENDER_EXTERNAL_URL`; local dùng request |
 | Đóng gói giao diện 3D | Hoàn thành ở local | Publish HTML, CSS, JS, font và các frame; bỏ file `.bak` |
-| Publish và kiểm tra HTTP | Đã kiểm tra bản đầu | Publish thành công; health, landing, login, JS trả 200; HTTP chuyển HTTPS 307 |
-| Kiểm tra Docker image | Build bản đầu thành công | Linux amd64; đang kiểm tra lại sau bổ sung tương thích với code GitHub mới |
-| Đẩy code lên GitHub | Chưa thực hiện | Repository: `lbiendav/EXE_PLANT_CARE_WEB`; đang ở nhánh `main` |
-| Đăng nhập và tạo dịch vụ Render | Chưa thực hiện | Dashboard đang ở màn hình đăng nhập; cần phiên đăng nhập của chủ tài khoản |
-| Chọn Firebase thử nghiệm | Chờ người dùng chọn | Khuyến nghị project riêng; chưa tạo/chuyển dữ liệu Firebase |
+| Publish và kiểm tra HTTP | Hoàn thành | Publish thành công; health, landing, login, assets trả 200; HTTP chuyển HTTPS 307 |
+| Kiểm tra Docker image | Hoàn thành | Linux amd64; sửa quyền đọc index.html; chạy bằng UID 1654, không nhúng secret |
+| Đẩy code lên GitHub | Đang thực hiện | Repository: `lbiendav/EXE_PLANT_CARE_WEB`; nhánh `staging` đã merge main mới |
+| Đăng nhập và tạo dịch vụ Render | Đang thực hiện | Đã đăng nhập workspace; đang kết nối GitHub |
+| Firebase cho lần deploy đầu | Giữ project hiện tại | Chưa tạo/chuyển dữ liệu; có thể tách project staging về sau |
 | Domain và kiểm thử online | Chưa thực hiện | Chưa có URL public được xác nhận |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -26,7 +26,8 @@ trong tài liệu này. Các mục “hoàn thành ở local” chưa đồng ng
 ## 2. Các thay đổi trong code và mục đích
 
 - `Dockerfile`: dùng .NET SDK 9 để restore/publish, .NET ASP.NET 9 để chạy.
-  Build container không cần kết nối Firebase hay khóa Firebase.
+  Build container không cần kết nối Firebase hay khóa Firebase. Chuẩn hóa quyền
+  đọc output publish để user runtime đọc được cả file local có mode `600`.
 - `.dockerignore`: không gửi `Firebase/`, `Seed/`, `appsettings*.json`, `.env`,
   khóa riêng, output build và cấu hình công cụ lên quá trình Docker build.
   `global.json` chỉ dùng cho SDK trên máy, không đưa vào container; Docker dùng
@@ -277,6 +278,15 @@ gộp việc nâng major version vào lần deploy đầu này.
 - 10/09/2026: fetch GitHub phát hiện `origin/main` mới ở `222da75` với Dockerfile
   và biến `FIREBASE_KEY`; bổ sung tương thích biến này và chuẩn bị đồng bộ lịch sử
   vào nhánh staging trước khi push.
+- 10/09/2026: tạo nhánh staging, commit cấu hình `bfb835c`, merge main mới bằng
+  commit `4308395`. Giữ nguyên `global.json` ngoài commit.
+- 10/09/2026: smoke test Linux phát hiện `3D_UI/index.html` có mode `600` trên máy,
+  khiến user thường trong container nhận HTTP 500. Đã bổ sung chuẩn hóa quyền đọc
+  trong Docker build. Health/login/frame đều trả 200, URL khóa trả 404 và admin
+  chưa đăng nhập redirect về login; đang kiểm tra lại trang chủ sau sửa quyền.
+- 10/09/2026: kiểm tra lại image sau sửa quyền: `/healthz`, `/`, `/Account/Login`,
+  frame 3D đều HTTP 200; HTTP thường redirect 307. Container chạy UID 1654,
+  thư mục ứng dụng không chứa service account, appsettings local hoặc Seed.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
