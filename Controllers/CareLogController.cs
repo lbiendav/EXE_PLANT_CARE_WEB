@@ -67,6 +67,17 @@ public class CareLogController : Controller
         if (await RequireOwnedPlant(plantId) is IActionResult redirect)
             return redirect;
 
+        // Identity and timestamps belong to the server, never to submitted fields.
+        model.UserId = HttpContext.Session.GetString("Uid")!;
+        model.Note ??= "";
+        model.ImageUrl = "";
+        if (model.ActionType is not ("Watering" or "Fertilizing" or "Repotting" or "Observation"))
+        {
+            ModelState.AddModelError(nameof(model.ActionType), "Vui lòng chọn hoạt động hợp lệ.");
+            ViewBag.PlantId = plantId;
+            return View(model);
+        }
+
         model.CreatedAt =
             Timestamp.GetCurrentTimestamp();
 
@@ -79,6 +90,7 @@ public class CareLogController : Controller
             new { plantId });
     }
 
+    [HttpPost]
     public async Task<IActionResult> Delete(
         string plantId,
         string id)

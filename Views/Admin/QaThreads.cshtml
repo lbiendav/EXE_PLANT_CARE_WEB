@@ -43,12 +43,9 @@
                         @thread.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                     </small>
 
-                    <a asp-action="DeleteQaThread"
-                       asp-route-id="@thread.Id"
-                       class="btn btn-outline-danger btn-sm w-100"
-                       onclick="return confirm('Xóa chủ đề hỏi đáp này?');">
-                        Xóa
-                    </a>
+<form asp-action="DeleteQaThread" asp-route-id="@thread.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa chủ đề hỏi đáp này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
+                                </form>
                 </div>
             </div>
         </div>

@@ -75,6 +75,7 @@ public class AdminController : Controller
         return View(users);
     }
 
+    [HttpPost]
     public async Task<IActionResult> Ban(string id)
     {
         await _userService.BanUser(id);
@@ -82,6 +83,7 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Users));
     }
 
+    [HttpPost]
     public async Task<IActionResult> UnBan(string id)
     {
         await _userService.UnBanUser(id);
@@ -96,6 +98,7 @@ public class AdminController : Controller
         return View(templates);
     }
 
+    [HttpPost]
     public async Task<IActionResult> DeletePlantTemplate(string id)
     {
         await _templateService.Delete(id);
@@ -110,6 +113,7 @@ public class AdminController : Controller
         return View(samples);
     }
 
+    [HttpPost]
     public async Task<IActionResult> DeleteSamplePlant(string id)
     {
         await _samplePlantService.Delete(id);
@@ -231,6 +235,7 @@ public class AdminController : Controller
         return View(posts);
     }
 
+    [HttpPost]
     public async Task<IActionResult> DeleteCommunityPost(string id)
     {
         await _communityPostService.Delete(id);
@@ -245,6 +250,7 @@ public class AdminController : Controller
         return View(threads);
     }
 
+    [HttpPost]
     public async Task<IActionResult> DeleteQaThread(string id)
     {
         await _qaThreadService.Delete(id);
@@ -259,6 +265,7 @@ public class AdminController : Controller
         return View(diagnoses);
     }
 
+    [HttpPost]
     public async Task<IActionResult> DeleteAiDiagnosis(string id)
     {
         await _aiDiagnosisService.Delete(id);

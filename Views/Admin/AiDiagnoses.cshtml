@@ -48,12 +48,9 @@
                         @d.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                     </small>
 
-                    <a asp-action="DeleteAiDiagnosis"
-                       asp-route-id="@d.Id"
-                       class="btn btn-outline-danger btn-sm w-100"
-                       onclick="return confirm('Xóa bản ghi chẩn đoán này?');">
-                        Xóa
-                    </a>
+<form asp-action="DeleteAiDiagnosis" asp-route-id="@d.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bản ghi chẩn đoán này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
+                                </form>
                 </div>
             </div>
         </div>

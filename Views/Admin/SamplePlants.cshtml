@@ -46,12 +46,9 @@
                             Sửa
                         </a>
 
-                        <a asp-action="DeleteSamplePlant"
-                           asp-route-id="@p.Id"
-                           class="btn btn-outline-danger btn-sm flex-fill"
-                           onclick="return confirm('Xóa cây này khỏi thư viện?');">
-                            Xóa
-                        </a>
+<form asp-action="DeleteSamplePlant" asp-route-id="@p.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa cây này khỏi thư viện?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm flex-fill">Xóa</button>
+                                </form>
                     </div>
                 </div>
             </div>

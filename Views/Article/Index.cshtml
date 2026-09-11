@@ -59,12 +59,9 @@
                                         Sửa
                                     </a>
 
-                                    <a asp-action="Delete"
-                                       asp-route-id="@item.Id"
-                                       class="btn btn-outline-danger btn-sm"
-                                       onclick="return confirm('Xóa bài viết này?');">
-                                        Xóa
-                                    </a>
+<form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bài viết này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Xóa</button>
+                                </form>
                                 }
                             </div>
                         </td>

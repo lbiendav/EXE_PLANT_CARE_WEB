@@ -52,12 +52,9 @@
                         <span>💬 @post.CommentCount</span>
                     </div>
 
-                    <a asp-action="DeleteCommunityPost"
-                       asp-route-id="@post.Id"
-                       class="btn btn-outline-danger btn-sm w-100"
-                       onclick="return confirm('Xóa bài đăng này?');">
-                        Xóa bài đăng
-                    </a>
+<form asp-action="DeleteCommunityPost" asp-route-id="@post.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bài đăng này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa bài đăng</button>
+                                </form>
                 </div>
             </div>
         </div>

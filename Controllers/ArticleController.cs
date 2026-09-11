@@ -35,10 +35,12 @@ public class ArticleController : Controller
         var article =
             await _service.GetById(id);
 
+        if (article == null) return NotFound();
         return View(article);
     }
 
     [AdminOnly]
+    [HttpPost]
     public async Task<IActionResult> Delete(
         string id)
     {
@@ -58,6 +60,13 @@ public class ArticleController : Controller
     public async Task<IActionResult> Create(
         ArticleModel article)
     {
+        if (string.IsNullOrWhiteSpace(article.Title) || string.IsNullOrWhiteSpace(article.Content))
+        {
+            ModelState.AddModelError("", "Vui lòng nhập tiêu đề và nội dung bài viết.");
+            return View(article);
+        }
+        article.CoverImage ??= "";
+        article.Views = 0;
         article.CreatedAt =
             Timestamp.GetCurrentTimestamp();
 
@@ -73,6 +82,7 @@ public class ArticleController : Controller
         var article =
             await _service.GetById(id);
 
+        if (article == null) return NotFound();
         return View(article);
     }
 
@@ -82,6 +92,17 @@ public class ArticleController : Controller
         string id,
         ArticleModel article)
     {
+        var existing = await _service.GetById(id);
+        if (existing == null) return NotFound();
+        if (string.IsNullOrWhiteSpace(article.Title) || string.IsNullOrWhiteSpace(article.Content))
+        {
+            ModelState.AddModelError("", "Vui lòng nhập tiêu đề và nội dung bài viết.");
+            return View(article);
+        }
+        article.CreatedAt = existing.CreatedAt;
+        article.Views = existing.Views;
+        article.Tags = existing.Tags;
+        article.CoverImage ??= "";
         await _service.Update(id, article);
 
         return RedirectToAction(nameof(Index));

@@ -65,6 +65,10 @@ public class PlantController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
+        if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
+            (vm.PlantSampleId.Contains('/') || await _templateService.GetById(vm.PlantSampleId) == null))
+            ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
+
         if (!ModelState.IsValid)
         {
             await PopulateTemplates();
@@ -110,6 +114,7 @@ public class PlantController : Controller
         return View(plant);
     }
 
+    [HttpPost]
     public async Task<IActionResult> Delete(
         string id)
     {

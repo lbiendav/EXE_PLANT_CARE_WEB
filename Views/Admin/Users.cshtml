@@ -68,20 +68,15 @@
                         <td>
                             @if (!user.IsLocked)
                             {
-                                <a asp-action="Ban"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-outline-danger btn-sm"
-                                   onclick="return confirm('Khóa tài khoản này?');">
-                                    Khóa
-                                </a>
+<form asp-action="Ban" asp-route-id="@user.Id" method="post" class="d-inline" onsubmit="return confirm('Khóa tài khoản này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Khóa</button>
+                                </form>
                             }
                             else
                             {
-                                <a asp-action="UnBan"
-                                   asp-route-id="@user.Id"
-                                   class="btn btn-outline-success btn-sm">
-                                    Mở khóa
-                                </a>
+<form asp-action="UnBan" asp-route-id="@user.Id" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-success btn-sm">Mở khóa</button>
+                                </form>
                             }
                         </td>
                     </tr>

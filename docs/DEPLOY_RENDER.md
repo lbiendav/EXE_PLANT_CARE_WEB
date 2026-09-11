@@ -22,7 +22,8 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Firebase riêng | Hoàn thành | `homeplant-staging-dav`; Firestore Standard tại Singapore, Free tier, billing chưa bật; Email/Password đã bật |
 | Domain và kiểm thử online | Smoke test hoàn thành | HTTPS, health, landing, login/register, Home/Library trả 200; domain đã nằm trong Authorized domains |
 | Seed dữ liệu tham chiếu | Hoàn thành | 8 `sample_plants`, 2 `plant_templates`, 1 `articles` từ project cũ; không sao chép dữ liệu cá nhân |
-| Đăng ký/email/upload/ghi dữ liệu qua UI | Chưa kiểm thử end-to-end | Cần tài khoản và email test do người dùng chọn; seed bằng Admin SDK đã hoàn thành |
+| Đăng ký/email | Người dùng xác nhận đăng ký/đăng nhập thành công | Agent không đọc hộp thư hoặc tự gửi email test |
+| Kiểm thử user/admin | Đang hoàn tất vòng QA | Hai tài khoản test riêng; luồng HTTP thực với session, form, Firebase và ImgBB; xem mục 14 |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -537,3 +538,73 @@ dotnet publish HomePlant.csproj -c Release
 
 Các bài test dùng HTTP giả lập hoàn toàn; không thay thế việc người dùng kiểm tra
 nhận email thực tế. Test và seed không được đưa vào Docker image/publish output.
+
+## 14. Tài khoản test và kiểm thử các luồng user/admin
+
+Chỉ sử dụng Firebase `homeplant-staging-dav`. Đã tạo hai tài khoản:
+
+| Vai trò | Email đăng nhập | UID |
+| --- | --- | --- |
+| User | `homeplant.qa.user.20260911@example.invalid` | `homeplant-qa-user-20260911` |
+| Admin | `homeplant.qa.admin.20260911@example.invalid` | `homeplant-qa-admin-20260911` |
+
+Mật khẩu ngẫu nhiên nằm trong `.env.test-accounts.json` ở thư mục gốc, quyền 600,
+được Git ignore và loại khỏi Docker. Không đưa file này vào Git/chat hoặc chia sẻ
+công khai. Đây là tài khoản tổng hợp, được Admin SDK tạo với `emailVerified=true`
+để test mà không gửi email. Địa chỉ `.invalid` không có hộp thư thật; không dùng
+chúng để kiểm thử nhận email/quên mật khẩu. Không áp dụng cách bỏ qua xác minh
+này cho tài khoản thật. Đăng nhập ở `/Account/Login`, admin mở `/Admin/Dashboard`.
+
+### Những lỗi đã sửa trong vòng QA
+
+- Template không tồn tại vẫn tạo được cây: xác minh template ở server trước khi lưu.
+- Nhật ký nhận `UserId` giả từ form: lấy UID từ session và chỉ cho phép các loại
+  hoạt động hợp lệ; không nhận ảnh/ngày tạo/người tạo do client tự gán.
+- User bị khóa hoặc bị hạ quyền vẫn dùng session cũ: kiểm tra hồ sơ hiện tại trước
+  mỗi MVC action có session, xóa session khi user bị khóa/mất hồ sơ, cập nhật role
+  trước khi kiểm tra quyền admin. Đổi lại có thêm một lần đọc hồ sơ Firestore cho
+  mỗi request MVC đã đăng nhập; endpoint health và tài nguyên static không bị ảnh hưởng.
+- Các thao tác khóa/xóa dùng GET: chuyển sang POST và form có antiforgery token;
+  bật tự kiểm tra antiforgery cho các request MVC thay đổi dữ liệu. GET không còn
+  xóa/khóa dữ liệu; POST thiếu token bị từ chối HTTP 400.
+- Chi tiết bài viết không tồn tại gây lỗi: trả 404. Tạo/sửa bài viết kiểm tra tiêu
+  đề/nội dung; sửa bài giữ nguyên ngày tạo, lượt xem và tags thay vì ghi giá trị mặc định.
+- Xóa cây để lại care logs: dọn các nhật ký thuộc cây trước khi xóa cây. Xác minh
+  cây thuộc user trước khi cho phép dọn, không để user khác xóa nhật ký bằng ID cây.
+
+### Chạy lại tự động
+
+```sh
+npm --prefix Seed install
+node Seed/web_flow_test.js --run
+```
+
+Script mặc định chỉ in hướng dẫn; `--run` là xác nhận thực hiện test có ghi/xóa.
+Script khóa project/hostname và UID/email vào hai tài khoản QA trên, không dùng
+Firebase cũ. Chạy lần lượt, không mở nhiều lượt cùng lúc. Không thao tác thủ công
+trên hai tài khoản QA khi script đang chạy vì test có tạm khóa/hạ quyền/đổi mật khẩu.
+Cuối các bài test tương ứng, script khôi phục role admin, mở khóa user và mật khẩu
+ban đầu. Nếu bị ngắt cưỡng bức, kiểm tra lại các trạng thái này trước khi chạy tiếp.
+
+Các kiểm tra bao gồm: login/logout, phân quyền, hồ sơ, template không hợp lệ,
+tạo/xem/xóa cây, nhật ký và quyền sở hữu, CRUD bài viết/cây mẫu, đọc/xóa dữ liệu
+tổng hợp ở trang templates/community/QA/AI, upload ảnh 1px qua ImgBB, đổi mật khẩu,
+khóa/mở khóa và thu hồi quyền trong session. HTTP client lấy token từ form thật,
+giữ cookie riêng cho user/admin và đối chiếu dữ liệu Firestore sau thao tác.
+Đây là kiểm thử chức năng HTTP, không phải kiểm thử click/hiển thị đa trình duyệt
+hay đánh giá toàn diện bảo mật/tải lớn. Không gọi dịch vụ AI thật hoặc gửi email.
+
+Dữ liệu CRUD có tiền tố `[TEST] QA` và được xóa trong các bài kiểm tra xóa.
+Nếu có bài lỗi, marker và ID liên quan được in để dọn đúng bản ghi; không xóa
+theo collection chung. Hai tài khoản test vẫn được giữ để bạn dùng. Ảnh 1px đã
+upload nằm ở ImgBB; script không tự xóa ảnh từ dịch vụ ảnh.
+
+Kiểm thử bản local kết nối cùng Firebase staging (chỉ sau khi cấu hình local dùng
+credential staging, API key staging và PORT 18082, không dùng cấu hình Firebase cũ):
+
+```sh
+QA_BASE_URL=http://localhost:18082 node Seed/web_flow_test.js --run
+```
+
+Các kiểm thử không ghi Firebase vẫn chạy bằng `npm --prefix Seed test` và
+`dotnet run --project Tests/RegistrationChecks/RegistrationChecks.csproj`.

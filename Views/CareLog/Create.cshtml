@@ -13,7 +13,8 @@
     <h1>Ghi nhật ký chăm sóc</h1>
 </div>
 
-<form method="post" style="max-width:520px;">
+<form asp-action="Create" method="post" style="max-width:520px;">
+    <div asp-validation-summary="All" class="text-danger"></div>
 
     <input type="hidden"
            name="plantId"

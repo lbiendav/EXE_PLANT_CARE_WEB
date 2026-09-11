@@ -41,12 +41,9 @@
                     <p class="small text-muted mb-2" style="min-height:60px;">@t.Description</p>
 
                     <div class="mt-auto">
-                        <a asp-action="DeletePlantTemplate"
-                           asp-route-id="@t.Id"
-                           class="btn btn-outline-danger btn-sm w-100"
-                           onclick="return confirm('Xóa mẫu cây này?');">
-                            Xóa
-                        </a>
+<form asp-action="DeletePlantTemplate" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa mẫu cây này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
+                                </form>
                     </div>
                 </div>
             </div>

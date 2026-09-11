@@ -47,13 +47,9 @@
                         <td class="text-muted">@item.CreatedAt</td>
 
                         <td class="text-end">
-                            <a asp-action="Delete"
-                               asp-route-plantId="@ViewBag.PlantId"
-                               asp-route-id="@item.Id"
-                               class="btn btn-outline-danger btn-sm"
-                               onclick="return confirm('Xóa bản ghi này?');">
-                                Xóa
-                            </a>
+<form asp-action="Delete" asp-route-plantId="@ViewBag.PlantId" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bản ghi này?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Xóa</button>
+                                </form>
                         </td>
 
                     </tr>
