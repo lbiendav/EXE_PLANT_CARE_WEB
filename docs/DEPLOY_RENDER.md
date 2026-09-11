@@ -431,6 +431,9 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
 - 11/09/2026: 10 kiểm thử HTTP giả lập trong `Tests/RegistrationChecks` đạt;
   không gọi Firebase thật hoặc gửi email. Build ứng dụng thành công, còn warning
   nullable từ mã nguồn hiện có. Kiểm thử hộp thư thật vẫn cần người dùng thực hiện.
+- 11/09/2026: Render tự deploy commit `ec8175a` thành công, trạng thái Live sau
+  khoảng 1 phút 10 giây. Đây là bản sửa đăng ký và cũng đưa script seed/tài liệu
+  từ lần làm trước lên nhánh staging. Không thay đổi `global.json` có sẵn.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
