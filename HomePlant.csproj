@@ -20,8 +20,9 @@
     <Content Update="appsettings.Development.json;appsettings.Example.json">
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
-    <Content Remove="Firebase/**;Seed/**;3D_UI/**;docs/**" />
-    <None Remove="Firebase/**;Seed/**;3D_UI/**;docs/**" />
+    <Compile Remove="Tests/**" />
+    <Content Remove="Firebase/**;Seed/**;3D_UI/**;docs/**;Tests/**" />
+    <None Remove="Firebase/**;Seed/**;3D_UI/**;docs/**;Tests/**" />
     <Content Include="3D_UI/index.html;3D_UI/assets/**;3D_UI/render_output/**"
              Exclude="**/*.bak;**/.DS_Store">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

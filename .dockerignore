@@ -20,6 +20,7 @@
 **/.env*
 Firebase
 Seed
+Tests
 appsettings*.json
 global.json
 docs

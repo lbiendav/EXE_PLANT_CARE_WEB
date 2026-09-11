@@ -55,6 +55,8 @@ public class FirebaseAuthService
     public async Task<string> Register(
         RegisterVM model)
     {
+        // Validate before creating an Auth user, not after leaving a partial account.
+        RegistrationEmailClient.ValidateApiKey(_apiKey);
         var userArgs = new UserRecordArgs()
         {
             Email = model.Email,
@@ -62,9 +64,22 @@ public class FirebaseAuthService
             DisplayName = model.FullName
         };
 
-        UserRecord firebaseUser =
-            await FirebaseAuth.DefaultInstance
-            .CreateUserAsync(userArgs);
+        UserRecord firebaseUser;
+        try
+        {
+            firebaseUser = await FirebaseAuth.DefaultInstance.CreateUserAsync(userArgs);
+        }
+        catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.EmailAlreadyExists)
+        {
+            firebaseUser = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(model.Email);
+            if (firebaseUser.EmailVerified || firebaseUser.Disabled)
+                throw new RegistrationException("Không thể tiếp tục đăng ký. Hãy đăng nhập hoặc sử dụng chức năng Quên mật khẩu.");
+
+            // Do not overwrite the existing user's password, name, claims or profile.
+            // SendVerificationEmail checks the original password and matching UID first.
+            await SendVerificationEmail(model.Email, model.Password, firebaseUser.Uid);
+            return firebaseUser.Uid;
+        }
 
         await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(
             firebaseUser.Uid,
@@ -86,35 +101,9 @@ public class FirebaseAuthService
         string password,
         string uid)
     {
-        var http = _httpClientFactory.CreateClient();
-
-        var signInResponse = await http.PostAsJsonAsync(
-            $"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={_apiKey}",
-            new
-            {
-                email,
-                password,
-                returnSecureToken = true
-            });
-
-        signInResponse.EnsureSuccessStatusCode();
-
-        var signInResult = await signInResponse.Content
-            .ReadFromJsonAsync<SignInWithPasswordResponse>();
-
         var continueUrl = BuildContinueUrl($"/Account/VerifyEmail?uid={Uri.EscapeDataString(uid)}");
-
-        var sendCodeResponse = await http.PostAsJsonAsync(
-            $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_apiKey}",
-            new
-            {
-                requestType = "VERIFY_EMAIL",
-                idToken = signInResult!.IdToken,
-                continueUrl,
-                canHandleCodeInApp = false
-            });
-
-        sendCodeResponse.EnsureSuccessStatusCode();
+        using var http = _httpClientFactory.CreateClient();
+        await RegistrationEmailClient.SendAsync(http, _apiKey, email, password, uid, continueUrl);
     }
 
     public async Task<bool> CompleteVerification(

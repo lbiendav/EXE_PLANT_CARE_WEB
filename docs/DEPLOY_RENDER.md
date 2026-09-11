@@ -21,7 +21,8 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Nạp khóa vào Render | Hoàn thành | Secret file và Firebase API key đã đổi sang project staging riêng; ImgBB giữ API key hiện có |
 | Firebase riêng | Hoàn thành | `homeplant-staging-dav`; Firestore Standard tại Singapore, Free tier, billing chưa bật; Email/Password đã bật |
 | Domain và kiểm thử online | Smoke test hoàn thành | HTTPS, health, landing, login/register, Home/Library trả 200; domain đã nằm trong Authorized domains |
-| Đăng ký/email/upload/ghi dữ liệu | Chưa kiểm thử end-to-end | Cần tài khoản và email test do người dùng chọn; staging hiện chưa seed dữ liệu |
+| Seed dữ liệu tham chiếu | Hoàn thành | 8 `sample_plants`, 2 `plant_templates`, 1 `articles` từ project cũ; không sao chép dữ liệu cá nhân |
+| Đăng ký/email/upload/ghi dữ liệu qua UI | Chưa kiểm thử end-to-end | Cần tài khoản và email test do người dùng chọn; seed bằng Admin SDK đã hoàn thành |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -36,7 +37,8 @@ Firebase staging: https://console.firebase.google.com/project/homeplant-staging-
 Lần deploy đầu đã dùng credential Firebase hiện tại được người dùng cho phép.
 Sau khi nhận lựa chọn tạo Firebase riêng, đã tạm suspend dịch vụ, tạo project mới,
 thay Project ID/API key/secret file, xác minh secret đúng project rồi resume và
-deploy lại. Chưa sao chép dữ liệu, tài khoản hoặc gửi email thử. Firebase cũ
+deploy lại. Sau đó đã seed 11 bản ghi tham chiếu theo yêu cầu (mục 12), không sao
+chép tài khoản hoặc gửi email thử. Firebase cũ
 `home-plant-app-dav` và cấu hình local được giữ nguyên.
 
 ## 2. Các thay đổi trong code và mục đích
@@ -283,7 +285,8 @@ Blueprint không phải thao tác bắt buộc cho Web Service tạo thủ công
 - [x] `/` mở được trong Chrome; CSS/JS/font và frame đầu của cả 4 chuỗi 3D trả 200.
   Chưa kiểm tra riêng từng frame trong toàn bộ hoạt ảnh.
 - [x] `/Account/Login` và `/Account/Register` mở được; không lặp redirect HTTPS.
-- [x] `/Home/Index` và `/Library/Index` đọc Firestore staging thành công (database trống).
+- [x] `/Home/Index` và `/Library/Index` đọc Firestore staging thành công; đã kiểm
+  tra lại sau khi seed dữ liệu, cùng trang chi tiết cây và trang bài viết.
 - [ ] Dùng tài khoản thử nghiệm để đăng ký, nhận email, xác minh và đăng nhập.
 - [ ] Link trong email trở về đúng domain Render, không phải localhost/HTTP.
 - [ ] Tạo cây/chỉnh sửa dữ liệu bằng tài khoản test, tải lại trang để kiểm tra dữ liệu còn.
@@ -310,6 +313,7 @@ code không khôi phục dữ liệu Firestore đã sửa.
 | Không có default credentials/file not found | Tên Secret File, `GOOGLE_APPLICATION_CREDENTIALS`, đã Save và redeploy chưa |
 | Firebase project ID thiếu | Kiểm tra `Firebase__ProjectId`, phải có hai dấu gạch dưới |
 | Invalid API key/permission denied | API key và service account phải thuộc project dự định dùng; kiểm tra IAM/API đã bật |
+| Đăng ký tạo Auth user rồi hiện lỗi 500 | Kiểm tra `Firebase__ApiKey` chỉ chứa Web API key, không chứa nhiều dòng `.env`/JSON. Sau sửa, dùng lại email và mật khẩu ban đầu để tiếp tục xác minh; không cần xóa user |
 | Đã sửa env nhưng Project ID vẫn cũ | Render tải giá trị secret bất đồng bộ: Show secret của ô cần sửa, chờ tải xong rồi Edit, thay giá trị và Save; mở lại kiểm tra. Che khóa lại ngay sau kiểm tra |
 | Unauthorized continue URI | Thêm hostname Render vào Firebase Authorized domains |
 | Redirect HTTPS liên tục | Kiểm tra biến forwarded headers và cổng HTTPS 443 |
@@ -401,6 +405,32 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
 - 11/09/2026: chưa tạo tài khoản test, chưa gửi email, chưa upload ImgBB, chưa seed
   hoặc ghi dữ liệu nghiệp vụ. Đây là các bước kiểm thử tiếp theo, không phải các
   phần đã hoàn tất. `global.json` có sẵn vẫn để untracked, không sửa.
+- 11/09/2026 (seed theo yêu cầu tiếp theo): kiểm tra staging chưa có collection
+  và Auth chưa có user. Project cũ có 8 cây mẫu, 2 template, 1 bài viết. Đã tạo
+  `Seed/staging_seed.js`, chạy 7 unit test thành công và dry-run trước khi ghi.
+  Seed đúng 11 document vào project mới, giữ document ID, không sửa project cũ,
+  không sao chép users/Auth/community/QA/AI hoặc subcollection.
+- 11/09/2026: đối chiếu từng document staging khớp dữ liệu nguồn sau chuẩn hóa
+  (8 + 2 + 1). Chạy apply lần hai: tạo 0, bỏ qua 11, không ghi đè. Staging chỉ có
+  3 collection tham chiếu, Auth vẫn chưa có user. Kiểm tra `/Home/Index`,
+  `/Library/Index`, chi tiết cây Kim Tiền, `/Article/Index`, `/Article/Details/ART_001`
+  đều HTTP 200; trang thư viện có đủ 8 liên kết chi tiết cây.
+- 11/09/2026: điều tra lỗi POST Register: stack trace tại dòng gọi đăng nhập để
+  lấy ID token, Firebase trả HTTP 400. Auth user đã tạo nhưng chưa xác minh;
+  Firestore chưa tạo hồ sơ. Phát hiện giá trị `Firebase__ApiKey` bị lẫn dòng
+  `FIREBASE_KEY`/service account (2440 ký tự thay vì Web API key 39 ký tự).
+  Kiểm tra khớp trước đó đã so với biến tạm bị lẫn nội dung nên chưa đủ chặt chẽ.
+- 11/09/2026: sửa Render về duy nhất API key khớp cấu hình web app staging;
+  mở lại sau lưu, xác nhận 39 ký tự, khớp nguồn độc lập và không chứa service account.
+  Không sửa/xóa Auth user đã đăng ký dở, không tự gửi email cho người dùng.
+- 11/09/2026: bổ sung kiểm tra định dạng API key trước khi tạo user, xử lý lỗi HTTP/
+  timeout/JSON thành thông báo trên form, không đưa phản hồi provider/secret vào
+  thông báo. Khi email đã tồn tại nhưng chưa xác minh và không bị khóa, có thể
+  thử lại với mật khẩu gốc; kiểm tra token đúng UID trước khi gửi email xác minh.
+  Không ghi đè mật khẩu, tên, claims hoặc hồ sơ của tài khoản tồn tại.
+- 11/09/2026: 10 kiểm thử HTTP giả lập trong `Tests/RegistrationChecks` đạt;
+  không gọi Firebase thật hoặc gửi email. Build ứng dụng thành công, còn warning
+  nullable từ mã nguồn hiện có. Kiểm thử hộp thư thật vẫn cần người dùng thực hiện.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
@@ -413,3 +443,94 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
 - [Firebase Authorized domains cho email actions](https://firebase.google.com/docs/auth/web/passing-state-in-email-actions)
 - [ASP.NET Core forwarded headers](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-9.0)
 - [.NET support policy](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)
+
+## 12. Seed dữ liệu test từ Firebase cũ sang staging
+
+Đã seed dữ liệu tham chiếu từ `home-plant-app-dav` sang `homeplant-staging-dav`:
+
+| Collection | Số document | Nội dung |
+| --- | ---: | --- |
+| `sample_plants` | 8 | Thư viện cây, ảnh, hướng dẫn chăm sóc, bệnh thường gặp |
+| `plant_templates` | 2 | Sen Đá Đô La và Cây Lưỡi Hổ |
+| `articles` | 1 | Bài hướng dẫn xử lý sen đá úng nước |
+
+Không sao chép `users`, Firebase Authentication, cây/nhật ký của người dùng,
+`community_posts`, `qa_threads`, `ai_diagnoses` hoặc subcollection. Vì vậy staging
+chưa có tài khoản đăng nhập/admin; việc seed không tự tạo tài khoản hay gửi email.
+Nội dung tham chiếu được giữ theo nguồn để test ứng dụng, chưa được kiểm chứng
+chuyên môn về chăm cây. URL ảnh giữ nguyên, không tải lại ảnh lên ImgBB.
+
+### Chạy thủ công
+
+Chạy các lệnh sau từ thư mục gốc HomePlant. Cần Node.js hỗ trợ `firebase-admin`
+14 (Node 22+), Firebase API hoạt động và hai file credential đúng project:
+
+- `Firebase/firebase-key.json`: chỉ được script dùng để đọc project cũ.
+- `Firebase/firebase-staging-key.json`: dùng để ghi vào project staging.
+
+Hai file được Git ignore; không gửi nội dung khóa lên Git hoặc chat.
+
+```sh
+npm --prefix Seed install
+npm --prefix Seed test
+npm --prefix Seed run seed:staging -- --dry-run
+```
+
+Đọc danh sách document và số `pending` trước khi cho ghi. Kiểm tra source là
+`home-plant-app-dav`, target là `homeplant-staging-dav`, rồi chạy:
+
+```sh
+npm --prefix Seed run seed:staging -- --apply --confirm-project=homeplant-staging-dav
+```
+
+Không dùng `node Seed/plant_library_seed.js` cho thao tác này: script cũ dùng
+credential khác và không có cơ chế bảo vệ đích staging của script mới.
+
+### Hành vi an toàn và chuẩn hóa
+
+- Mặc định dry-run, không ghi; `--apply` bắt buộc kèm xác nhận đúng Project ID.
+  Script kiểm tra project trong cả hai credential và từ chối project khác.
+- Chỉ đọc ba collection được liệt kê, tối đa 100 document/collection. Khi nguồn
+  vượt ngưỡng, dừng để rà soát phạm vi; không âm thầm sao chép toàn bộ database.
+- Giữ document ID và dùng `create`, không dùng ghi đè. Document đã tồn tại được
+  bỏ qua, kể cả khi có thay đổi đồng thời. Chạy lại không tạo bản trùng và không
+  làm mất chỉnh sửa của người thử nghiệm. Script không xóa document.
+- Chỉ lấy các field mà model C# sử dụng; không sao chép field tài khoản/owner
+  ngoài danh sách. Trước khi dùng với nội dung nguồn mới, vẫn cần rà soát để tránh
+  dữ liệu cá nhân nằm trong các trường văn bản như mô tả/nội dung bài viết.
+- Chuẩn hóa `image` sang `imageUrl` khi cần, bổ sung các trường care còn thiếu
+  bằng chuỗi rỗng; template ưu tiên `careInstructions`, bỏ các field thừa không
+  được `PlantTemplateModel` sử dụng.
+- Giữ timestamp hợp lệ; nếu thiếu hoặc bằng epoch 1970, dùng thời điểm tạo
+  document nguồn. `views` bài viết khởi tạo bằng 0. Không cập nhật các trường này
+  trên bản ghi staging đã tồn tại.
+- Đọc và kiểm tra toàn bộ dữ liệu dự kiến trước khi ghi. Nếu lỗi mạng giữa chừng,
+  một phần có thể đã tạo; sửa lỗi rồi chạy lại sẽ chỉ thêm các bản còn thiếu.
+- Không cần redeploy Render để thấy dữ liệu Firestore mới. Mở `/Home/Index`,
+  `/Library/Index`, `/Article/Index` để kiểm tra; nếu dùng rollback code thì dữ
+  liệu seed vẫn còn. Script không có lệnh tự xóa seed.
+
+## 13. Thử lại đăng ký đã bị gián đoạn
+
+Sau khi bản sửa đăng ký đã deploy thành công:
+
+1. Mở `https://homeplant-staging.onrender.com/Account/Register` bằng một lượt GET
+   mới (nhập URL trên thanh địa chỉ), không refresh lại POST lỗi cũ.
+2. Nhập lại cùng email và **mật khẩu ban đầu**. Với tài khoản chưa xác minh, ứng
+   dụng sẽ kiểm tra mật khẩu và gửi email xác minh lại thay vì tạo tài khoản trùng.
+   Thông tin tên/điện thoại nhập lại không ghi đè tài khoản đang có.
+3. Chỉ khi Firebase chấp nhận yêu cầu gửi email, ứng dụng mới hiện trang
+   “Kiểm tra email”. Kiểm tra cả Spam, mở liên kết xác minh và tiếp tục về HomePlant.
+4. Đăng nhập. Nếu quên mật khẩu ban đầu, dùng chức năng Quên mật khẩu; không xóa
+   tài khoản để né lỗi và không tự đặt `emailVerified = true` trong Console.
+5. Nếu còn lỗi, ghi lại giờ và thông báo trên form; không gửi mật khẩu hoặc API key.
+
+Chạy kiểm thử không gửi email:
+
+```sh
+dotnet run --project Tests/RegistrationChecks/RegistrationChecks.csproj
+dotnet publish HomePlant.csproj -c Release
+```
+
+Các bài test dùng HTTP giả lập hoàn toàn; không thay thế việc người dùng kiểm tra
+nhận email thực tế. Test và seed không được đưa vào Docker image/publish output.

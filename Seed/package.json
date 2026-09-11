@@ -4,7 +4,8 @@
   "description": "",
   "main": "plant_library_seed.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test staging_seed.test.js",
+    "seed:staging": "node staging_seed.js"
   },
   "keywords": [],
   "author": "",

@@ -39,11 +39,26 @@ public class AccountController : Controller
         {
             await _authService.Register(vm);
         }
+        catch (RegistrationException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            return View(vm);
+        }
+        catch (HttpRequestException)
+        {
+            ModelState.AddModelError("", RegistrationEmailClient.RetryMessage);
+            return View(vm);
+        }
+        catch (OperationCanceledException)
+        {
+            ModelState.AddModelError("", RegistrationEmailClient.RetryMessage);
+            return View(vm);
+        }
         catch (FirebaseAuthException)
         {
             ModelState.AddModelError(
                 "",
-                "Không thể tạo tài khoản. Email này có thể đã được sử dụng.");
+                "Chưa thể hoàn tất đăng ký. Vui lòng thử lại sau bằng cùng email và mật khẩu, hoặc chọn Quên mật khẩu.");
 
             return View(vm);
         }
