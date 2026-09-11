@@ -23,7 +23,7 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Domain và kiểm thử online | Smoke test hoàn thành | HTTPS, health, landing, login/register, Home/Library trả 200; domain đã nằm trong Authorized domains |
 | Seed dữ liệu tham chiếu | Hoàn thành | 8 `sample_plants`, 2 `plant_templates`, 1 `articles` từ project cũ; không sao chép dữ liệu cá nhân |
 | Đăng ký/email | Người dùng xác nhận đăng ký/đăng nhập thành công | Agent không đọc hộp thư hoặc tự gửi email test |
-| Kiểm thử user/admin | Đang hoàn tất vòng QA | Hai tài khoản test riêng; luồng HTTP thực với session, form, Firebase và ImgBB; xem mục 14 |
+| Kiểm thử user/admin | Đạt 65/65 trên Render | Bản `1ce12f1`; hai tài khoản test riêng; luồng HTTP thực với session, form, Firebase và ImgBB; xem mục 14 |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -290,10 +290,10 @@ Blueprint không phải thao tác bắt buộc cho Web Service tạo thủ công
   tra lại sau khi seed dữ liệu, cùng trang chi tiết cây và trang bài viết.
 - [ ] Dùng tài khoản thử nghiệm để đăng ký, nhận email, xác minh và đăng nhập.
 - [ ] Link trong email trở về đúng domain Render, không phải localhost/HTTP.
-- [ ] Tạo cây/chỉnh sửa dữ liệu bằng tài khoản test, tải lại trang để kiểm tra dữ liệu còn.
-- [ ] Upload một ảnh mẫu qua ImgBB.
+- [x] Tạo cây/chỉnh sửa dữ liệu bằng tài khoản test, tải lại trang để kiểm tra dữ liệu còn.
+- [x] Upload một ảnh mẫu qua ImgBB.
 - [x] Người chưa đăng nhập vào `/Admin/Dashboard` nhận 302 về `/Account/Login`.
-- [ ] Tài khoản đã đăng nhập nhưng không phải admin bị chặn trang quản trị.
+- [x] Tài khoản đã đăng nhập nhưng không phải admin bị chặn trang quản trị.
 - [ ] Sau redeploy, dữ liệu Firestore vẫn còn; chấp nhận phải đăng nhập lại vì session RAM.
 
 Không dùng tài khoản/dữ liệu thật cho thao tác thử ghi/xóa. Việc gửi email test cần
@@ -436,6 +436,19 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
   khoảng 1 phút 10 giây. Đây là bản sửa đăng ký và cũng đưa script seed/tài liệu
   từ lần làm trước lên nhánh staging. Không thay đổi `global.json` có sẵn.
 
+- 11/09/2026 (QA user/admin): tạo hai tài khoản tổng hợp ở mục 14, mật khẩu chỉ
+  lưu trong file local bị ignore. Sửa lỗi dữ liệu cây/nhật ký, phân quyền session,
+  antiforgery và thao tác xóa/khóa, kiểm tra bài viết và dọn care logs khi xóa cây.
+  Build/publish thành công; 10 kiểm thử đăng ký và 7 kiểm thử seed đạt.
+- 11/09/2026: bộ kiểm thử HTTP thực đạt 65/65 ở local kết nối Firebase staging.
+  Dọn đúng 6 document QA còn sót từ các lượt thử trước, không sửa dữ liệu thật.
+  Push `1ce12f1` lên staging; Render tự deploy Live trong 49,6 giây.
+- 11/09/2026: chạy lại trên domain Render đạt **65/65**, không có bài thất bại;
+  marker `[TEST] QA 1789128933546`. Dữ liệu CRUD của lượt này đã được xóa qua
+  các luồng kiểm thử; giữ hai tài khoản QA, khôi phục mật khẩu/role/mở khóa.
+  Đây không phải chứng nhận mọi tính năng đã hoàn thiện: chưa kiểm thử email
+  thật, dịch vụ AI thật, tải lớn hoặc hiển thị/click trên nhiều trình duyệt.
+
 ## 11. Tài liệu chính thức đã đối chiếu
 
 - [Render Docker](https://render.com/docs/docker)
@@ -573,6 +586,24 @@ này cho tài khoản thật. Đăng nhập ở `/Account/Login`, admin mở `/A
   cây thuộc user trước khi cho phép dọn, không để user khác xóa nhật ký bằng ID cây.
 
 ### Chạy lại tự động
+
+Để kiểm thử thủ công trên `https://homeplant-staging.onrender.com`:
+
+1. Mở `.env.test-accounts.json` trên máy để lấy email/mật khẩu; đăng nhập user
+   ở cửa sổ thường và admin ở cửa sổ ẩn danh để tách session.
+2. Với user: vào hồ sơ, sửa tên/ảnh; vào vườn cây, thêm cây mẫu, mở chi tiết,
+   thêm nhật ký chăm sóc, xóa nhật ký rồi xóa cây thử. Tải lại sau mỗi lần lưu.
+3. Dùng user mở `/Admin/Dashboard`: phải bị chuyển hướng, không thấy quản trị.
+4. Với admin: mở `/Admin/Dashboard`, thử tạo/sửa/xóa cây mẫu và bài viết có tên
+   bắt đầu bằng `[TEST]`; kiểm tra chúng xuất hiện ở thư viện/trang bài viết công khai.
+5. Vào quản lý user, chỉ khóa email QA user ở bảng trên. Cửa sổ user đang đăng
+   nhập phải bị đưa về đăng nhập ở request tiếp theo; đăng nhập mới cũng bị chặn.
+   Mở khóa ngay sau kiểm tra. Không khóa hoặc sửa tài khoản thật.
+6. Thử đổi mật khẩu QA user, đăng xuất/đăng nhập bằng mật khẩu mới rồi đổi về
+   mật khẩu trong file; nếu không khôi phục, script tự động sẽ không đăng nhập được.
+7. Xóa các bản ghi `[TEST]` do mình vừa tạo, giữ hai tài khoản QA. Không xóa cả
+   collection hoặc dữ liệu seed. Kiểm thử email phải dùng hộp thư thật do bạn sở hữu,
+   không dùng hai địa chỉ `.invalid` này.
 
 ```sh
 npm --prefix Seed install
