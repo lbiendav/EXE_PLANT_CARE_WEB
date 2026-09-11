@@ -94,7 +94,7 @@ public class PlantController : Controller
 
         TempData["Success"] = "Đã thêm cây vào vườn.";
         if (vm.Photo != null && imageUrl == null)
-            TempData["Warning"] = "Cây đã được thêm, nhưng ảnh không tải lên được. Hãy thử ảnh dưới 32 MB hoặc thử lại sau.";
+            TempData["Warning"] = "Cây đã được thêm, nhưng dịch vụ ảnh chưa nhận được file. Bạn có thể chọn lại ảnh trong mục Sửa cây.";
 
         return RedirectToAction(nameof(Index));
     }
