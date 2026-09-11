@@ -38,9 +38,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient(nameof(ImgBbService), client =>
 {
-    // Do not leave an MVC request waiting for HttpClient's 100-second default
-    // when the optional image host is slow or unavailable.
-    client.Timeout = TimeSpan.FromSeconds(75);
+    // Large originals can take longer than a minute to reach the image host;
+    // the browser normally compresses them first.
+    client.Timeout = TimeSpan.FromSeconds(180);
 });
 
 var credentialPath = builder.Configuration["Firebase:CredentialPath"];

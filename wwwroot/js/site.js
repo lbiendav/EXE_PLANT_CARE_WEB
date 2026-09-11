@@ -7,6 +7,10 @@
         const file = input.files && input.files[0];
         if (!file || file.size <= compressionThreshold || file.type === "image/gif") return;
 
+        const feedback = document.getElementById("photoPlaceholderText");
+        if (feedback)
+            feedback.textContent = "Đang tối ưu ảnh trước khi tải lên...";
+
         const submitButtons = input.form
             ? Array.from(input.form.querySelectorAll('button[type="submit"], input[type="submit"]'))
             : [];
@@ -35,13 +39,25 @@
                 type: "image/jpeg",
                 lastModified: Date.now()
             });
+
+            // Ignore an older compression job if the user selected another file.
+            if (!input.files || input.files[0] !== file) return;
+
             const transfer = new DataTransfer();
             transfer.items.add(compressed);
             input.files = transfer.files;
+
+            if (feedback) {
+                const originalSize = (file.size / 1024 / 1024).toFixed(1);
+                const compressedSize = (compressed.size / 1024 / 1024).toFixed(1);
+                feedback.textContent = `Đã tối ưu ảnh: ${originalSize} MB → ${compressedSize} MB`;
+            }
         } catch {
             if (file.size > providerLimit) {
                 input.setCustomValidity("Không thể thu nhỏ ảnh trên 32 MB này. Hãy đổi ảnh sang JPG, PNG hoặc WebP rồi thử lại.");
                 input.reportValidity();
+            } else if (feedback && input.files && input.files[0] === file) {
+                feedback.textContent = `Sẽ tải ảnh gốc: ${file.name}`;
             }
         } finally {
             submitButtons.forEach(button => button.disabled = false);
@@ -49,5 +65,27 @@
     }
 
     document.querySelectorAll('input[type="file"][accept*="image"]')
-        .forEach(input => input.addEventListener("change", () => compressLargeImage(input)));
+        .forEach(input => {
+            input.addEventListener("change", () => {
+                const preparation = compressLargeImage(input);
+                input.imagePreparation = preparation;
+                preparation.finally(() => {
+                    if (input.imagePreparation === preparation)
+                        input.imagePreparation = null;
+                });
+            });
+
+            if (!input.form) return;
+            input.form.addEventListener("submit", async event => {
+                const preparation = input.imagePreparation;
+                if (!preparation) return;
+
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                await preparation;
+
+                if (input.form.checkValidity())
+                    input.form.requestSubmit();
+            }, true);
+        });
 })();
