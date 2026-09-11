@@ -11,6 +11,9 @@ services:
     dockerContext: .
     healthCheckPath: /healthz
     autoDeployTrigger: commit
+    buildFilter:
+      ignoredPaths:
+        - docs/**
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production

@@ -1,5 +1,6 @@
 # Secrets - never commit
 Firebase/firebase-key.json
+Firebase/firebase-staging-key.json
 Seed/firebase-key.json
 appsettings.json
 .env

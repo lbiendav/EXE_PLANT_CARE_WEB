@@ -1,6 +1,6 @@
 # HomePlant — nhật ký và hướng dẫn triển khai Render Free
 
-Cập nhật: 10/09/2026. Mục tiêu: bản thử nghiệm online trong quá trình phát triển,
+Cập nhật: 11/09/2026. Mục tiêu: bản thử nghiệm online trong quá trình phát triển,
 giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 
 ## 1. Trạng thái thực tế
@@ -9,28 +9,34 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | --- | --- | --- |
 | Kiểm tra cấu trúc và khả năng hosting | Hoàn thành | .NET 9; Render chạy bằng Docker, Firebase kết nối bên ngoài |
 | Dockerfile và .dockerignore | Hoàn thành | Build nhiều giai đoạn; runtime chạy bằng user không phải root; loại khóa và cấu hình local khỏi Docker context |
-| Cấu hình Render | Hoàn thành ở local | `render.yaml`: Free, Singapore, nhánh `staging`, tự deploy khi push, `/healthz` |
+| Cấu hình Render | Hoàn thành trên Render | Free, Singapore, nhánh `staging`, On Commit, `/healthz`; bỏ qua thay đổi chỉ trong `docs/**` |
 | Nạp credential và cấu hình cổng | Hoàn thành ở local | Nhận `PORT`; hỗ trợ secret file/ADC; giữ khóa local khi Development |
 | URL trong email Firebase | Hoàn thành ở local | Ưu tiên `App__PublicBaseUrl`, tiếp theo `RENDER_EXTERNAL_URL`; local dùng request |
 | Đóng gói giao diện 3D | Hoàn thành ở local | Publish HTML, CSS, JS, font và các frame; bỏ file `.bak` |
 | Publish và kiểm tra HTTP | Hoàn thành | Publish thành công; health, landing, login, assets trả 200; HTTP chuyển HTTPS 307 |
 | Kiểm tra Docker image | Hoàn thành | Linux amd64; sửa quyền đọc index.html; chạy bằng UID 1654, không nhúng secret |
-| Đẩy code lên GitHub | Hoàn thành | `origin/staging` đã có commit `613f7f2`; main không bị push thay đổi |
-| Form tạo dịch vụ Render | Đã điền, chưa submit | `homeplant-staging`, Docker, Singapore, Free $0/tháng, `/healthz`; chưa có service live |
-| Kết nối GitHub tự động | Chờ mã xác thực GitHub | Đã chọn chỉ repository này; GitHub yêu cầu mã ở Confirm access |
-| Nạp khóa vào Render | Chờ xác nhận chuyển secret | Chưa upload service account hoặc API key vào Render |
-| Firebase cho lần deploy đầu | Giữ project hiện tại | Chưa tạo/chuyển dữ liệu; có thể tách project staging về sau |
-| Domain và kiểm thử online | Chưa thực hiện | Chưa có URL public được xác nhận |
+| Đẩy code lên GitHub | Hoàn thành | Lần deploy đầu dùng `1d5b715` trên `origin/staging`; main không bị push thay đổi |
+| Tạo dịch vụ Render | Hoàn thành | `homeplant-staging`, Docker, Singapore, Free $0/tháng; lần build đầu thành công trong 51,3 giây |
+| Kết nối GitHub tự động | Hoàn thành | Kết nối repository `EXE_PLANT_CARE_WEB`, Auto-Deploy On Commit |
+| Nạp khóa vào Render | Hoàn thành | Secret file và Firebase API key đã đổi sang project staging riêng; ImgBB giữ API key hiện có |
+| Firebase riêng | Hoàn thành | `homeplant-staging-dav`; Firestore Standard tại Singapore, Free tier, billing chưa bật; Email/Password đã bật |
+| Domain và kiểm thử online | Đang kiểm tra sau chuyển Firebase | `https://homeplant-staging.onrender.com`; đã thêm hostname vào Authorized domains của project mới |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
 trong tài liệu này. Các mục “hoàn thành ở local” chưa đồng nghĩa đã chạy trên Render.
 
-Bước tiếp theo: xác nhận cho phép đưa credential Firebase và API key Firebase/ImgBB
-vào secrets/biến môi trường của Render `homeplant-staging` (hoặc tự nhập trên form),
-sau đó Deploy web service. Form hiện dùng Public Git Repository để lần deploy đầu
-không phụ thuộc việc hoàn tất xác thực GitHub. Chưa bấm Deploy, chưa có chi phí
-hosting được tạo bởi quá trình này.
+Website: https://homeplant-staging.onrender.com
+
+Render Dashboard: https://dashboard.render.com/web/srv-dahmb71594qs73fkkd50
+
+Firebase staging: https://console.firebase.google.com/project/homeplant-staging-dav/overview
+
+Lần deploy đầu đã dùng credential Firebase hiện tại được người dùng cho phép.
+Sau khi nhận lựa chọn tạo Firebase riêng, đã tạm suspend dịch vụ, tạo project mới,
+thay Project ID/API key/secret file, xác minh secret đúng project rồi resume và
+deploy lại. Chưa sao chép dữ liệu, tài khoản hoặc gửi email thử. Firebase cũ
+`home-plant-app-dav` và cấu hình local được giữ nguyên.
 
 ## 2. Các thay đổi trong code và mục đích
 
@@ -49,6 +55,9 @@ hosting được tạo bởi quá trình này.
   thuộc hoàn toàn vào request do proxy chuyển tiếp; encode UID trong URL.
 - `appsettings.Example.json`: bổ sung tên cấu hình tùy chọn, không chứa khóa thật.
 - `render.yaml`: mô tả một web service Free, không tạo database trả phí hoặc disk.
+- `firebase.staging.json` và `firestore.staging.rules`: cấu hình riêng để bật
+  Email/Password và triển khai rules chặn client trực tiếp trên staging; không sửa
+  `firebase.json`/`firestore.rules` đang dùng cho project cũ.
 
 Thứ tự nạp credential:
 
@@ -64,6 +73,34 @@ Thứ tự nạp credential:
 Khuyến nghị dùng Firebase project dành riêng cho staging để thử tính năng và seed
 không ảnh hưởng dữ liệu quan trọng. Nếu dùng project hiện tại, bản online và local
 sẽ cùng đọc/ghi dữ liệu khi có cùng Project ID và credential.
+
+Đã chọn project riêng `homeplant-staging-dav`, không liên kết tài khoản thanh toán.
+Firestore `(default)` là Standard/Native, vị trí `asia-southeast1` (Singapore).
+Backend dùng service account `homeplant-render@homeplant-staging-dav.iam.gserviceaccount.com`
+với hai role `roles/datastore.user` và `roles/firebaseauth.admin`, không cấp Owner/Editor.
+Khóa local riêng là `Firebase/firebase-staging-key.json` (Git ignore, quyền file 600).
+Trên Render, tên file vẫn là `firebase-key.json` để giữ đường dẫn runtime ổn định.
+
+Để tự làm lại cho một project mới, tạo project trên Firebase Console, bỏ qua Google
+Analytics nếu không cần và không nâng lên Blaze. Bật Cloud Firestore API nếu báo
+API disabled; có thể cần chờ vài phút sau khi bật. Tạo database ở Singapore với
+rules Production. Tạo web app để lấy Web API key. Trong Google Cloud Console →
+IAM & Admin → Service Accounts, tạo service account dành cho backend, cấp hai
+role trên, tạo khóa JSON và lưu ngoài Git. Không ghi đè khóa của project local.
+
+Các lệnh đã dùng (chỉ chạy lệnh tạo khi tài nguyên chưa tồn tại):
+
+```sh
+firebase projects:create homeplant-staging-dav --display-name 'HomePlant Staging'
+firebase apps:create WEB 'HomePlant Staging Web' --project homeplant-staging-dav
+firebase firestore:databases:create '(default)' --location asia-southeast1 --project homeplant-staging-dav
+firebase deploy --only auth --config firebase.staging.json --project homeplant-staging-dav --non-interactive
+firebase deploy --only firestore:rules,firestore:indexes --config firebase.staging.json --project homeplant-staging-dav --non-interactive
+```
+
+Không dùng `firebase deploy` thiếu `--project` khi có nhiều project. File rules
+staging từ chối toàn bộ truy cập SDK client; backend Admin SDK vẫn truy cập bằng
+IAM. Chỉ deploy file này vào project web staging, không vào project mobile cũ.
 
 1. Vào Firebase Console, chọn hoặc tạo project thử nghiệm.
 2. Trong Authentication → Sign-in method, bật Email/Password.
@@ -180,6 +217,7 @@ vào commit để xử lý lỗi authentication.
 | Instance Type | **Free** |
 | Health Check Path | `/healthz` |
 | Auto Deploy | On Commit |
+| Build Filters → Ignored Paths | `docs/**` |
 
 4. Thêm Environment Variables:
 
@@ -225,11 +263,12 @@ Nếu tự host máy chủ trực tiếp, cần cấu hình KnownProxies/KnownNe
    Blueprint không chứa private key. Lần start đầu có thể thất bại cho đến khi thêm file.
 6. Save và deploy lại, sau đó hoàn tất Authorized domains và kiểm thử.
 
-### Phương án đã chuẩn bị khi GitHub còn chờ xác thực
+### Phương án dự phòng nếu không kết nối được GitHub
 
 Repository hiện là public. Có thể chọn **Public Git Repository**, nhập
 `https://github.com/lbiendav/EXE_PLANT_CARE_WEB`, chọn nhánh `staging` và các giá trị
-ở mục 6. Form đang được chuẩn bị theo cách này, Auto-Deploy đặt **Off**.
+ở mục 6; Auto-Deploy đặt **Off**. Đây chỉ là phương án dự phòng, không phải cấu
+hình dịch vụ hiện tại: dịch vụ hiện tại đã kết nối GitHub và dùng **On Commit**.
 
 Mỗi lần cập nhật: push lên staging → Render → Manual Deploy → Deploy latest commit.
 Sau khi hoàn tất kết nối GitHub, kiểm tra kết nối repository trong Settings rồi
@@ -259,6 +298,7 @@ Sau mỗi phần tính năng chạy ổn: đưa thay đổi lên `staging`, ch�
 push GitHub. Khi đã kết nối GitHub và bật On Commit, Render tự build/deploy commit
 mới. Nếu dùng Public Git Repository với Auto-Deploy Off, chọn Manual Deploy →
 Deploy latest commit. Không cần tạo lại dịch vụ hay database.
+Thay đổi chỉ trong `docs/**` không tự build lại vì đã cấu hình Ignored Paths.
 Khi bản mới lỗi, dùng Events/Deploys để rollback bản chạy tốt trước đó. Rollback
 code không khôi phục dữ liệu Firestore đã sửa.
 
@@ -325,6 +365,24 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
   Dockerfile `./Dockerfile`, build context `.`, Auto-Deploy Off và các biến không
   chứa secret. Chưa upload khóa, chưa bấm Deploy; chờ xác nhận chuyển các khóa
   vào đúng dịch vụ Render này hoặc người dùng tự nhập.
+- 11/09/2026: người dùng hoàn tất đăng nhập Render, GitHub xác thực, đồng ý nạp
+  khóa và bật quyền Chrome extension “Allow access to file URLs”. Chuyển form về
+  Git Provider đã kết nối, nhánh staging, Auto-Deploy On Commit.
+- 11/09/2026: nạp biến môi trường và Secret File, tạo dịch vụ
+  `srv-dahmb71594qs73fkkd50`. Lần deploy `1d5b715` báo Live sau 51,3 giây;
+  URL là `https://homeplant-staging.onrender.com`.
+- 11/09/2026: nhận lựa chọn Firebase riêng; suspend dịch vụ trong lúc chuyển đổi.
+  Tạo project `homeplant-staging-dav`, web app `HomePlant Staging Web`, bật API
+  Firestore/Auth/IAM/Rules, bật Email/Password, thêm domain Render vào Authorized domains.
+- 11/09/2026: tạo Firestore Standard Singapore, xác nhận `freeTier: true` và
+  `billingEnabled: false`. Deploy rules staging chặn client trực tiếp thành công;
+  project cũ không bị thay rules. Chưa seed dữ liệu mới hoặc sao chép dữ liệu cũ.
+- 11/09/2026: tạo service account riêng với quyền Firestore User/Firebase Auth Admin,
+  lưu khóa vào file Git ignore quyền 600; đổi Project ID/API key/secret file Render.
+  Đọc lại secret đã lưu xác nhận project ID mới. Đọc Firestore (0 article) và cấu
+  hình Auth bằng khóa mới thành công. Resume và yêu cầu deploy lại.
+- 11/09/2026: các file `.env` tạm dùng để nhập khóa lên Render đã được xóa;
+  các file khóa gốc/local vẫn giữ nguyên. Không đưa khóa vào tài liệu/Git.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
