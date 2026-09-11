@@ -13,7 +13,7 @@
     <h1>Thêm cây mới</h1>
 </div>
 
-<form method="post" enctype="multipart/form-data" style="max-width:520px;">
+<form method="post" enctype="multipart/form-data" style="max-width:520px;" id="plantCreateForm">
 
     <div class="mb-3">
         <label for="Photo"
@@ -24,7 +24,7 @@
             <span id="photoPlaceholderText" class="mt-2">Chạm để thêm ảnh</span>
             <img id="photoPreview" class="d-none" style="max-height:220px;max-width:100%;object-fit:cover;" />
         </label>
-        <input type="file" id="Photo" name="Photo" accept="image/*" class="d-none" />
+        <input type="file" id="Photo" name="Photo" accept="image/*,.heic,.heif" class="d-none" />
     </div>
 
     <div class="mb-3">
@@ -79,5 +79,11 @@
         preview.classList.remove("d-none");
         placeholder.classList.add("d-none");
         placeholderText.textContent = file.name;
+    });
+
+    document.getElementById("plantCreateForm").addEventListener("submit", function () {
+        var button = this.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = "Đang lưu...";
     });
 </script>

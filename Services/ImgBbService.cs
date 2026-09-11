@@ -1,4 +1,9 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace HomePlant.Services;
@@ -6,44 +11,87 @@ namespace HomePlant.Services;
 public class ImgBbService
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ImgBbService> _logger;
     private readonly string _apiKey;
+
+    // ImgBB API v1 accepts an image payload up to 32 MB.
+    public const long MaxImageBytes = 32 * 1024 * 1024;
 
     public ImgBbService(
         IHttpClientFactory httpClientFactory,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<ImgBbService> logger)
     {
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
         _apiKey = configuration["ImgBB:ApiKey"] ?? "";
     }
 
-    public async Task<string?> Upload(IFormFile? photo)
+    public async Task<string?> Upload(
+        IFormFile? photo,
+        CancellationToken cancellationToken = default)
     {
         if (photo == null || photo.Length == 0)
             return null;
 
-        using var ms = new MemoryStream();
-        await photo.CopyToAsync(ms);
-        var base64Image = Convert.ToBase64String(ms.ToArray());
-
-        var http = _httpClientFactory.CreateClient();
-
-        using var content = new MultipartFormDataContent
+        if (photo.Length > MaxImageBytes)
         {
-            { new StringContent(_apiKey), "key" },
-            { new StringContent(base64Image), "image" }
-        };
-
-        var response = await http.PostAsync(
-            "https://api.imgbb.com/1/upload",
-            content);
-
-        if (!response.IsSuccessStatusCode)
+            _logger.LogWarning("Image upload skipped because the file exceeds {MaxImageBytes} bytes.", MaxImageBytes);
             return null;
+        }
 
-        var result = await response.Content
-            .ReadFromJsonAsync<ImgBbResponse>();
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            _logger.LogError("Image upload skipped because ImgBB is not configured.");
+            return null;
+        }
 
-        return result?.Data?.Url;
+        try
+        {
+            var http = _httpClientFactory.CreateClient(nameof(ImgBbService));
+
+            await using var imageStream = photo.OpenReadStream();
+            using var imageContent = new StreamContent(imageStream);
+            if (MediaTypeHeaderValue.TryParse(photo.ContentType, out var contentType))
+                imageContent.Headers.ContentType = contentType;
+
+            using var content = new MultipartFormDataContent
+            {
+                { new StringContent(_apiKey), "key" },
+                { imageContent, "image", Path.GetFileName(photo.FileName) }
+            };
+
+            using var response = await http.PostAsync(
+                "https://api.imgbb.com/1/upload",
+                content,
+                cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("ImgBB rejected an image upload with HTTP {StatusCode}.", (int)response.StatusCode);
+                return null;
+            }
+
+            var result = await response.Content
+                .ReadFromJsonAsync<ImgBbResponse>(cancellationToken: cancellationToken);
+
+            return result?.Data?.Url;
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("ImgBB image upload timed out.");
+            return null;
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogWarning(exception, "ImgBB image upload failed.");
+            return null;
+        }
+        catch (JsonException exception)
+        {
+            _logger.LogWarning(exception, "ImgBB returned an invalid image upload response.");
+            return null;
+        }
     }
 
     private class ImgBbResponse

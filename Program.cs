@@ -36,6 +36,12 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(nameof(ImgBbService), client =>
+{
+    // Do not leave an MVC request waiting for HttpClient's 100-second default
+    // when the optional image host is slow or unavailable.
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var credentialPath = builder.Configuration["Firebase:CredentialPath"];
 var firebaseJson = builder.Configuration["FIREBASE_KEY"];

@@ -141,7 +141,9 @@ public class AdminController : Controller
             Name = vm.Name,
             ScientificName = vm.ScientificName,
             Description = vm.Description,
-            Image = vm.Photo != null ? await _imgBbService.Upload(vm.Photo) : vm.ExistingImageUrl,
+            Image = vm.Photo != null
+                ? await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted) ?? ""
+                : vm.ExistingImageUrl,
             CreatedAt = Timestamp.GetCurrentTimestamp(),
             Care = new CareModel
             {
@@ -154,6 +156,10 @@ public class AdminController : Controller
         };
 
         await _samplePlantService.Add(plant);
+
+        TempData["Success"] = "Đã thêm cây vào thư viện.";
+        if (vm.Photo != null && string.IsNullOrEmpty(plant.Image))
+            TempData["Warning"] = "Cây đã được thêm, nhưng ảnh không tải lên được. Hãy thử ảnh dưới 32 MB hoặc thử lại sau.";
 
         return RedirectToAction(nameof(SamplePlants));
     }
@@ -198,13 +204,17 @@ public class AdminController : Controller
         if (existing == null)
             return NotFound();
 
+        var uploadedImage = vm.Photo != null
+            ? await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted)
+            : null;
+
         var plant = new PlantSampleModel
         {
             Id = id,
             Name = vm.Name,
             ScientificName = vm.ScientificName,
             Description = vm.Description,
-            Image = vm.Photo != null ? await _imgBbService.Upload(vm.Photo) : vm.ExistingImageUrl,
+            Image = uploadedImage ?? vm.ExistingImageUrl,
             CreatedAt = existing.CreatedAt,
             Care = new CareModel
             {
@@ -217,6 +227,10 @@ public class AdminController : Controller
         };
 
         await _samplePlantService.Update(id, plant);
+
+        TempData["Success"] = "Đã cập nhật cây trong thư viện.";
+        if (vm.Photo != null && uploadedImage == null)
+            TempData["Warning"] = "Thông tin đã được lưu, nhưng ảnh mới không tải lên được. Ảnh cũ vẫn được giữ.";
 
         return RedirectToAction(nameof(SamplePlants));
     }

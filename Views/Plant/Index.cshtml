@@ -116,6 +116,12 @@ else
                                 Xem chi tiết
                             </a>
 
+                            <a asp-action="Edit"
+                               asp-route-id="@plant.Id"
+                               class="btn btn-outline-success btn-sm flex-fill">
+                                Sửa
+                            </a>
+
 <form asp-action="Delete" asp-route-id="@plant.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa cây này khỏi vườn?');">
                                     <button type="submit" class="btn btn-outline-danger btn-sm flex-fill">Xóa</button>
                                 </form>

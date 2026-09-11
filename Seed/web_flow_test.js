@@ -74,15 +74,25 @@ async function run() {
         const r=await user.post("/Plant/Create",{Nickname:marker+" invalid",PlantSampleId:"qa-missing-template",CurrentStatus:"Khỏe mạnh"});
         status(r,200);assert.ok(r.body.includes("validation"));
     });
-    let plantId;
+    let plantId, plantCreatedAt;
     await check("create garden plant",async()=>{
         status(await user.post("/Plant/Create",{Nickname:marker,PlantSampleId:"PLANT_MASTER_999",CurrentStatus:"Khỏe mạnh"}),302);
         const s=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",marker).get();
-        assert.equal(s.size,1);plantId=s.docs[0].id;
+        assert.equal(s.size,1);plantId=s.docs[0].id;plantCreatedAt=s.docs[0].data().createdAt;
     });
     if(plantId){
         await check("garden plant details",async()=>status(await user.request("/Plant/Details/"+plantId),200));
+        await check("garden plant edit form",async()=>status(await user.request("/Plant/Edit/"+plantId),200));
         await check("another account cannot read plant",async()=>status(await admin.request("/Plant/Details/"+plantId),404));
+        await check("another account cannot edit plant",async()=>status(await admin.request("/Plant/Edit/"+plantId),404));
+        await check("edit garden plant and preserve creation time",async()=>{
+            const templates=await db.collection("plant_templates").get();
+            const editTemplate=templates.docs.find(doc=>doc.id!=="PLANT_MASTER_999");
+            assert.ok(editTemplate,"A second plant template is required for the edit test");
+            status(await user.post("/Plant/Edit/"+plantId,{Nickname:marker+" edited",PlantSampleId:editTemplate.id,CurrentStatus:"Cần chú ý"}),302);
+            const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
+            assert.equal(data.customName,marker+" edited");assert.equal(data.templateId,editTemplate.id);assert.equal(data.status,"warning");assert.ok(data.createdAt.isEqual(plantCreatedAt));
+        });
         await check("care log form",async()=>status(await user.request("/CareLog/Create?plantId="+plantId),200));
         await check("add care log and enforce current user",async()=>{
             status(await user.post("/CareLog/Create?plantId="+plantId,{ActionType:"Watering",Note:marker,ImageUrl:"",UserId:adminAccount.uid}),302);

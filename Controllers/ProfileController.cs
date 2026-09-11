@@ -93,9 +93,10 @@ public class ProfileController : Controller
             return View(vm);
         }
 
-        var avatarUrl = avatar != null
-            ? await _imgBbService.Upload(avatar)
-            : vm.AvatarUrl;
+        var uploadedAvatarUrl = avatar != null
+            ? await _imgBbService.Upload(avatar, HttpContext.RequestAborted)
+            : null;
+        var avatarUrl = uploadedAvatarUrl ?? vm.AvatarUrl;
 
         await _userService.UpdateProfile(
             uid,
@@ -108,6 +109,8 @@ public class ProfileController : Controller
         HttpContext.Session.SetString("AvatarUrl", avatarUrl ?? "");
 
         TempData["Success"] = "Cập nhật hồ sơ thành công.";
+        if (avatar != null && uploadedAvatarUrl == null)
+            TempData["Warning"] = "Thông tin đã được lưu, nhưng ảnh đại diện mới không tải lên được. Ảnh cũ vẫn được giữ.";
 
         return RedirectToAction(nameof(Index));
     }

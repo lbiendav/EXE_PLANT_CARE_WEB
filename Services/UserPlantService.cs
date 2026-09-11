@@ -39,6 +39,11 @@ public class UserPlantService
         await Collection(uid).AddAsync(plant);
     }
 
+    public async Task Update(string uid, string id, UserPlantModel plant)
+    {
+        await Collection(uid).Document(id).SetAsync(plant);
+    }
+
     public async Task Delete(string uid, string id)
     {
         // A missing/unowned parent must not authorize deletion of global care logs.

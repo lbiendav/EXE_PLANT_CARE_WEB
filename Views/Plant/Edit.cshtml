@@ -1,0 +1,86 @@
+@model HomePlant.ViewModels.PlantEditVM
+
+@{
+    ViewData["Title"] = "Sửa cây";
+}
+
+<a asp-action="Details" asp-route-id="@Model.Id" class="back-link">
+    ← Chi tiết cây
+</a>
+
+<div class="mb-4">
+    <span class="kicker">Cập nhật nhật ký</span>
+    <h1>Sửa cây</h1>
+</div>
+
+<form method="post" asp-action="Edit" asp-route-id="@Model.Id" enctype="multipart/form-data" style="max-width:520px;" id="plantEditForm">
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="mb-3">
+        <label for="Photo"
+               id="photoDropzone"
+               class="photo-dropzone d-flex flex-column align-items-center justify-content-center text-center p-5"
+               style="overflow:hidden;">
+            @if (!string.IsNullOrEmpty(Model.ExistingImageUrl))
+            {
+                <img id="photoPreview" src="@Model.ExistingImageUrl" style="max-height:220px;max-width:100%;object-fit:cover;" />
+                <span id="photoPlaceholder" class="d-none" style="font-size:1.6rem;">＋</span>
+                <span id="photoPlaceholderText" class="mt-2">Chạm để thay ảnh</span>
+            }
+            else
+            {
+                <span id="photoPlaceholder" style="font-size:1.6rem;">＋</span>
+                <span id="photoPlaceholderText" class="mt-2">Chạm để thêm ảnh</span>
+                <img id="photoPreview" class="d-none" style="max-height:220px;max-width:100%;object-fit:cover;" />
+            }
+        </label>
+        <input type="file" id="Photo" name="Photo" accept="image/*,.heic,.heif" class="d-none" />
+        <div class="form-text">Để trống nếu muốn giữ ảnh hiện tại.</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" asp-for="Nickname">Tên gọi</label>
+        <input asp-for="Nickname" class="form-control" />
+        <span asp-validation-for="Nickname" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" asp-for="PlantSampleId">Loại cây (từ thư viện)</label>
+        <select asp-for="PlantSampleId" asp-items="ViewBag.PlantSamples" class="form-select">
+            <option value="">Chọn loại cây</option>
+        </select>
+        <span asp-validation-for="PlantSampleId" class="text-danger small"></span>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label" asp-for="CurrentStatus">Trạng thái sức khỏe</label>
+        <select asp-for="CurrentStatus" class="form-select">
+            <option>Khỏe mạnh</option>
+            <option>Cần chú ý</option>
+            <option>Bị bệnh</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success btn-lg w-100">Lưu thay đổi</button>
+</form>
+
+<script>
+    document.getElementById("Photo").addEventListener("change", function () {
+        var file = this.files && this.files[0];
+        if (!file) return;
+
+        var preview = document.getElementById("photoPreview");
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove("d-none");
+        document.getElementById("photoPlaceholder").classList.add("d-none");
+        document.getElementById("photoPlaceholderText").textContent = file.name;
+    });
+
+    document.getElementById("plantEditForm").addEventListener("submit", function () {
+        var button = this.querySelector('button[type="submit"]');
+        button.disabled = true;
+        button.textContent = "Đang lưu...";
+    });
+</script>

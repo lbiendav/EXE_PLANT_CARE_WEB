@@ -135,11 +135,18 @@
             </div>
         </div>
 
-        <a asp-controller="CareLog"
-           asp-action="Index"
-           asp-route-plantId="@Model.Id"
-           class="btn btn-outline-success">
-            Xem lịch sử chăm sóc
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-success">
+                Sửa cây
+            </a>
+            <a asp-controller="CareLog"
+               asp-action="Index"
+               asp-route-plantId="@Model.Id"
+               class="btn btn-outline-success">
+                Xem lịch sử chăm sóc
+            </a>
+        </div>
     </div>
 </div>
