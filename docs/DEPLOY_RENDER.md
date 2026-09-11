@@ -20,7 +20,8 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Kết nối GitHub tự động | Hoàn thành | Kết nối repository `EXE_PLANT_CARE_WEB`, Auto-Deploy On Commit |
 | Nạp khóa vào Render | Hoàn thành | Secret file và Firebase API key đã đổi sang project staging riêng; ImgBB giữ API key hiện có |
 | Firebase riêng | Hoàn thành | `homeplant-staging-dav`; Firestore Standard tại Singapore, Free tier, billing chưa bật; Email/Password đã bật |
-| Domain và kiểm thử online | Đang kiểm tra sau chuyển Firebase | `https://homeplant-staging.onrender.com`; đã thêm hostname vào Authorized domains của project mới |
+| Domain và kiểm thử online | Smoke test hoàn thành | HTTPS, health, landing, login/register, Home/Library trả 200; domain đã nằm trong Authorized domains |
+| Đăng ký/email/upload/ghi dữ liệu | Chưa kiểm thử end-to-end | Cần tài khoản và email test do người dùng chọn; staging hiện chưa seed dữ liệu |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -277,16 +278,18 @@ Blueprint không phải thao tác bắt buộc cho Web Service tạo thủ công
 
 ## 8. Kiểm thử online sau deploy
 
-- [ ] `/healthz` trả HTTP 200 và `{"status":"ok"}`. Đây chỉ là liveness, chưa chứng
+- [x] `/healthz` trả HTTP 200 và `{"status":"ok"}`. Đây chỉ là liveness, chưa chứng
   minh Firestore/Auth kết nối thành công.
-- [ ] `/` tải được giao diện, CSS/JS/font và các frame 3D, không bị 404.
-- [ ] `/Account/Login` và `/Account/Register` mở được; không lặp redirect HTTPS.
-- [ ] `/Home/Index` hoặc `/Library/Index` đọc dữ liệu Firestore được.
+- [x] `/` mở được trong Chrome; CSS/JS/font và frame đầu của cả 4 chuỗi 3D trả 200.
+  Chưa kiểm tra riêng từng frame trong toàn bộ hoạt ảnh.
+- [x] `/Account/Login` và `/Account/Register` mở được; không lặp redirect HTTPS.
+- [x] `/Home/Index` và `/Library/Index` đọc Firestore staging thành công (database trống).
 - [ ] Dùng tài khoản thử nghiệm để đăng ký, nhận email, xác minh và đăng nhập.
 - [ ] Link trong email trở về đúng domain Render, không phải localhost/HTTP.
 - [ ] Tạo cây/chỉnh sửa dữ liệu bằng tài khoản test, tải lại trang để kiểm tra dữ liệu còn.
 - [ ] Upload một ảnh mẫu qua ImgBB.
-- [ ] Người chưa đăng nhập/không phải admin không truy cập được trang quản trị.
+- [x] Người chưa đăng nhập vào `/Admin/Dashboard` nhận 302 về `/Account/Login`.
+- [ ] Tài khoản đã đăng nhập nhưng không phải admin bị chặn trang quản trị.
 - [ ] Sau redeploy, dữ liệu Firestore vẫn còn; chấp nhận phải đăng nhập lại vì session RAM.
 
 Không dùng tài khoản/dữ liệu thật cho thao tác thử ghi/xóa. Việc gửi email test cần
@@ -307,6 +310,7 @@ code không khôi phục dữ liệu Firestore đã sửa.
 | Không có default credentials/file not found | Tên Secret File, `GOOGLE_APPLICATION_CREDENTIALS`, đã Save và redeploy chưa |
 | Firebase project ID thiếu | Kiểm tra `Firebase__ProjectId`, phải có hai dấu gạch dưới |
 | Invalid API key/permission denied | API key và service account phải thuộc project dự định dùng; kiểm tra IAM/API đã bật |
+| Đã sửa env nhưng Project ID vẫn cũ | Render tải giá trị secret bất đồng bộ: Show secret của ô cần sửa, chờ tải xong rồi Edit, thay giá trị và Save; mở lại kiểm tra. Che khóa lại ngay sau kiểm tra |
 | Unauthorized continue URI | Thêm hostname Render vào Firebase Authorized domains |
 | Redirect HTTPS liên tục | Kiểm tra biến forwarded headers và cổng HTTPS 443 |
 | Không tìm thấy cổng | Xem log `Now listening`; app phải bind `0.0.0.0` với PORT Render |
@@ -383,6 +387,20 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
   hình Auth bằng khóa mới thành công. Resume và yêu cầu deploy lại.
 - 11/09/2026: các file `.env` tạm dùng để nhập khóa lên Render đã được xóa;
   các file khóa gốc/local vẫn giữ nguyên. Không đưa khóa vào tài liệu/Git.
+- 11/09/2026: push `35f764c` (cấu hình Firebase riêng + tài liệu); Render tự deploy
+  thành công, xác nhận kết nối GitHub On Commit hoạt động.
+- 11/09/2026: smoke test online phát hiện Home/Library trả 500 PermissionDenied:
+  giao diện Render tải giá trị env bất đồng bộ và vẫn giữ Project ID cũ dù đã nhập
+  giá trị mới. Đã tải giá trị trước khi sửa, lưu lại Project ID và API key, mở lại
+  đối chiếu Project ID = `homeplant-staging-dav`, API key khớp web app staging,
+  secret file khớp project mới. Lần deploy cuối với `35f764c` báo Live (23,9 giây).
+- 11/09/2026: kiểm tra lại online thành công: `/healthz`, `/`, `/Home/Index`,
+  `/Library/Index`, `/Account/Login`, `/Account/Register`, CSS/JS/font và frame đầu
+  cả 4 chuỗi 3D trả 200; HTTP chuyển HTTPS 301; admin chưa login trả 302 về login;
+  URL file khóa Firebase trả 404. Mở landing page bằng Chrome thành công.
+- 11/09/2026: chưa tạo tài khoản test, chưa gửi email, chưa upload ImgBB, chưa seed
+  hoặc ghi dữ liệu nghiệp vụ. Đây là các bước kiểm thử tiếp theo, không phải các
+  phần đã hoàn tất. `global.json` có sẵn vẫn để untracked, không sửa.
 
 ## 11. Tài liệu chính thức đã đối chiếu
 
