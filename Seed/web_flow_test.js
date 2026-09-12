@@ -114,7 +114,7 @@ async function run() {
         });
         await check("delete garden plant",async()=>{
             status(await user.post("/CareLog/Create?plantId="+plantId,{ActionType:"Observation",Note:marker+" cascade"}),302);
-            status(await admin.post("/Plant/Delete/"+plantId,{},"/Profile/Edit"),302);
+            status(await admin.post("/Plant/Delete/"+plantId,{},"/Profile/Edit"),404);
             assert.equal((await db.collection("plants").doc(plantId).collection("careLogs").get()).size,1,"Other user removed care logs");
             status(await user.post("/Plant/Delete/"+plantId,{},"/Plant/Index"),302);
             assert.equal((await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).exists,false);
@@ -161,14 +161,15 @@ async function run() {
     await check("admin creates sample plant with uploaded image",async()=>{
         status(await admin.upload("/Admin/CreateSamplePlant",sample,"Photo"),302);
         const s=await db.collection("sample_plants").where("name","==",marker).get();assert.equal(s.size,1);sampleId=s.docs[0].id;
-        sampleImageUrl=s.docs[0].data().image;
+        sampleImageUrl=s.docs[0].data().imageUrl;
         assert.match(sampleImageUrl,/^(https:\/\/|\/Image\/)/,"Upload did not persist the sample plant image URL");
         if(sampleImageUrl.startsWith("/"))status(await admin.request(sampleImageUrl),200);
     });
     if(sampleId){
         await check("admin edits sample",async()=>{
             status(await admin.post("/Admin/EditSamplePlant/"+sampleId,{...sample,Name:marker+" edited"}),302);
-            assert.equal((await db.collection("sample_plants").doc(sampleId).get()).data().name,marker+" edited");
+            const data=(await db.collection("sample_plants").doc(sampleId).get()).data();
+            assert.equal(data.name,marker+" edited");assert.equal(data.imageUrl,sampleImageUrl);
         });
         await check("public sample detail",async()=>status(await anonymous.request("/Library/Details/"+sampleId),200));
         await check("GET cannot delete sample",async()=>status(await admin.request("/Admin/DeleteSamplePlant/"+sampleId),405));
