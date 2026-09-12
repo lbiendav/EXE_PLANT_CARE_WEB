@@ -79,7 +79,7 @@ async function run() {
     const createSpecies=speciesSnapshot.docs[0];
     let plantId, plantCreatedAt, plantImageUrl, reminderId;
     await check("create garden plant with uploaded image",async()=>{
-        status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh",WateringFrequency:"7",FertilizingFrequency:"30",RepottingFrequency:"365"},"Photo"),302);
+        status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh",WateringFrequency:"7",WateringFrequencyUnit:"Days",FertilizingFrequency:"30",FertilizingFrequencyUnit:"Days",RepottingFrequency:"365",RepottingFrequencyUnit:"Days"},"Photo"),302);
         const s=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",marker).get();
         assert.equal(s.size,1);plantId=s.docs[0].id;plantCreatedAt=s.docs[0].data().createdAt;
         plantImageUrl=s.docs[0].data().imageUrl;
@@ -88,15 +88,27 @@ async function run() {
         if(plantImageUrl.startsWith("/"))status(await user.request(plantImageUrl),200);
     });
     if(plantId){
-        await check("garden plant details",async()=>status(await user.request("/Plant/Details/"+plantId),200));
+        await check("garden plant details include schedule and history",async()=>{
+            const r=await user.request("/Plant/Details/"+plantId);status(r,200);
+            assert.ok(r.body.includes("Lịch sử chăm sóc"));
+            assert.ok(r.body.includes("data-countdown-at"));
+        });
         await check("garden plant edit form",async()=>status(await user.request("/Plant/Edit/"+plantId),200));
         await check("another account cannot read plant",async()=>status(await admin.request("/Plant/Details/"+plantId),404));
         await check("another account cannot edit plant",async()=>status(await admin.request("/Plant/Edit/"+plantId),404));
         await check("edit garden plant and preserve creation time",async()=>{
             const editTemplate=speciesSnapshot.docs.find(doc=>doc.id!==createSpecies.id) || createSpecies;
-            status(await user.post("/Plant/Edit/"+plantId,{Nickname:marker+" edited",PlantSampleId:editTemplate.id,CurrentStatus:"Cần chú ý",WateringFrequency:"7",FertilizingFrequency:"30",RepottingFrequency:"365"}),302);
+            status(await user.post("/Plant/Edit/"+plantId,{Nickname:marker+" edited",PlantSampleId:editTemplate.id,CurrentStatus:"Cần chú ý"}),302);
             const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.equal(data.customName,marker+" edited");assert.equal(data.templateId,editTemplate.id);assert.equal(data.status,"warning");assert.ok(data.createdAt.isEqual(plantCreatedAt));
+        });
+        await check("update all schedules from details with seconds and minutes",async()=>{
+            status(await user.post("/Plant/UpdateSchedule/"+plantId,{"Schedule.WateringFrequency":"30","Schedule.WateringFrequencyUnit":"Seconds","Schedule.FertilizingFrequency":"2","Schedule.FertilizingFrequencyUnit":"Minutes","Schedule.RepottingFrequency":"4","Schedule.RepottingFrequencyUnit":"Hours"}),302);
+            const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
+            assert.equal(data.wateringFrequencyUnit,"Seconds");assert.equal(data.fertilizingFrequencyUnit,"Minutes");assert.equal(data.repottingFrequencyUnit,"Hours");
+            assert.ok(data.nextWateringAt&&data.nextFertilizingAt&&data.nextRepottingAt);
+            const garden=await user.request("/Plant/Index");status(garden,200);
+            for(const label of ["Tưới nước","Bón phân","Thay chậu","Tưới gần nhất","Bón phân gần nhất","Thay chậu gần nhất"])assert.ok(garden.body.includes(label),"Garden is missing "+label);
         });
         await check("overdue schedule creates one notification",async()=>{
             const plantRef=db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId);

@@ -122,7 +122,8 @@ public class CareLogController : Controller
     [HttpPost]
     public async Task<IActionResult> Delete(
         string plantId,
-        string id)
+        string id,
+        string? returnUrl = null)
     {
         if (await RequireOwnedPlant(plantId) is IActionResult redirect)
             return redirect;
@@ -131,6 +132,9 @@ public class CareLogController : Controller
             HttpContext.Session.GetString("Uid")!,
             plantId,
             id);
+
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
 
         return RedirectToAction(
             nameof(Index),

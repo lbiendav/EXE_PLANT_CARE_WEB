@@ -13,17 +13,23 @@ public class PlantController : Controller
     private readonly PlantTemplateService _templateService;
     private readonly PlantSampleService _samplePlantService;
     private readonly ImageStorageService _imageStorage;
+    private readonly CareLogService _careLogService;
+    private readonly CareReminderService _careReminderService;
 
     public PlantController(
         UserPlantService userPlantService,
         PlantTemplateService templateService,
         PlantSampleService samplePlantService,
-        ImageStorageService imageStorage)
+        ImageStorageService imageStorage,
+        CareLogService careLogService,
+        CareReminderService careReminderService)
     {
         _userPlantService = userPlantService;
         _templateService = templateService;
         _samplePlantService = samplePlantService;
         _imageStorage = imageStorage;
+        _careLogService = careLogService;
+        _careReminderService = careReminderService;
     }
 
     public async Task<IActionResult> Index()
@@ -76,6 +82,10 @@ public class PlantController : Controller
             (vm.PlantSampleId.Contains('/') || await _samplePlantService.GetById(vm.PlantSampleId) == null))
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
 
+        ValidateUnit(vm.WateringFrequency, vm.WateringFrequencyUnit, nameof(vm.WateringFrequencyUnit));
+        ValidateUnit(vm.FertilizingFrequency, vm.FertilizingFrequencyUnit, nameof(vm.FertilizingFrequencyUnit));
+        ValidateUnit(vm.RepottingFrequency, vm.RepottingFrequencyUnit, nameof(vm.RepottingFrequencyUnit));
+
         if (!ModelState.IsValid)
         {
             await PopulateSpecies(vm.PlantSampleId);
@@ -96,11 +106,14 @@ public class PlantController : Controller
             CreatedAt = now,
             PlantedAt = now,
             WateringFrequency = vm.WateringFrequency,
+            WateringFrequencyUnit = CareScheduleCalculator.NormalizeUnit(vm.WateringFrequencyUnit),
             FertilizingFrequency = vm.FertilizingFrequency,
+            FertilizingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(vm.FertilizingFrequencyUnit),
             RepottingFrequency = vm.RepottingFrequency,
-            NextWateringAt = CareScheduleCalculator.NextFrom(now, vm.WateringFrequency),
-            NextFertilizingAt = CareScheduleCalculator.NextFrom(now, vm.FertilizingFrequency),
-            NextRepottingAt = CareScheduleCalculator.NextFrom(now, vm.RepottingFrequency)
+            RepottingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(vm.RepottingFrequencyUnit),
+            NextWateringAt = CareScheduleCalculator.NextFrom(now, vm.WateringFrequency, vm.WateringFrequencyUnit),
+            NextFertilizingAt = CareScheduleCalculator.NextFrom(now, vm.FertilizingFrequency, vm.FertilizingFrequencyUnit),
+            NextRepottingAt = CareScheduleCalculator.NextFrom(now, vm.RepottingFrequency, vm.RepottingFrequencyUnit)
         };
 
         try
@@ -133,9 +146,7 @@ public class PlantController : Controller
         if (plant == null)
             return NotFound();
 
-        ViewBag.Species = await GetSpecies(plant.TemplateId);
-
-        return View(plant);
+        return View(await BuildDetailsVM(plant));
     }
 
     public async Task<IActionResult> Edit(string id)
@@ -158,10 +169,7 @@ public class PlantController : Controller
             Nickname = plant.CustomName,
             PlantSampleId = plant.TemplateId,
             CurrentStatus = plant.DisplayStatus,
-            ExistingImageUrl = plant.ImageUrl,
-            WateringFrequency = plant.WateringFrequency,
-            FertilizingFrequency = plant.FertilizingFrequency,
-            RepottingFrequency = plant.RepottingFrequency
+            ExistingImageUrl = plant.ImageUrl
         });
     }
 
@@ -195,20 +203,10 @@ public class PlantController : Controller
             : null;
         var previousImage = existing.ImageUrl;
 
-        var now = Timestamp.GetCurrentTimestamp();
         existing.TemplateId = vm.PlantSampleId;
         existing.CustomName = vm.Nickname;
         existing.Status = ToStoredStatus(vm.CurrentStatus);
         existing.ImageUrl = uploadedImage ?? existing.ImageUrl ?? "";
-        existing.NextWateringAt = CareScheduleCalculator.Recalculate(
-            existing.WateringFrequency, vm.WateringFrequency, existing.NextWateringAt, existing.LastWatered, now);
-        existing.NextFertilizingAt = CareScheduleCalculator.Recalculate(
-            existing.FertilizingFrequency, vm.FertilizingFrequency, existing.NextFertilizingAt, existing.LastFertilized, now);
-        existing.NextRepottingAt = CareScheduleCalculator.Recalculate(
-            existing.RepottingFrequency, vm.RepottingFrequency, existing.NextRepottingAt, existing.LastRepotted, now);
-        existing.WateringFrequency = vm.WateringFrequency;
-        existing.FertilizingFrequency = vm.FertilizingFrequency;
-        existing.RepottingFrequency = vm.RepottingFrequency;
 
         try
         {
@@ -227,6 +225,52 @@ public class PlantController : Controller
         if (vm.Photo != null && uploadedImage == null)
             TempData["Warning"] = "Thông tin đã được lưu, nhưng ảnh mới không tải lên được. Ảnh cũ vẫn được giữ.";
 
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateSchedule(
+        string id,
+        [Bind(Prefix = "Schedule")] CareScheduleVM schedule)
+    {
+        var uid = HttpContext.Session.GetString("Uid");
+        if (uid == null)
+            return RedirectToAction("Login", "Account");
+
+        var plant = await _userPlantService.GetById(uid, id);
+        if (plant == null)
+            return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            var invalidViewModel = await BuildDetailsVM(plant);
+            invalidViewModel.Schedule = schedule;
+            return View("Details", invalidViewModel);
+        }
+
+        var now = Timestamp.GetCurrentTimestamp();
+        plant.NextWateringAt = CareScheduleCalculator.Recalculate(
+            plant.WateringFrequency, plant.WateringFrequencyUnit,
+            schedule.WateringFrequency, schedule.WateringFrequencyUnit,
+            plant.NextWateringAt, null, now);
+        plant.NextFertilizingAt = CareScheduleCalculator.Recalculate(
+            plant.FertilizingFrequency, plant.FertilizingFrequencyUnit,
+            schedule.FertilizingFrequency, schedule.FertilizingFrequencyUnit,
+            plant.NextFertilizingAt, null, now);
+        plant.NextRepottingAt = CareScheduleCalculator.Recalculate(
+            plant.RepottingFrequency, plant.RepottingFrequencyUnit,
+            schedule.RepottingFrequency, schedule.RepottingFrequencyUnit,
+            plant.NextRepottingAt, null, now);
+        plant.WateringFrequency = schedule.WateringFrequency;
+        plant.WateringFrequencyUnit = CareScheduleCalculator.NormalizeUnit(schedule.WateringFrequencyUnit);
+        plant.FertilizingFrequency = schedule.FertilizingFrequency;
+        plant.FertilizingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(schedule.FertilizingFrequencyUnit);
+        plant.RepottingFrequency = schedule.RepottingFrequency;
+        plant.RepottingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(schedule.RepottingFrequencyUnit);
+
+        await _userPlantService.Update(uid, id, plant);
+        await _careReminderService.ClearForPlant(uid, id, HttpContext.RequestAborted);
+        TempData["Success"] = "Đã cập nhật lịch nhắc chăm sóc.";
         return RedirectToAction(nameof(Details), new { id });
     }
 
@@ -281,6 +325,35 @@ public class PlantController : Controller
 
         var legacy = await _templateService.GetById(id);
         return legacy == null ? null : PlantSpeciesVM.FromTemplate(legacy);
+    }
+
+    private async Task<PlantDetailsVM> BuildDetailsVM(UserPlantModel plant)
+    {
+        var speciesTask = GetSpecies(plant.TemplateId);
+        var logsTask = _careLogService.GetLogs(plant.Id);
+        await Task.WhenAll(speciesTask, logsTask);
+
+        return new PlantDetailsVM
+        {
+            Plant = plant,
+            Species = speciesTask.Result,
+            CareLogs = logsTask.Result,
+            Schedule = new CareScheduleVM
+            {
+                WateringFrequency = plant.WateringFrequency,
+                WateringFrequencyUnit = CareScheduleCalculator.NormalizeUnit(plant.WateringFrequencyUnit),
+                FertilizingFrequency = plant.FertilizingFrequency,
+                FertilizingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(plant.FertilizingFrequencyUnit),
+                RepottingFrequency = plant.RepottingFrequency,
+                RepottingFrequencyUnit = CareScheduleCalculator.NormalizeUnit(plant.RepottingFrequencyUnit)
+            }
+        };
+    }
+
+    private void ValidateUnit(int? frequency, string? unit, string field)
+    {
+        if (frequency.HasValue && unit is not ("Seconds" or "Minutes" or "Hours" or "Days"))
+            ModelState.AddModelError(field, "Đơn vị thời gian không hợp lệ.");
     }
 
     private static string ToStoredStatus(string vietnameseStatus) => vietnameseStatus switch

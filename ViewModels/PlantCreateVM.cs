@@ -12,14 +12,20 @@ public class PlantCreateVM
 
     public string CurrentStatus { get; set; } = "Khỏe mạnh";
 
-    [Range(1, 3650, ErrorMessage = "Tần suất tưới phải từ 1 đến 3650 ngày")]
+    [Range(1, 3650, ErrorMessage = "Chu kỳ tưới phải từ 1 đến 3650")]
     public int? WateringFrequency { get; set; }
 
-    [Range(1, 3650, ErrorMessage = "Tần suất bón phân phải từ 1 đến 3650 ngày")]
+    public string WateringFrequencyUnit { get; set; } = "Days";
+
+    [Range(1, 3650, ErrorMessage = "Chu kỳ bón phân phải từ 1 đến 3650")]
     public int? FertilizingFrequency { get; set; }
 
-    [Range(1, 3650, ErrorMessage = "Tần suất thay chậu phải từ 1 đến 3650 ngày")]
+    public string FertilizingFrequencyUnit { get; set; } = "Days";
+
+    [Range(1, 3650, ErrorMessage = "Chu kỳ thay chậu phải từ 1 đến 3650")]
     public int? RepottingFrequency { get; set; }
+
+    public string RepottingFrequencyUnit { get; set; } = "Days";
 
     public IFormFile? Photo { get; set; }
 }

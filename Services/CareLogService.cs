@@ -123,6 +123,7 @@ public class CareLogService
         string? lastField = null;
         string? nextField = null;
         int? frequency = null;
+        string? frequencyUnit = null;
 
         switch (actionType)
         {
@@ -130,16 +131,19 @@ public class CareLogService
                 lastField = "lastWatered";
                 nextField = "nextWateringAt";
                 frequency = plant.WateringFrequency;
+                frequencyUnit = plant.WateringFrequencyUnit;
                 break;
             case "Fertilizing":
                 lastField = "lastFertilized";
                 nextField = "nextFertilizingAt";
                 frequency = plant.FertilizingFrequency;
+                frequencyUnit = plant.FertilizingFrequencyUnit;
                 break;
             case "Repotting":
                 lastField = "lastRepotted";
                 nextField = "nextRepottingAt";
                 frequency = plant.RepottingFrequency;
+                frequencyUnit = plant.RepottingFrequencyUnit;
                 break;
         }
 
@@ -149,7 +153,7 @@ public class CareLogService
         updates[lastField] = caredAt.HasValue ? caredAt.Value : null!;
         var scheduleBase = caredAt ?? (usePlantedAtWhenMissing ? plant.PlantedAt : null);
         updates[nextField] = scheduleBase.HasValue
-            ? CareScheduleCalculator.NextFrom(scheduleBase.Value, frequency) ?? null!
+            ? CareScheduleCalculator.NextFrom(scheduleBase.Value, frequency, frequencyUnit) ?? null!
             : null!;
         return updates;
     }

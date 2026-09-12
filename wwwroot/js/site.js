@@ -129,4 +129,52 @@
 
     refreshNotifications();
     window.setInterval(refreshNotifications, 60_000);
+    window.addEventListener("homeplant:care-due", refreshNotifications);
+})();
+
+(() => {
+    const countdowns = Array.from(document.querySelectorAll("[data-countdown-at]"));
+    if (countdowns.length === 0) return;
+
+    function updateCountdowns() {
+        const now = Date.now();
+        let newlyDue = false;
+        for (const element of countdowns) {
+            const dueAt = Date.parse(element.dataset.countdownAt || "");
+            if (!Number.isFinite(dueAt)) {
+                element.textContent = "Không xác định";
+                continue;
+            }
+
+            const remaining = Math.ceil((dueAt - now) / 1000);
+            if (remaining <= 0) {
+                if (element.dataset.countdownFinished !== "true") {
+                    element.dataset.countdownFinished = "true";
+                    newlyDue = true;
+                }
+                element.textContent = "Đã đến hạn";
+                element.classList.add("is-due");
+                element.closest(".care-task")?.classList.add("is-due");
+                element.closest(".care-summary-entry")?.classList.add("text-danger");
+                continue;
+            }
+
+            element.classList.remove("is-due");
+            element.closest(".care-summary-entry")?.classList.remove("text-danger");
+            const days = Math.floor(remaining / 86400);
+            const hours = Math.floor((remaining % 86400) / 3600);
+            const minutes = Math.floor((remaining % 3600) / 60);
+            const seconds = remaining % 60;
+            const clock = [hours, minutes, seconds]
+                .map(value => String(value).padStart(2, "0"))
+                .join(":");
+            element.textContent = days > 0 ? `Còn ${days} ngày ${clock}` : `Còn ${clock}`;
+        }
+
+        if (newlyDue)
+            window.dispatchEvent(new CustomEvent("homeplant:care-due"));
+    }
+
+    updateCountdowns();
+    window.setInterval(updateCountdowns, 1_000);
 })();

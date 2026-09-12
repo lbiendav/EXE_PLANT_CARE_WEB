@@ -161,6 +161,24 @@ public sealed class CareReminderService
         }
     }
 
+    public async Task ClearForPlant(
+        string uid,
+        string plantId,
+        CancellationToken cancellationToken = default)
+    {
+        var matching = await Notifications(uid)
+            .WhereEqualTo("plantId", plantId)
+            .GetSnapshotAsync(cancellationToken);
+
+        foreach (var page in matching.Documents.Chunk(400))
+        {
+            var batch = _db.StartBatch();
+            foreach (var document in page)
+                batch.Delete(document.Reference);
+            await batch.CommitAsync(cancellationToken);
+        }
+    }
+
     public async Task<bool> GetEmailPreference(
         string uid,
         CancellationToken cancellationToken = default)

@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Vườn của tôi";
+    string FormatCareDate(Google.Cloud.Firestore.Timestamp? value) =>
+        value.HasValue ? value.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm:ss") : "Chưa ghi nhận";
 }
 
 <style>
@@ -45,7 +47,12 @@ else
         {
             var plant = item.Plant;
             var species = item.Species;
-            var nextCare = item.NextCare;
+            var schedules = new[]
+            {
+                new { Label = "Tưới nước", DueAt = plant.NextWateringAt },
+                new { Label = "Bón phân", DueAt = plant.NextFertilizingAt },
+                new { Label = "Thay chậu", DueAt = plant.NextRepottingAt }
+            };
 
             <div class="col-lg-4 col-md-6">
                 <div class="card garden-card h-100">
@@ -78,25 +85,38 @@ else
                                 <span class="fact-label">Ngày trồng</span>
                                 <span class="fact-value">@plant.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span>
                             </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Việc tiếp theo</span>
-                                @if (nextCare.HasValue)
-                                {
-                                    var isDue = nextCare.Value.DueAt <= Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp();
-                                    <span class="fact-value @(isDue ? "text-danger" : "")">
-                                        @nextCare.Value.Label · @nextCare.Value.DueAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="fact-value">Chưa thiết lập</span>
-                                }
+                            <div class="fact-row align-items-start">
+                                <span class="fact-label">Lịch tiếp theo</span>
+                                <div class="fact-value care-summary-list">
+                                    @foreach (var schedule in schedules)
+                                    {
+                                        var isDue = schedule.DueAt.HasValue && schedule.DueAt.Value <= Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp();
+                                        <div class="care-summary-entry @(isDue ? "text-danger" : "")">
+                                            <span>@schedule.Label</span>
+                                            @if (schedule.DueAt.HasValue)
+                                            {
+                                                <time>@schedule.DueAt.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm:ss")</time>
+                                                <small data-countdown-at="@schedule.DueAt.Value.ToDateTime().ToString("O")">Đang tính…</small>
+                                            }
+                                            else
+                                            {
+                                                <small>Chưa thiết lập</small>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </div>
                             <div class="fact-row">
                                 <span class="fact-label">Tưới gần nhất</span>
-                                <span class="fact-value">
-                                    @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy") : "Chưa ghi nhận")
-                                </span>
+                                <span class="fact-value">@FormatCareDate(plant.LastWatered)</span>
+                            </div>
+                            <div class="fact-row">
+                                <span class="fact-label">Bón phân gần nhất</span>
+                                <span class="fact-value">@FormatCareDate(plant.LastFertilized)</span>
+                            </div>
+                            <div class="fact-row">
+                                <span class="fact-label">Thay chậu gần nhất</span>
+                                <span class="fact-value">@FormatCareDate(plant.LastRepotted)</span>
                             </div>
                         </div>
 
@@ -113,9 +133,9 @@ else
                                 Sửa
                             </a>
 
-<form asp-action="Delete" asp-route-id="@plant.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa cây này khỏi vườn?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm flex-fill">Xóa</button>
-                                </form>
+                            <form asp-action="Delete" asp-route-id="@plant.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa cây này khỏi vườn?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm flex-fill">Xóa</button>
+                            </form>
                         </div>
 
                     </div>

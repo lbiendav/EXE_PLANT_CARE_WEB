@@ -1,38 +1,30 @@
-@using HomePlant.Models
-@model UserPlantModel
+@using HomePlant.Services
+@model HomePlant.ViewModels.PlantDetailsVM
 
 @{
-    ViewData["Title"] = Model.CustomName;
-    var species = ViewBag.Species as HomePlant.ViewModels.PlantSpeciesVM;
+    ViewData["Title"] = Model.Plant.CustomName;
+    var plant = Model.Plant;
+    var species = Model.Species;
     var now = Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp();
     string FormatDate(Google.Cloud.Firestore.Timestamp? value) =>
-        value.HasValue ? value.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm") : "Chưa thiết lập";
+        value.HasValue ? value.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm:ss") : "Chưa thiết lập";
+    string ActionLabel(string actionType) => actionType switch
+    {
+        "Watering" => "Tưới nước",
+        "Fertilizing" => "Bón phân",
+        "Repotting" => "Thay chậu",
+        _ => "Ghi chú"
+    };
 }
 
-<style>
-    .detail-hero {
-        position: relative;
-        overflow: hidden;
-        border: 1px solid var(--hair-soft);
-    }
-
-    .detail-hero img {
-        width: 100%;
-        height: 320px;
-        object-fit: cover;
-    }
-</style>
-
-<a asp-action="Index" class="back-link">
-    ← Vườn của tôi
-</a>
+<a asp-action="Index" class="back-link">← Vườn của tôi</a>
 
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="detail-hero">
-            <img src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : Model.ImageUrl)"
-                 alt="@Model.CustomName" />
-            <span class="status-pill bg-@Model.StatusColorClass">@Model.DisplayStatus</span>
+            <img src="@(string.IsNullOrEmpty(plant.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : plant.ImageUrl)"
+                 alt="@plant.CustomName" />
+            <span class="status-pill bg-@plant.StatusColorClass">@plant.DisplayStatus</span>
         </div>
 
         @if (species != null)
@@ -45,18 +37,9 @@
 
                     @if (species.Care != null)
                     {
-                        <div class="field-row">
-                            <span class="field-label">Ánh sáng</span>
-                            <span class="field-value">@species.Care.Light</span>
-                        </div>
-                        <div class="field-row">
-                            <span class="field-label">Nước</span>
-                            <span class="field-value">@species.Care.Water</span>
-                        </div>
-                        <div class="field-row">
-                            <span class="field-label">Đất</span>
-                            <span class="field-value">@species.Care.Soil</span>
-                        </div>
+                        <div class="field-row"><span class="field-label">Ánh sáng</span><span class="field-value">@species.Care.Light</span></div>
+                        <div class="field-row"><span class="field-label">Nước</span><span class="field-value">@species.Care.Water</span></div>
+                        <div class="field-row"><span class="field-label">Đất</span><span class="field-value">@species.Care.Soil</span></div>
                     }
                 </div>
             </div>
@@ -65,67 +48,139 @@
 
     <div class="col-lg-7">
         <span class="kicker">Nhật ký cây</span>
-        <h1 class="mb-1">@Model.CustomName</h1>
+        <h1 class="mb-1">@plant.CustomName</h1>
         <p class="text-muted mb-4">Chi tiết cây trong vườn của bạn</p>
 
         <div class="card mb-3">
             <div class="card-body p-4">
                 <h6 class="kicker mb-3">Thông tin chung</h6>
-
-                <div class="field-row">
-                    <span class="field-label">Loài cây</span>
-                    <span class="field-value">@(species?.Name ?? "Chưa xác định")</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Bắt đầu chăm từ</span>
-                    <span class="field-value">@Model.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span>
-                </div>
+                <div class="field-row"><span class="field-label">Loài cây</span><span class="field-value">@(species?.Name ?? "Chưa xác định")</span></div>
+                <div class="field-row"><span class="field-label">Bắt đầu chăm từ</span><span class="field-value">@plant.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span></div>
             </div>
         </div>
 
-        <div class="card mb-4">
+        <div class="card mb-3">
             <div class="card-body p-4">
-                <h6 class="kicker mb-3">Lịch chăm sóc</h6>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h6 class="kicker mb-0">Lịch chăm sóc và đếm ngược</h6>
+                    <span class="text-muted small">Tự cập nhật mỗi giây</span>
+                </div>
 
                 <div class="care-grid">
                     @foreach (var task in new[]
                     {
-                        new { Type = "Watering", Label = "Tưới nước", Last = Model.LastWatered, Next = Model.NextWateringAt, Frequency = Model.WateringFrequency },
-                        new { Type = "Fertilizing", Label = "Bón phân", Last = Model.LastFertilized, Next = Model.NextFertilizingAt, Frequency = Model.FertilizingFrequency },
-                        new { Type = "Repotting", Label = "Thay chậu", Last = Model.LastRepotted, Next = Model.NextRepottingAt, Frequency = Model.RepottingFrequency }
+                        new { Type = "Watering", Label = "Tưới nước", Last = plant.LastWatered, Next = plant.NextWateringAt, Frequency = plant.WateringFrequency, Unit = plant.WateringFrequencyUnit },
+                        new { Type = "Fertilizing", Label = "Bón phân", Last = plant.LastFertilized, Next = plant.NextFertilizingAt, Frequency = plant.FertilizingFrequency, Unit = plant.FertilizingFrequencyUnit },
+                        new { Type = "Repotting", Label = "Thay chậu", Last = plant.LastRepotted, Next = plant.NextRepottingAt, Frequency = plant.RepottingFrequency, Unit = plant.RepottingFrequencyUnit }
                     })
                     {
                         var isDue = task.Next.HasValue && task.Next.Value <= now;
                         <div class="care-task @(isDue ? "is-due" : "")">
                             <div class="care-task-label">@task.Label</div>
-                            <div class="care-task-date">@(isDue ? "Đã đến hạn · " : "")@FormatDate(task.Next)</div>
+                            <div class="care-task-date">@FormatDate(task.Next)</div>
+                            @if (task.Next.HasValue)
+                            {
+                                <div class="care-countdown" data-countdown-at="@task.Next.Value.ToDateTime().ToString("O")">Đang tính…</div>
+                            }
+                            else
+                            {
+                                <div class="care-countdown is-empty">Chưa đặt lịch</div>
+                            }
                             <div class="text-muted small mb-3">
-                                @(task.Frequency.HasValue ? $"Mỗi {task.Frequency} ngày" : "Chưa đặt tần suất")
-                                <br />Lần gần nhất: @(task.Last.HasValue ? task.Last.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy") : "Chưa ghi nhận")
+                                @(task.Frequency.HasValue ? $"Mỗi {task.Frequency} {CareScheduleCalculator.UnitLabel(task.Unit)}" : "Chưa đặt chu kỳ")
+                                <br />Lần gần nhất: @(task.Last.HasValue ? task.Last.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm:ss") : "Chưa ghi nhận")
                             </div>
                             <form asp-controller="CareLog" asp-action="QuickCreate" method="post">
-                                <input type="hidden" name="plantId" value="@Model.Id" />
+                                <input type="hidden" name="plantId" value="@plant.Id" />
                                 <input type="hidden" name="actionType" value="@task.Type" />
                                 <button type="submit" class="btn btn-outline-success btn-sm w-100">Đã @task.Label.ToLowerInvariant()</button>
                             </form>
                         </div>
                     }
                 </div>
+
+                <form asp-action="UpdateSchedule" asp-route-id="@plant.Id" method="post" class="schedule-editor mt-4">
+                    <p class="text-muted small mb-3">Để trống một mục nếu muốn tắt lời nhắc đó. Khi đổi chu kỳ hoặc đơn vị, đồng hồ mới bắt đầu từ lúc bạn lưu.</p>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" asp-for="Schedule.WateringFrequency">Tưới nước</label>
+                            <div class="input-group">
+                                <input asp-for="Schedule.WateringFrequency" type="number" min="1" max="3650" class="form-control" />
+                                <select asp-for="Schedule.WateringFrequencyUnit" class="form-select schedule-unit" aria-label="Đơn vị tưới nước">
+                                    <option value="Seconds">giây</option><option value="Minutes">phút</option><option value="Hours">giờ</option><option value="Days">ngày</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Schedule.WateringFrequency" class="text-danger small"></span>
+                            <span asp-validation-for="Schedule.WateringFrequencyUnit" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" asp-for="Schedule.FertilizingFrequency">Bón phân</label>
+                            <div class="input-group">
+                                <input asp-for="Schedule.FertilizingFrequency" type="number" min="1" max="3650" class="form-control" />
+                                <select asp-for="Schedule.FertilizingFrequencyUnit" class="form-select schedule-unit" aria-label="Đơn vị bón phân">
+                                    <option value="Seconds">giây</option><option value="Minutes">phút</option><option value="Hours">giờ</option><option value="Days">ngày</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Schedule.FertilizingFrequency" class="text-danger small"></span>
+                            <span asp-validation-for="Schedule.FertilizingFrequencyUnit" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" asp-for="Schedule.RepottingFrequency">Thay chậu</label>
+                            <div class="input-group">
+                                <input asp-for="Schedule.RepottingFrequency" type="number" min="1" max="3650" class="form-control" />
+                                <select asp-for="Schedule.RepottingFrequencyUnit" class="form-select schedule-unit" aria-label="Đơn vị thay chậu">
+                                    <option value="Seconds">giây</option><option value="Minutes">phút</option><option value="Hours">giờ</option><option value="Days">ngày</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Schedule.RepottingFrequency" class="text-danger small"></span>
+                            <span asp-validation-for="Schedule.RepottingFrequencyUnit" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3">Lưu lịch chăm sóc</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <h6 class="kicker mb-0">Lịch sử chăm sóc</h6>
+                    <a asp-controller="CareLog" asp-action="Create" asp-route-plantId="@plant.Id" class="btn btn-outline-success btn-sm">+ Thêm hoạt động</a>
+                </div>
+
+                @if (Model.CareLogs.Count == 0)
+                {
+                    <p class="text-muted mb-0">Chưa có hoạt động chăm sóc nào.</p>
+                }
+                else
+                {
+                    <div class="care-history-scroll">
+                        @foreach (var log in Model.CareLogs)
+                        {
+                            <article class="care-history-item">
+                                <div>
+                                    <strong>@ActionLabel(log.ActionType)</strong>
+                                    <time class="text-muted small d-block">@log.CreatedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm:ss")</time>
+                                    @if (!string.IsNullOrWhiteSpace(log.Note))
+                                    {
+                                        <p class="mb-0 mt-1">@log.Note</p>
+                                    }
+                                </div>
+                                <form asp-controller="CareLog" asp-action="Delete" method="post" onsubmit="return confirm('Xóa hoạt động này?');">
+                                    <input type="hidden" name="plantId" value="@plant.Id" />
+                                    <input type="hidden" name="id" value="@log.Id" />
+                                    <input type="hidden" name="returnUrl" value="@Url.Action("Details", "Plant", new { id = plant.Id })" />
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Xóa</button>
+                                </form>
+                            </article>
+                        }
+                    </div>
+                }
             </div>
         </div>
 
         <div class="d-flex flex-wrap gap-2">
-            <a asp-action="Edit"
-               asp-route-id="@Model.Id"
-               class="btn btn-success">
-                Sửa cây
-            </a>
-            <a asp-controller="CareLog"
-               asp-action="Index"
-               asp-route-plantId="@Model.Id"
-               class="btn btn-outline-success">
-                Xem lịch sử chăm sóc
-            </a>
+            <a asp-action="Edit" asp-route-id="@plant.Id" class="btn btn-success">Sửa thông tin cây</a>
         </div>
     </div>
 </div>

@@ -41,11 +41,20 @@ public class UserPlantModel
     [FirestoreProperty("wateringFrequency")]
     public int? WateringFrequency { get; set; }
 
+    [FirestoreProperty("wateringFrequencyUnit")]
+    public string WateringFrequencyUnit { get; set; } = "Days";
+
     [FirestoreProperty("fertilizingFrequency")]
     public int? FertilizingFrequency { get; set; }
 
+    [FirestoreProperty("fertilizingFrequencyUnit")]
+    public string FertilizingFrequencyUnit { get; set; } = "Days";
+
     [FirestoreProperty("repottingFrequency")]
     public int? RepottingFrequency { get; set; }
+
+    [FirestoreProperty("repottingFrequencyUnit")]
+    public string RepottingFrequencyUnit { get; set; } = "Days";
 
     [FirestoreProperty("nextWateringAt")]
     public Timestamp? NextWateringAt { get; set; }
