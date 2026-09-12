@@ -1,7 +1,7 @@
 # HomePlant — nhật ký và hướng dẫn triển khai Render Free
 
 Cập nhật: 11/09/2026. Mục tiêu: bản thử nghiệm online trong quá trình phát triển,
-giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
+giữ ASP.NET Core MVC + Firestore + Firebase Authentication.
 
 ## 1. Trạng thái thực tế
 
@@ -18,12 +18,12 @@ giữ ASP.NET Core MVC + Firestore + Firebase Authentication + ImgBB.
 | Đẩy code lên GitHub | Hoàn thành | Lần deploy đầu dùng `1d5b715` trên `origin/staging`; main không bị push thay đổi |
 | Tạo dịch vụ Render | Hoàn thành | `homeplant-staging`, Docker, Singapore, Free $0/tháng; lần build đầu thành công trong 51,3 giây |
 | Kết nối GitHub tự động | Hoàn thành | Kết nối repository `EXE_PLANT_CARE_WEB`, Auto-Deploy On Commit |
-| Nạp khóa vào Render | Hoàn thành | Secret file và Firebase API key đã đổi sang project staging riêng; ImgBB giữ API key hiện có |
+| Nạp khóa vào Render | Hoàn thành | Secret file và Firebase API key đã đổi sang project staging riêng |
 | Firebase riêng | Hoàn thành | `homeplant-staging-dav`; Firestore Standard tại Singapore, Free tier, billing chưa bật; Email/Password đã bật |
 | Domain và kiểm thử online | Smoke test hoàn thành | HTTPS, health, landing, login/register, Home/Library trả 200; domain đã nằm trong Authorized domains |
 | Seed dữ liệu tham chiếu | Hoàn thành | 8 `sample_plants`, 2 `plant_templates`, 1 `articles` từ project cũ; không sao chép dữ liệu cá nhân |
 | Đăng ký/email | Người dùng xác nhận đăng ký/đăng nhập thành công | Agent không đọc hộp thư hoặc tự gửi email test |
-| Kiểm thử user/admin | Đạt 65/65 trên Render | Bản `1ce12f1`; hai tài khoản test riêng; luồng HTTP thực với session, form, Firebase và ImgBB; xem mục 14 |
+| Kiểm thử user/admin | Đạt 65/65 trên Render | Bản `1ce12f1`; hai tài khoản test riêng; luồng HTTP thực với session, form và Firebase; xem mục 14 |
 | Kiểm tra Firebase thật từ máy | Hoàn thành, chỉ đọc | Đọc tối đa 1 article và cấu hình Firebase Auth thành công; chưa ghi/xóa hoặc gửi email |
 
 Không có khóa bí mật, mật khẩu, nội dung service account hoặc dữ liệu người dùng
@@ -153,7 +153,6 @@ Tạo file `.env.render.local` trên máy bằng editor với nội dung mẫu b
 ```dotenv
 Firebase__ProjectId=YOUR_STAGING_PROJECT_ID
 Firebase__ApiKey=YOUR_FIREBASE_WEB_API_KEY
-ImgBB__ApiKey=YOUR_IMGBB_API_KEY
 GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/firebase-key.json
 App__PublicBaseUrl=http://localhost:8080
 ```
@@ -233,7 +232,6 @@ vào commit để xử lý lỗi authentication.
 | `GOOGLE_APPLICATION_CREDENTIALS` | `/etc/secrets/firebase-key.json` | Đường dẫn secret file ở bước tiếp theo |
 | `Firebase__ProjectId` | Project ID Firebase thử nghiệm | Cùng project với service account và API key |
 | `Firebase__ApiKey` | Firebase Web API Key | Không phải JSON private key |
-| `ImgBB__ApiKey` | API key ImgBB | Cần để upload ảnh |
 
 `PORT` do Render cung cấp; không cần tự điền. Với domain mặc định, không cần đặt
 `App__PublicBaseUrl`: ứng dụng tự dùng `RENDER_EXTERNAL_URL` do Render cung cấp.
@@ -262,7 +260,7 @@ Nếu tự host máy chủ trực tiếp, cần cấu hình KnownProxies/KnownNe
 1. Push file `render.yaml` lên nhánh `staging`.
 2. Render → New → Blueprint → chọn repository và nhánh `staging`.
 3. Xem lại danh sách tài nguyên: một web service `homeplant-staging`, plan Free.
-4. Điền các giá trị có `sync: false`: Firebase Project ID, Firebase API Key, ImgBB API Key.
+4. Điền các giá trị có `sync: false`: Firebase Project ID và Firebase API Key.
 5. Sau khi service được tạo, thêm Secret File `firebase-key.json` trong Environment.
    Blueprint không chứa private key. Lần start đầu có thể thất bại cho đến khi thêm file.
 6. Save và deploy lại, sau đó hoàn tất Authorized domains và kiểm thử.
@@ -291,7 +289,7 @@ Blueprint không phải thao tác bắt buộc cho Web Service tạo thủ công
 - [ ] Dùng tài khoản thử nghiệm để đăng ký, nhận email, xác minh và đăng nhập.
 - [ ] Link trong email trở về đúng domain Render, không phải localhost/HTTP.
 - [x] Tạo cây/chỉnh sửa dữ liệu bằng tài khoản test, tải lại trang để kiểm tra dữ liệu còn.
-- [x] Upload một ảnh mẫu qua ImgBB.
+- [x] Upload một ảnh mẫu vào Firestore và đọc lại qua endpoint `/Image/{id}`.
 - [x] Người chưa đăng nhập vào `/Admin/Dashboard` nhận 302 về `/Account/Login`.
 - [x] Tài khoản đã đăng nhập nhưng không phải admin bị chặn trang quản trị.
 - [ ] Sau redeploy, dữ liệu Firestore vẫn còn; chấp nhận phải đăng nhập lại vì session RAM.
@@ -321,7 +319,7 @@ code không khôi phục dữ liệu Firestore đã sửa.
 | Không tìm thấy cổng | Xem log `Now listening`; app phải bind `0.0.0.0` với PORT Render |
 | Thiếu `3D_UI` hoặc asset 404 | Kiểm tra output publish và tên file phân biệt hoa/thường trên Linux |
 | Firestore yêu cầu index | Tạo index theo query/lỗi, đúng project staging; chờ build index xong |
-| Upload ảnh thất bại | Kiểm tra `ImgBB__ApiKey`, dung lượng ảnh và log HTTP |
+| Upload ảnh thất bại | Kiểm tra quyền ghi collection `uploaded_images`, dung lượng ảnh và log Firestore |
 | Lần mở đầu chậm khoảng một phút | Render Free ngủ khi không có truy cập trong 15 phút |
 | Đăng xuất sau restart/redeploy | Session đang lưu RAM, không phải mất dữ liệu Firebase |
 
@@ -403,7 +401,7 @@ lần deploy web này; cần rà soát quyền cho các client trước khi áp 
   `/Library/Index`, `/Account/Login`, `/Account/Register`, CSS/JS/font và frame đầu
   cả 4 chuỗi 3D trả 200; HTTP chuyển HTTPS 301; admin chưa login trả 302 về login;
   URL file khóa Firebase trả 404. Mở landing page bằng Chrome thành công.
-- 11/09/2026: chưa tạo tài khoản test, chưa gửi email, chưa upload ImgBB, chưa seed
+- 11/09/2026: chưa tạo tài khoản test, chưa gửi email, chưa upload ảnh, chưa seed
   hoặc ghi dữ liệu nghiệp vụ. Đây là các bước kiểm thử tiếp theo, không phải các
   phần đã hoàn tất. `global.json` có sẵn vẫn để untracked, không sửa.
 - 11/09/2026 (seed theo yêu cầu tiếp theo): kiểm tra staging chưa có collection
@@ -475,7 +473,7 @@ Không sao chép `users`, Firebase Authentication, cây/nhật ký của ngườ
 `community_posts`, `qa_threads`, `ai_diagnoses` hoặc subcollection. Vì vậy staging
 chưa có tài khoản đăng nhập/admin; việc seed không tự tạo tài khoản hay gửi email.
 Nội dung tham chiếu được giữ theo nguồn để test ứng dụng, chưa được kiểm chứng
-chuyên môn về chăm cây. URL ảnh giữ nguyên, không tải lại ảnh lên ImgBB.
+chuyên môn về chăm cây. URL ảnh tham chiếu được giữ nguyên.
 
 ### Chạy thủ công
 
@@ -619,7 +617,7 @@ ban đầu. Nếu bị ngắt cưỡng bức, kiểm tra lại các trạng thá
 
 Các kiểm tra bao gồm: login/logout, phân quyền, hồ sơ, template không hợp lệ,
 tạo/xem/xóa cây, nhật ký và quyền sở hữu, CRUD bài viết/cây mẫu, đọc/xóa dữ liệu
-tổng hợp ở trang templates/community/QA/AI, upload ảnh 1px qua ImgBB, đổi mật khẩu,
+tổng hợp ở trang templates/community/QA/AI, upload ảnh 1px vào Firestore, đổi mật khẩu,
 khóa/mở khóa và thu hồi quyền trong session. HTTP client lấy token từ form thật,
 giữ cookie riêng cho user/admin và đối chiếu dữ liệu Firestore sau thao tác.
 Đây là kiểm thử chức năng HTTP, không phải kiểm thử click/hiển thị đa trình duyệt
@@ -627,8 +625,8 @@ hay đánh giá toàn diện bảo mật/tải lớn. Không gọi dịch vụ A
 
 Dữ liệu CRUD có tiền tố `[TEST] QA` và được xóa trong các bài kiểm tra xóa.
 Nếu có bài lỗi, marker và ID liên quan được in để dọn đúng bản ghi; không xóa
-theo collection chung. Hai tài khoản test vẫn được giữ để bạn dùng. Ảnh 1px đã
-upload nằm ở ImgBB; script không tự xóa ảnh từ dịch vụ ảnh.
+theo collection chung. Hai tài khoản test vẫn được giữ để bạn dùng. Ảnh kiểm thử
+được lưu trong collection `uploaded_images` của project staging.
 
 Kiểm thử bản local kết nối cùng Firebase staging (chỉ sau khi cấu hình local dùng
 credential staging, API key staging và PORT 18082, không dùng cấu hình Firebase cũ):

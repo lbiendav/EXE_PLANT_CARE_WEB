@@ -36,12 +36,6 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
-builder.Services.AddHttpClient(nameof(ImgBbService), client =>
-{
-    // Large originals can take longer than a minute to reach the image host;
-    // the browser normally compresses them first.
-    client.Timeout = TimeSpan.FromSeconds(180);
-});
 
 var credentialPath = builder.Configuration["Firebase:CredentialPath"];
 var firebaseJson = builder.Configuration["FIREBASE_KEY"];
@@ -101,7 +95,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<PlantSampleService>();
 builder.Services.AddScoped<UserPlantService>();
 builder.Services.AddScoped<PlantTemplateService>();
-builder.Services.AddScoped<ImgBbService>();
+builder.Services.AddScoped<ImageStorageService>();
 builder.Services.AddScoped<CommunityPostService>();
 builder.Services.AddScoped<QaThreadService>();
 builder.Services.AddScoped<AiDiagnosisService>();

@@ -8,16 +8,16 @@ public class ProfileController : Controller
 {
     private readonly FirebaseAuthService _authService;
     private readonly UserService _userService;
-    private readonly ImgBbService _imgBbService;
+    private readonly ImageStorageService _imageStorage;
 
     public ProfileController(
         FirebaseAuthService authService,
         UserService userService,
-        ImgBbService imgBbService)
+        ImageStorageService imageStorage)
     {
         _authService = authService;
         _userService = userService;
-        _imgBbService = imgBbService;
+        _imageStorage = imageStorage;
     }
 
     public IActionResult Index()
@@ -93,16 +93,31 @@ public class ProfileController : Controller
             return View(vm);
         }
 
-        var uploadedAvatarUrl = avatar != null
-            ? await _imgBbService.Upload(avatar, HttpContext.RequestAborted)
-            : null;
-        var avatarUrl = uploadedAvatarUrl ?? vm.AvatarUrl;
+        var existingUser = await _authService.GetUser(uid);
+        if (existingUser == null)
+            return NotFound();
 
-        await _userService.UpdateProfile(
-            uid,
-            vm.FullName,
-            vm.Phone,
-            avatarUrl);
+        var uploadedAvatarUrl = avatar != null
+            ? await _imageStorage.Upload(avatar, HttpContext.RequestAborted)
+            : null;
+        var avatarUrl = uploadedAvatarUrl ?? existingUser.AvatarUrl;
+
+        try
+        {
+            await _userService.UpdateProfile(
+                uid,
+                vm.FullName,
+                vm.Phone,
+                avatarUrl);
+        }
+        catch
+        {
+            await _imageStorage.Delete(uploadedAvatarUrl, CancellationToken.None);
+            throw;
+        }
+
+        if (uploadedAvatarUrl != null)
+            await _imageStorage.Delete(existingUser.AvatarUrl, CancellationToken.None);
 
         HttpContext.Session.SetString("FullName", vm.FullName ?? "");
         HttpContext.Session.SetString("Phone", vm.Phone ?? "");

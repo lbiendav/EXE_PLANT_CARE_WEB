@@ -11,16 +11,16 @@ public class PlantController : Controller
 {
     private readonly UserPlantService _userPlantService;
     private readonly PlantTemplateService _templateService;
-    private readonly ImgBbService _imgBbService;
+    private readonly ImageStorageService _imageStorage;
 
     public PlantController(
         UserPlantService userPlantService,
         PlantTemplateService templateService,
-        ImgBbService imgBbService)
+        ImageStorageService imageStorage)
     {
         _userPlantService = userPlantService;
         _templateService = templateService;
-        _imgBbService = imgBbService;
+        _imageStorage = imageStorage;
     }
 
     public async Task<IActionResult> Index()
@@ -77,7 +77,7 @@ public class PlantController : Controller
 
         var now = Timestamp.GetCurrentTimestamp();
 
-        var imageUrl = await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted);
+        var imageUrl = await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted);
 
         var plant = new UserPlantModel
         {
@@ -90,7 +90,15 @@ public class PlantController : Controller
             PlantedAt = now
         };
 
-        await _userPlantService.Add(uid, plant);
+        try
+        {
+            await _userPlantService.Add(uid, plant);
+        }
+        catch
+        {
+            await _imageStorage.Delete(imageUrl, CancellationToken.None);
+            throw;
+        }
 
         TempData["Success"] = "Đã thêm cây vào vườn.";
         if (vm.Photo != null && imageUrl == null)
@@ -170,15 +178,27 @@ public class PlantController : Controller
         }
 
         var uploadedImage = vm.Photo != null
-            ? await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted)
+            ? await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted)
             : null;
+        var previousImage = existing.ImageUrl;
 
         existing.TemplateId = vm.PlantSampleId;
         existing.CustomName = vm.Nickname;
         existing.Status = ToStoredStatus(vm.CurrentStatus);
         existing.ImageUrl = uploadedImage ?? existing.ImageUrl ?? "";
 
-        await _userPlantService.Update(uid, id, existing);
+        try
+        {
+            await _userPlantService.Update(uid, id, existing);
+        }
+        catch
+        {
+            await _imageStorage.Delete(uploadedImage, CancellationToken.None);
+            throw;
+        }
+
+        if (uploadedImage != null)
+            await _imageStorage.Delete(previousImage, CancellationToken.None);
 
         TempData["Success"] = "Đã cập nhật cây.";
         if (vm.Photo != null && uploadedImage == null)
@@ -196,7 +216,12 @@ public class PlantController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
+        var plant = await _userPlantService.GetById(uid, id);
+        if (plant == null)
+            return NotFound();
+
         await _userPlantService.Delete(uid, id);
+        await _imageStorage.Delete(plant.ImageUrl, CancellationToken.None);
 
         return RedirectToAction(nameof(Index));
     }

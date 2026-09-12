@@ -74,11 +74,14 @@ async function run() {
         const r=await user.post("/Plant/Create",{Nickname:marker+" invalid",PlantSampleId:"qa-missing-template",CurrentStatus:"Khỏe mạnh"});
         status(r,200);assert.ok(r.body.includes("validation"));
     });
-    let plantId, plantCreatedAt;
-    await check("create garden plant",async()=>{
-        status(await user.post("/Plant/Create",{Nickname:marker,PlantSampleId:"PLANT_MASTER_999",CurrentStatus:"Khỏe mạnh"}),302);
+    let plantId, plantCreatedAt, plantImageUrl;
+    await check("create garden plant with uploaded image",async()=>{
+        status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:"PLANT_MASTER_999",CurrentStatus:"Khỏe mạnh"},"Photo"),302);
         const s=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",marker).get();
         assert.equal(s.size,1);plantId=s.docs[0].id;plantCreatedAt=s.docs[0].data().createdAt;
+        plantImageUrl=s.docs[0].data().imageUrl;
+        assert.match(plantImageUrl,/^(https:\/\/|\/Image\/)/,"Upload did not persist the plant image URL");
+        if(plantImageUrl.startsWith("/"))status(await user.request(plantImageUrl),200);
     });
     if(plantId){
         await check("garden plant details",async()=>status(await user.request("/Plant/Details/"+plantId),200));
@@ -116,6 +119,11 @@ async function run() {
             status(await user.post("/Plant/Delete/"+plantId,{},"/Plant/Index"),302);
             assert.equal((await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).exists,false);
             assert.equal((await db.collection("plants").doc(plantId).collection("careLogs").get()).size,0,"Orphaned care logs after plant deletion");
+            if(plantImageUrl.startsWith("/Image/")){
+                const imageId=plantImageUrl.slice("/Image/".length);
+                assert.equal((await db.collection("uploaded_images").doc(imageId).get()).exists,false,"Orphaned image metadata after plant deletion");
+                assert.equal((await db.collection("uploaded_images").doc(imageId).collection("chunks").get()).size,0,"Orphaned image chunks after plant deletion");
+            }
         });
     }
     let articleId,articleTime;
@@ -148,11 +156,14 @@ async function run() {
         await check("admin reads populated "+collection,async()=>status(await admin.request("/Admin/"+list),200));
         await check("admin deletes QA "+collection,async()=>{status(await admin.post("/Admin/"+remove+"/"+ref.id,{},"/Admin/"+list),302);assert.equal((await ref.get()).exists,false);});
     }
-    let sampleId;
+    let sampleId, sampleImageUrl;
     const sample={Name:marker,ScientificName:"QA plant",Description:"Synthetic test record",ExistingImageUrl:"",Light:"Indirect",Water:"Weekly",Soil:"Test soil",Fertilizer:"None"};
-    await check("admin creates sample plant",async()=>{
-        status(await admin.post("/Admin/CreateSamplePlant",sample),302);
+    await check("admin creates sample plant with uploaded image",async()=>{
+        status(await admin.upload("/Admin/CreateSamplePlant",sample,"Photo"),302);
         const s=await db.collection("sample_plants").where("name","==",marker).get();assert.equal(s.size,1);sampleId=s.docs[0].id;
+        sampleImageUrl=s.docs[0].data().image;
+        assert.match(sampleImageUrl,/^(https:\/\/|\/Image\/)/,"Upload did not persist the sample plant image URL");
+        if(sampleImageUrl.startsWith("/"))status(await admin.request(sampleImageUrl),200);
     });
     if(sampleId){
         await check("admin edits sample",async()=>{
@@ -164,12 +175,18 @@ async function run() {
         await check("admin deletes sample",async()=>{
             status(await admin.post("/Admin/DeleteSamplePlant/"+sampleId,{},"/Admin/SamplePlants"),302);
             assert.equal((await db.collection("sample_plants").doc(sampleId).get()).exists,false);
+            if(sampleImageUrl.startsWith("/Image/")){
+                const imageId=sampleImageUrl.slice("/Image/".length);
+                assert.equal((await db.collection("uploaded_images").doc(imageId).get()).exists,false,"Orphaned sample image metadata after deletion");
+                assert.equal((await db.collection("uploaded_images").doc(imageId).collection("chunks").get()).size,0,"Orphaned sample image chunks after deletion");
+            }
         });
     }
-    await check("upload QA profile image via ImgBB",async()=>{
+    await check("upload QA profile image",async()=>{
         status(await user.upload("/Profile/Edit",{FullName:"[TEST] HomePlant user",Phone:""},"avatar"),302);
         const avatar=(await db.collection("users").doc(userAccount.uid).get()).data().avatarUrl;
-        assert.ok(typeof avatar==="string"&&avatar.startsWith("https://"),"Upload did not persist image URL");
+        assert.ok(typeof avatar==="string"&&/^(https:\/\/|\/Image\/)/.test(avatar),"Upload did not persist image URL");
+        if(avatar.startsWith("/"))status(await user.request(avatar),200);
     });
     const changedPassword=userAccount.password+"-QA";let changed=false;
     try{

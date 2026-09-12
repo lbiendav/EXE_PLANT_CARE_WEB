@@ -18,7 +18,7 @@ public class AdminController : Controller
     private readonly CommunityPostService _communityPostService;
     private readonly QaThreadService _qaThreadService;
     private readonly AiDiagnosisService _aiDiagnosisService;
-    private readonly ImgBbService _imgBbService;
+    private readonly ImageStorageService _imageStorage;
 
     public AdminController(
         UserService userService,
@@ -29,7 +29,7 @@ public class AdminController : Controller
         CommunityPostService communityPostService,
         QaThreadService qaThreadService,
         AiDiagnosisService aiDiagnosisService,
-        ImgBbService imgBbService)
+        ImageStorageService imageStorage)
     {
         _userService = userService;
         _articleService = articleService;
@@ -39,7 +39,7 @@ public class AdminController : Controller
         _communityPostService = communityPostService;
         _qaThreadService = qaThreadService;
         _aiDiagnosisService = aiDiagnosisService;
-        _imgBbService = imgBbService;
+        _imageStorage = imageStorage;
     }
 
     public async Task<IActionResult> Dashboard()
@@ -116,7 +116,12 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteSamplePlant(string id)
     {
+        var plant = await _samplePlantService.GetById(id);
+        if (plant == null)
+            return NotFound();
+
         await _samplePlantService.Delete(id);
+        await _imageStorage.Delete(plant.Image, CancellationToken.None);
 
         return RedirectToAction(nameof(SamplePlants));
     }
@@ -142,7 +147,7 @@ public class AdminController : Controller
             ScientificName = vm.ScientificName,
             Description = vm.Description,
             Image = vm.Photo != null
-                ? await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted) ?? ""
+                ? await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted) ?? ""
                 : vm.ExistingImageUrl,
             CreatedAt = Timestamp.GetCurrentTimestamp(),
             Care = new CareModel
@@ -155,7 +160,15 @@ public class AdminController : Controller
             Diseases = CleanDiseases(vm.Diseases)
         };
 
-        await _samplePlantService.Add(plant);
+        try
+        {
+            await _samplePlantService.Add(plant);
+        }
+        catch
+        {
+            await _imageStorage.Delete(plant.Image, CancellationToken.None);
+            throw;
+        }
 
         TempData["Success"] = "Đã thêm cây vào thư viện.";
         if (vm.Photo != null && string.IsNullOrEmpty(plant.Image))
@@ -205,7 +218,7 @@ public class AdminController : Controller
             return NotFound();
 
         var uploadedImage = vm.Photo != null
-            ? await _imgBbService.Upload(vm.Photo, HttpContext.RequestAborted)
+            ? await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted)
             : null;
 
         var plant = new PlantSampleModel
@@ -214,7 +227,7 @@ public class AdminController : Controller
             Name = vm.Name,
             ScientificName = vm.ScientificName,
             Description = vm.Description,
-            Image = uploadedImage ?? vm.ExistingImageUrl,
+            Image = uploadedImage ?? existing.Image,
             CreatedAt = existing.CreatedAt,
             Care = new CareModel
             {
@@ -226,7 +239,18 @@ public class AdminController : Controller
             Diseases = CleanDiseases(vm.Diseases)
         };
 
-        await _samplePlantService.Update(id, plant);
+        try
+        {
+            await _samplePlantService.Update(id, plant);
+        }
+        catch
+        {
+            await _imageStorage.Delete(uploadedImage, CancellationToken.None);
+            throw;
+        }
+
+        if (uploadedImage != null)
+            await _imageStorage.Delete(existing.Image, CancellationToken.None);
 
         TempData["Success"] = "Đã cập nhật cây trong thư viện.";
         if (vm.Photo != null && uploadedImage == null)

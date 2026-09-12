@@ -28,5 +28,3 @@ services:
         sync: false
       - key: Firebase__ApiKey
         sync: false
-      - key: ImgBB__ApiKey
-        sync: false
