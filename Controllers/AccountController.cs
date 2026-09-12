@@ -3,6 +3,7 @@ using HomePlant.Models;
 using HomePlant.Services;
 using HomePlant.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomePlant.Controllers;
 
@@ -29,6 +30,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(
         RegisterVM vm)
     {
@@ -72,7 +74,15 @@ public class AccountController : Controller
         return View();
     }
 
+    [HttpGet]
+    public IActionResult AccessDenied()
+    {
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        return View();
+    }
+
     [HttpPost]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> ForgotPassword(
         ForgotPasswordVM vm)
     {
@@ -99,6 +109,7 @@ public class AccountController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login(
         LoginVM vm)
     {
@@ -113,7 +124,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(
                 "",
-                "Tài khoản không tồn tại.");
+                "Sai tài khoản hoặc mật khẩu");
 
             return View(vm);
         }
@@ -179,6 +190,7 @@ public class AccountController : Controller
             user.AvatarUrl ?? "");
     }
 
+    [HttpPost]
     public IActionResult Logout()
     {
         HttpContext.Session.Clear();

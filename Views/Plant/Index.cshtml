@@ -44,7 +44,8 @@ else
         @foreach (var item in Model)
         {
             var plant = item.Plant;
-            var template = item.Template;
+            var species = item.Species;
+            var nextCare = item.NextCare;
 
             <div class="col-lg-4 col-md-6">
                 <div class="card garden-card h-100">
@@ -61,10 +62,10 @@ else
 
                         <h5 class="fw-bold mb-0">@plant.CustomName</h5>
 
-                        @if (template != null)
+                        @if (species != null)
                         {
                             <small class="text-muted fst-italic mb-3">
-                                @template.Name · @template.ScientificName
+                                @species.Name · @species.ScientificName
                             </small>
                         }
                         else
@@ -75,37 +76,27 @@ else
                         <div class="mb-3">
                             <div class="fact-row">
                                 <span class="fact-label">Ngày trồng</span>
-                                <span class="fact-value">@plant.PlantedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                <span class="fact-value">@plant.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span>
                             </div>
                             <div class="fact-row">
-                                <span class="fact-label">Tưới nước gần nhất</span>
+                                <span class="fact-label">Việc tiếp theo</span>
+                                @if (nextCare.HasValue)
+                                {
+                                    var isDue = nextCare.Value.DueAt <= Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp();
+                                    <span class="fact-value @(isDue ? "text-danger" : "")">
+                                        @nextCare.Value.Label · @nextCare.Value.DueAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="fact-value">Chưa thiết lập</span>
+                                }
+                            </div>
+                            <div class="fact-row">
+                                <span class="fact-label">Tưới gần nhất</span>
                                 <span class="fact-value">
-                                    @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
+                                    @(plant.LastWatered.HasValue ? plant.LastWatered.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy") : "Chưa ghi nhận")
                                 </span>
-                            </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Tần suất tưới</span>
-                                <span class="fact-value">@(plant.WateringFrequency.HasValue ? $"{plant.WateringFrequency} ngày/lần" : "—")</span>
-                            </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Bón phân gần nhất</span>
-                                <span class="fact-value">
-                                    @(plant.LastFertilized.HasValue ? plant.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
-                                </span>
-                            </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Tần suất bón phân</span>
-                                <span class="fact-value">@(plant.FertilizingFrequency.HasValue ? $"{plant.FertilizingFrequency} ngày/lần" : "—")</span>
-                            </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Thay chậu gần nhất</span>
-                                <span class="fact-value">
-                                    @(plant.LastRepotted.HasValue ? plant.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy") : "Chưa có")
-                                </span>
-                            </div>
-                            <div class="fact-row">
-                                <span class="fact-label">Tần suất thay chậu</span>
-                                <span class="fact-value">@(plant.RepottingFrequency.HasValue ? $"{plant.RepottingFrequency} ngày/lần" : "—")</span>
                             </div>
                         </div>
 

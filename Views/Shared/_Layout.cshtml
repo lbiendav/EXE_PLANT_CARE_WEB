@@ -39,7 +39,10 @@
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
-                        data-bs-target="#navbarContent">
+                        data-bs-target="#navbarContent"
+                        aria-controls="navbarContent"
+                        aria-expanded="false"
+                        aria-label="Mở menu điều hướng">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -79,6 +82,16 @@
                                    asp-controller="Profile"
                                    asp-action="Index">
                                     Hồ sơ
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link notification-nav-link"
+                                   asp-controller="Notifications"
+                                   asp-action="Index"
+                                   data-notification-endpoint="@Url.Action("UnreadCount", "Notifications")">
+                                    Nhắc việc
+                                    <span class="notification-count d-none" aria-label="0 thông báo chưa đọc">0</span>
                                 </a>
                             </li>
                         }
@@ -124,12 +137,12 @@
                                 </span>
                             </li>
 
-                            <li class="nav-item">
-                                <a class="btn btn-outline-danger btn-sm ms-lg-3"
-                                   asp-controller="Account"
-                                   asp-action="Logout">
-                                    Đăng xuất
-                                </a>
+                            <li class="nav-item ms-lg-3">
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">
+                                        Đăng xuất
+                                    </button>
+                                </form>
                             </li>
                         }
 

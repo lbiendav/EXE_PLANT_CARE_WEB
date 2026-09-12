@@ -37,6 +37,24 @@
             </div>
         </div>
 
+        <div class="mt-3">
+            @if (Context.Session.GetString("Uid") != null)
+            {
+                <a asp-controller="Plant"
+                   asp-action="Create"
+                   asp-route-speciesId="@Model.Id"
+                   class="btn btn-success">
+                    + Thêm vào vườn của tôi
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Account" asp-action="Login" class="btn btn-success">
+                    Đăng nhập để thêm vào vườn
+                </a>
+            }
+        </div>
+
     </div>
 
 </div>

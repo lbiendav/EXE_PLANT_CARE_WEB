@@ -78,6 +78,12 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> Ban(string id)
     {
+        if (id == HttpContext.Session.GetString("Uid"))
+        {
+            TempData["Warning"] = "Bạn không thể tự khóa tài khoản quản trị đang sử dụng.";
+            return RedirectToAction(nameof(Users));
+        }
+
         await _userService.BanUser(id);
 
         return RedirectToAction(nameof(Users));
@@ -281,6 +287,17 @@ public class AdminController : Controller
         return RedirectToAction(nameof(CommunityPosts));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> UpdateCommunityPostStatus(string id, string status)
+    {
+        if (status is not ("approved" or "hidden" or "pending"))
+            return BadRequest();
+
+        await _communityPostService.UpdateStatus(id, status);
+        TempData["Success"] = "Đã cập nhật trạng thái bài đăng.";
+        return RedirectToAction(nameof(CommunityPosts));
+    }
+
     public async Task<IActionResult> QaThreads()
     {
         var threads = await _qaThreadService.GetAll();
@@ -293,6 +310,17 @@ public class AdminController : Controller
     {
         await _qaThreadService.Delete(id);
 
+        return RedirectToAction(nameof(QaThreads));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateQaThreadStatus(string id, string status)
+    {
+        if (status is not ("pending" or "processing" or "resolved"))
+            return BadRequest();
+
+        await _qaThreadService.UpdateStatus(id, status);
+        TempData["Success"] = "Đã cập nhật trạng thái câu hỏi.";
         return RedirectToAction(nameof(QaThreads));
     }
 

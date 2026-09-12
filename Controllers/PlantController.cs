@@ -11,15 +11,18 @@ public class PlantController : Controller
 {
     private readonly UserPlantService _userPlantService;
     private readonly PlantTemplateService _templateService;
+    private readonly PlantSampleService _samplePlantService;
     private readonly ImageStorageService _imageStorage;
 
     public PlantController(
         UserPlantService userPlantService,
         PlantTemplateService templateService,
+        PlantSampleService samplePlantService,
         ImageStorageService imageStorage)
     {
         _userPlantService = userPlantService;
         _templateService = templateService;
+        _samplePlantService = samplePlantService;
         _imageStorage = imageStorage;
     }
 
@@ -31,29 +34,33 @@ public class PlantController : Controller
             return RedirectToAction("Login", "Account");
 
         var plants = await _userPlantService.GetAll(uid);
-        var templates = await _templateService.GetAll();
-        var templateMap = templates.ToDictionary(t => t.Id, t => t);
+        var samples = await _samplePlantService.GetAll();
+        var speciesMap = samples
+            .Select(PlantSpeciesVM.FromSample)
+            .ToDictionary(species => species.Id, species => species);
+        foreach (var template in await _templateService.GetAll())
+            speciesMap.TryAdd(template.Id, PlantSpeciesVM.FromTemplate(template));
 
         var vm = plants
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => new GardenItemVM
             {
                 Plant = p,
-                Template = templateMap.GetValueOrDefault(p.TemplateId)
+                Species = speciesMap.GetValueOrDefault(p.TemplateId)
             })
             .ToList();
 
         return View(vm);
     }
 
-    public async Task<IActionResult> Create()
+    public async Task<IActionResult> Create(string? speciesId = null)
     {
         if (HttpContext.Session.GetString("Uid") == null)
             return RedirectToAction("Login", "Account");
 
-        await PopulateTemplates();
+        await PopulateSpecies(speciesId);
 
-        return View();
+        return View(new PlantCreateVM { PlantSampleId = speciesId ?? "" });
     }
 
     [HttpPost]
@@ -66,12 +73,12 @@ public class PlantController : Controller
             return RedirectToAction("Login", "Account");
 
         if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
-            (vm.PlantSampleId.Contains('/') || await _templateService.GetById(vm.PlantSampleId) == null))
+            (vm.PlantSampleId.Contains('/') || await _samplePlantService.GetById(vm.PlantSampleId) == null))
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
 
         if (!ModelState.IsValid)
         {
-            await PopulateTemplates();
+            await PopulateSpecies(vm.PlantSampleId);
             return View(vm);
         }
 
@@ -87,7 +94,13 @@ public class PlantController : Controller
             Status = ToStoredStatus(vm.CurrentStatus),
             ImageUrl = imageUrl ?? "",
             CreatedAt = now,
-            PlantedAt = now
+            PlantedAt = now,
+            WateringFrequency = vm.WateringFrequency,
+            FertilizingFrequency = vm.FertilizingFrequency,
+            RepottingFrequency = vm.RepottingFrequency,
+            NextWateringAt = CareScheduleCalculator.NextFrom(now, vm.WateringFrequency),
+            NextFertilizingAt = CareScheduleCalculator.NextFrom(now, vm.FertilizingFrequency),
+            NextRepottingAt = CareScheduleCalculator.NextFrom(now, vm.RepottingFrequency)
         };
 
         try
@@ -120,10 +133,7 @@ public class PlantController : Controller
         if (plant == null)
             return NotFound();
 
-        if (!string.IsNullOrEmpty(plant.TemplateId))
-        {
-            ViewBag.Template = await _templateService.GetById(plant.TemplateId);
-        }
+        ViewBag.Species = await GetSpecies(plant.TemplateId);
 
         return View(plant);
     }
@@ -140,7 +150,7 @@ public class PlantController : Controller
         if (plant == null)
             return NotFound();
 
-        await PopulateTemplates(plant.TemplateId);
+        await PopulateSpecies(plant.TemplateId, includeLegacySelected: true);
 
         return View(new PlantEditVM
         {
@@ -148,7 +158,10 @@ public class PlantController : Controller
             Nickname = plant.CustomName,
             PlantSampleId = plant.TemplateId,
             CurrentStatus = plant.DisplayStatus,
-            ExistingImageUrl = plant.ImageUrl
+            ExistingImageUrl = plant.ImageUrl,
+            WateringFrequency = plant.WateringFrequency,
+            FertilizingFrequency = plant.FertilizingFrequency,
+            RepottingFrequency = plant.RepottingFrequency
         });
     }
 
@@ -166,14 +179,14 @@ public class PlantController : Controller
             return NotFound();
 
         if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
-            (vm.PlantSampleId.Contains('/') || await _templateService.GetById(vm.PlantSampleId) == null))
-            ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
+            (vm.PlantSampleId.Contains('/') || await GetSpecies(vm.PlantSampleId) == null))
+            ModelState.AddModelError(nameof(vm.PlantSampleId), "Loài cây không tồn tại. Vui lòng chọn lại.");
 
         if (!ModelState.IsValid)
         {
             vm.Id = id;
             vm.ExistingImageUrl = existing.ImageUrl;
-            await PopulateTemplates(vm.PlantSampleId);
+            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true);
             return View(vm);
         }
 
@@ -182,10 +195,20 @@ public class PlantController : Controller
             : null;
         var previousImage = existing.ImageUrl;
 
+        var now = Timestamp.GetCurrentTimestamp();
         existing.TemplateId = vm.PlantSampleId;
         existing.CustomName = vm.Nickname;
         existing.Status = ToStoredStatus(vm.CurrentStatus);
         existing.ImageUrl = uploadedImage ?? existing.ImageUrl ?? "";
+        existing.NextWateringAt = CareScheduleCalculator.Recalculate(
+            existing.WateringFrequency, vm.WateringFrequency, existing.NextWateringAt, existing.LastWatered, now);
+        existing.NextFertilizingAt = CareScheduleCalculator.Recalculate(
+            existing.FertilizingFrequency, vm.FertilizingFrequency, existing.NextFertilizingAt, existing.LastFertilized, now);
+        existing.NextRepottingAt = CareScheduleCalculator.Recalculate(
+            existing.RepottingFrequency, vm.RepottingFrequency, existing.NextRepottingAt, existing.LastRepotted, now);
+        existing.WateringFrequency = vm.WateringFrequency;
+        existing.FertilizingFrequency = vm.FertilizingFrequency;
+        existing.RepottingFrequency = vm.RepottingFrequency;
 
         try
         {
@@ -226,12 +249,38 @@ public class PlantController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private async Task PopulateTemplates(string? selectedId = null)
+    private async Task PopulateSpecies(
+        string? selectedId = null,
+        bool includeLegacySelected = false)
     {
-        var templates = await _templateService.GetAll();
+        var options = (await _samplePlantService.GetAll())
+            .OrderBy(plant => plant.Name)
+            .Select(plant => new SelectListItem(plant.Name, plant.Id, plant.Id == selectedId))
+            .ToList();
 
-        ViewBag.PlantSamples = new SelectList(
-            templates, "Id", "Name", selectedId);
+        if (includeLegacySelected &&
+            !string.IsNullOrWhiteSpace(selectedId) &&
+            options.All(option => option.Value != selectedId))
+        {
+            var legacy = await _templateService.GetById(selectedId);
+            if (legacy != null)
+                options.Insert(0, new SelectListItem($"{legacy.Name} (dữ liệu cũ)", legacy.Id, true));
+        }
+
+        ViewBag.PlantSamples = options;
+    }
+
+    private async Task<PlantSpeciesVM?> GetSpecies(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return null;
+
+        var sample = await _samplePlantService.GetById(id);
+        if (sample != null)
+            return PlantSpeciesVM.FromSample(sample);
+
+        var legacy = await _templateService.GetById(id);
+        return legacy == null ? null : PlantSpeciesVM.FromTemplate(legacy);
     }
 
     private static string ToStoredStatus(string vietnameseStatus) => vietnameseStatus switch

@@ -61,7 +61,7 @@ async function run() {
     await check("user cannot open admin dashboard",async()=>status(await user.request("/Admin/Dashboard"),302));
     await check("missing article gives 404",async()=>status(await anonymous.request("/Article/Details/qa-nonexistent"),404));
     await check("POST without antiforgery token rejected",async()=>status(await user.request("/Plant/Create",{Nickname:marker+" csrf",PlantSampleId:"PLANT_MASTER_999"}),400));
-    for(const p of ["/Home/Index","/Library/Index","/Article/Index","/Plant/Index","/Plant/Create","/Profile/Index","/Profile/Edit","/Profile/ChangePassword"])
+    for(const p of ["/Home/Index","/Library/Index","/Article/Index","/Plant/Index","/Plant/Create","/Profile/Index","/Profile/Edit","/Profile/ChangePassword","/Notifications/Index","/Notifications/UnreadCount"])
         await check("user GET "+p,async()=>status(await user.request(p),200));
     for(const p of ["Dashboard","Users","SamplePlants","PlantTemplates","CommunityPosts","QaThreads","AiDiagnoses","CreateSamplePlant"])
         await check("admin GET "+p,async()=>status(await admin.request("/Admin/"+p),200));
@@ -74,12 +74,16 @@ async function run() {
         const r=await user.post("/Plant/Create",{Nickname:marker+" invalid",PlantSampleId:"qa-missing-template",CurrentStatus:"Khỏe mạnh"});
         status(r,200);assert.ok(r.body.includes("validation"));
     });
+    const speciesSnapshot=await db.collection("sample_plants").limit(2).get();
+    if(speciesSnapshot.empty)throw Error("At least one sample plant is required");
+    const createSpecies=speciesSnapshot.docs[0];
     let plantId, plantCreatedAt, plantImageUrl;
     await check("create garden plant with uploaded image",async()=>{
-        status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:"PLANT_MASTER_999",CurrentStatus:"Khỏe mạnh"},"Photo"),302);
+        status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh",WateringFrequency:"7",FertilizingFrequency:"30",RepottingFrequency:"365"},"Photo"),302);
         const s=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",marker).get();
         assert.equal(s.size,1);plantId=s.docs[0].id;plantCreatedAt=s.docs[0].data().createdAt;
         plantImageUrl=s.docs[0].data().imageUrl;
+        assert.equal(s.docs[0].data().wateringFrequency,7);assert.ok(s.docs[0].data().nextWateringAt);
         assert.match(plantImageUrl,/^(https:\/\/|\/Image\/)/,"Upload did not persist the plant image URL");
         if(plantImageUrl.startsWith("/"))status(await user.request(plantImageUrl),200);
     });
@@ -89,10 +93,8 @@ async function run() {
         await check("another account cannot read plant",async()=>status(await admin.request("/Plant/Details/"+plantId),404));
         await check("another account cannot edit plant",async()=>status(await admin.request("/Plant/Edit/"+plantId),404));
         await check("edit garden plant and preserve creation time",async()=>{
-            const templates=await db.collection("plant_templates").get();
-            const editTemplate=templates.docs.find(doc=>doc.id!=="PLANT_MASTER_999");
-            assert.ok(editTemplate,"A second plant template is required for the edit test");
-            status(await user.post("/Plant/Edit/"+plantId,{Nickname:marker+" edited",PlantSampleId:editTemplate.id,CurrentStatus:"Cần chú ý"}),302);
+            const editTemplate=speciesSnapshot.docs.find(doc=>doc.id!==createSpecies.id) || createSpecies;
+            status(await user.post("/Plant/Edit/"+plantId,{Nickname:marker+" edited",PlantSampleId:editTemplate.id,CurrentStatus:"Cần chú ý",WateringFrequency:"7",FertilizingFrequency:"30",RepottingFrequency:"365"}),302);
             const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.equal(data.customName,marker+" edited");assert.equal(data.templateId,editTemplate.id);assert.equal(data.status,"warning");assert.ok(data.createdAt.isEqual(plantCreatedAt));
         });
@@ -101,6 +103,9 @@ async function run() {
             status(await user.post("/CareLog/Create?plantId="+plantId,{ActionType:"Watering",Note:marker,ImageUrl:"",UserId:adminAccount.uid}),302);
             const s=await db.collection("plants").doc(plantId).collection("careLogs").get();
             assert.equal(s.size,1);assert.equal(s.docs[0].data().UserId,userAccount.uid);
+            const plant=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
+            assert.ok(plant.lastWatered,"Watering did not update the plant summary");
+            assert.ok(plant.nextWateringAt.toMillis()>plant.lastWatered.toMillis(),"Watering did not advance the reminder");
         });
         await check("care log list",async()=>status(await user.request("/CareLog/Index?plantId="+plantId),200));
         await check("other account cannot read care logs",async()=>status(await admin.request("/CareLog/Index?plantId="+plantId),404));
@@ -207,7 +212,7 @@ async function run() {
         await check("role downgrade invalidates admin access",async()=>status(await admin.request("/Admin/Dashboard"),302));
     }finally{await db.collection("users").doc(adminAccount.uid).update({role:"admin"});}
     await check("user login after unban",()=>login(user,userAccount));
-    await check("logout removes session",async()=>{status(await user.request("/Account/Logout"),302);status(await user.request("/Plant/Index"),302);});
+    await check("logout removes session",async()=>{status(await user.post("/Account/Logout",{},"/Profile/Index"),302);status(await user.request("/Plant/Index"),302);});
     console.log(JSON.stringify({marker,passed,failures,plantId,sampleId},null,2));
 }
 run().catch(e=>{console.error("QA aborted: "+e.message);process.exitCode=1;}).finally(async()=>{await deleteApp(app);if(failures.length)process.exitCode=1;});

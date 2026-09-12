@@ -31,4 +31,9 @@ public class QaThreadService
             .Document(id)
             .DeleteAsync();
     }
+
+    public Task UpdateStatus(string id, string status) =>
+        _db.Collection("qa_threads")
+            .Document(id)
+            .UpdateAsync("status", status);
 }

@@ -31,4 +31,9 @@ public class CommunityPostService
             .Document(id)
             .DeleteAsync();
     }
+
+    public Task UpdateStatus(string id, string status) =>
+        _db.Collection("community_posts")
+            .Document(id)
+            .UpdateAsync("status", status);
 }

@@ -18,7 +18,8 @@
 
 <div class="mb-4">
     <span class="kicker">Quản trị</span>
-    <h1 class="mb-0">Mẫu cây (Templates)</h1>
+    <h1 class="mb-0">Mẫu cây cũ</h1>
+    <p class="text-muted mt-2 mb-0">Chỉ giữ để tương thích với cây người dùng đã tạo trước đây. Hãy quản lý dữ liệu mới trong “Danh mục loài cây”.</p>
 </div>
 
 <div class="row g-4">
@@ -26,7 +27,7 @@
     {
         <div class="col-lg-3 col-md-4 col-sm-6">
             <div class="card admin-card h-100">
-                <img src="@(string.IsNullOrEmpty(t.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : t.ImageUrl)" />
+                <img src="@(string.IsNullOrEmpty(t.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : t.ImageUrl)" alt="@t.Name" />
 
                 <div class="card-body d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start">
@@ -40,11 +41,7 @@
                     <small class="text-muted fst-italic mb-2">@t.ScientificName</small>
                     <p class="small text-muted mb-2" style="min-height:60px;">@t.Description</p>
 
-                    <div class="mt-auto">
-<form asp-action="DeletePlantTemplate" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa mẫu cây này?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
-                                </form>
-                    </div>
+                    <div class="mt-auto text-muted small">Dữ liệu tương thích · chỉ đọc</div>
                 </div>
             </div>
         </div>

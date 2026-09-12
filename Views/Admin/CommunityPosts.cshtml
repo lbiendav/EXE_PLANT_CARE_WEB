@@ -29,14 +29,15 @@
                 <div class="card-body">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <img src="@(string.IsNullOrEmpty(post.AuthorAvatar) ? "https://i.pravatar.cc/150" : post.AuthorAvatar)"
-                             class="post-avatar" />
+                             class="post-avatar"
+                             alt="Ảnh đại diện của @post.AuthorName" />
                         <div>
                             <div class="fw-semibold">@post.AuthorName</div>
                             <small class="text-muted">@post.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</small>
                         </div>
 
-                        <span class="badge bg-@(post.Status == "approved" ? "success" : "secondary") ms-auto">
-                            @post.Status
+                        <span class="badge bg-@(post.Status == "approved" ? "success" : post.Status == "hidden" ? "danger" : "warning") ms-auto">
+                            @(post.Status switch { "approved" => "Đã duyệt", "hidden" => "Đã ẩn", _ => "Chờ duyệt" })
                         </span>
                     </div>
 
@@ -44,7 +45,7 @@
 
                     @if (post.Images.Count > 0)
                     {
-                        <img src="@post.Images[0]" class="post-image mb-2" />
+                        <img src="@post.Images[0]" class="post-image mb-2" alt="Ảnh trong bài đăng của @post.AuthorName" />
                     }
 
                     <div class="d-flex gap-3 text-muted small mb-3">
@@ -52,9 +53,23 @@
                         <span>💬 @post.CommentCount</span>
                     </div>
 
-<form asp-action="DeleteCommunityPost" asp-route-id="@post.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bài đăng này?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa bài đăng</button>
-                                </form>
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (post.Status != "approved")
+                        {
+                            <form asp-action="UpdateCommunityPostStatus" asp-route-id="@post.Id" asp-route-status="approved" method="post" class="flex-fill">
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100">Duyệt</button>
+                            </form>
+                        }
+                        @if (post.Status != "hidden")
+                        {
+                            <form asp-action="UpdateCommunityPostStatus" asp-route-id="@post.Id" asp-route-status="hidden" method="post" class="flex-fill">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Ẩn</button>
+                            </form>
+                        }
+                        <form asp-action="DeleteCommunityPost" asp-route-id="@post.Id" method="post" class="flex-fill" onsubmit="return confirm('Xóa vĩnh viễn bài đăng này?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

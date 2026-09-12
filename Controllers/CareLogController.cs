@@ -82,12 +82,41 @@ public class CareLogController : Controller
             Timestamp.GetCurrentTimestamp();
 
         await _service.AddLog(
+            model.UserId,
             plantId,
             model);
 
         return RedirectToAction(
             nameof(Index),
             new { plantId });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> QuickCreate(string plantId, string actionType)
+    {
+        if (await RequireOwnedPlant(plantId) is IActionResult redirect)
+            return redirect;
+
+        if (actionType is not ("Watering" or "Fertilizing" or "Repotting"))
+            return BadRequest();
+
+        var uid = HttpContext.Session.GetString("Uid")!;
+        await _service.AddLog(uid, plantId, new CareLogModel
+        {
+            UserId = uid,
+            ActionType = actionType,
+            Note = "",
+            ImageUrl = "",
+            CreatedAt = Timestamp.GetCurrentTimestamp()
+        });
+
+        TempData["Success"] = actionType switch
+        {
+            "Watering" => "Đã ghi nhận tưới nước và cập nhật lịch tiếp theo.",
+            "Fertilizing" => "Đã ghi nhận bón phân và cập nhật lịch tiếp theo.",
+            _ => "Đã ghi nhận thay chậu và cập nhật lịch tiếp theo."
+        };
+        return RedirectToAction("Details", "Plant", new { id = plantId });
     }
 
     [HttpPost]
@@ -99,6 +128,7 @@ public class CareLogController : Controller
             return redirect;
 
         await _service.DeleteLog(
+            HttpContext.Session.GetString("Uid")!,
             plantId,
             id);
 

@@ -233,6 +233,26 @@ vào commit để xử lý lỗi authentication.
 | `Firebase__ProjectId` | Project ID Firebase thử nghiệm | Cùng project với service account và API key |
 | `Firebase__ApiKey` | Firebase Web API Key | Không phải JSON private key |
 
+Thông báo trong web hoạt động không cần dịch vụ ngoài. Để gửi thêm email nhắc chăm
+cây, cấu hình các biến sau trên Render. Người dùng vẫn phải tự bật “Nhắc qua email”
+trong trang **Nhắc việc**; mặc định không gửi email.
+
+| Key | Giá trị gợi ý |
+| --- | --- |
+| `Smtp__Host` | Host SMTP của nhà cung cấp email |
+| `Smtp__Port` | `587` |
+| `Smtp__EnableSsl` | `true` |
+| `Smtp__Username` | Tài khoản SMTP |
+| `Smtp__Password` | Mật khẩu/app password, lưu bằng Secret |
+| `Smtp__FromAddress` | Địa chỉ người gửi đã được xác minh |
+| `Smtp__FromName` | `HomePlant` |
+| `Notifications__ScanIntervalMinutes` | `5` |
+
+Render Free có thể sleep khi không có traffic. Trong thời gian instance ngủ, email
+có thể được gửi trễ tới khi dịch vụ thức lại; lời nhắc trong ứng dụng vẫn được đồng
+bộ ngay khi người dùng mở trang. Nếu cần SLA gửi đúng phút, chuyển reminder worker
+sang Render Background Worker/Cron Job luôn hoạt động.
+
 `PORT` do Render cung cấp; không cần tự điền. Với domain mặc định, không cần đặt
 `App__PublicBaseUrl`: ứng dụng tự dùng `RENDER_EXTERNAL_URL` do Render cung cấp.
 Nếu dùng custom domain, đặt `App__PublicBaseUrl=https://your-domain.example` và

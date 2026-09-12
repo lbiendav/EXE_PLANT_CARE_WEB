@@ -9,9 +9,16 @@ public class AdminOnlyAttribute : ActionFilterAttribute
     {
         var role = context.HttpContext.Session.GetString("Role");
 
-        if (!string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (context.HttpContext.Session.GetString("Uid") == null)
         {
             context.Result = new RedirectToActionResult("Login", "Account", null);
+        }
+        else
+        {
+            context.Result = new RedirectToActionResult("AccessDenied", "Account", null);
         }
     }
 }

@@ -41,7 +41,8 @@
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <img src="@(string.IsNullOrEmpty(user.AvatarUrl) ? "https://i.pravatar.cc/150" : user.AvatarUrl)"
-                                     class="avatar-sm" />
+                                     class="avatar-sm"
+                                     alt="Ảnh đại diện của @user.FullName" />
                                 <span class="fw-semibold">@user.FullName</span>
                             </div>
                         </td>
@@ -66,7 +67,11 @@
                         </td>
 
                         <td>
-                            @if (!user.IsLocked)
+                            @if (user.Id == Context.Session.GetString("Uid"))
+                            {
+                                <span class="text-muted small">Tài khoản hiện tại</span>
+                            }
+                            else if (!user.IsLocked)
                             {
 <form asp-action="Ban" asp-route-id="@user.Id" method="post" class="d-inline" onsubmit="return confirm('Khóa tài khoản này?');">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Khóa</button>

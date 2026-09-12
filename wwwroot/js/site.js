@@ -89,3 +89,44 @@
             }, true);
         });
 })();
+
+(() => {
+    const link = document.querySelector("[data-notification-endpoint]");
+    if (!link) return;
+
+    const badge = link.querySelector(".notification-count");
+    const endpoint = link.dataset.notificationEndpoint;
+
+    async function refreshNotifications() {
+        try {
+            const response = await fetch(endpoint, {
+                credentials: "same-origin",
+                headers: { "Accept": "application/json" }
+            });
+            if (!response.ok) return;
+
+            const result = await response.json();
+            const count = Number(result.count) || 0;
+            badge.textContent = count > 99 ? "99+" : String(count);
+            badge.classList.toggle("d-none", count === 0);
+            badge.setAttribute("aria-label", `${count} thông báo chưa đọc`);
+
+            if (result.latest && "Notification" in window && Notification.permission === "granted") {
+                const storageKey = "homeplant-last-browser-notification";
+                if (sessionStorage.getItem(storageKey) !== result.latest.id) {
+                    new Notification(result.latest.title, {
+                        body: result.latest.message,
+                        icon: "/favicon.ico",
+                        tag: result.latest.id
+                    });
+                    sessionStorage.setItem(storageKey, result.latest.id);
+                }
+            }
+        } catch {
+            // A reminder polling failure must not affect the rest of the page.
+        }
+    }
+
+    refreshNotifications();
+    window.setInterval(refreshNotifications, 60_000);
+})();

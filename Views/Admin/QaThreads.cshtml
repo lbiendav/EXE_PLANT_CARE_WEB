@@ -21,14 +21,15 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h6 class="fw-bold mb-0">@thread.Title</h6>
-                        <span class="badge bg-@(thread.Status == "processing" ? "warning" : "success")">
-                            @thread.Status
+                        <span class="badge bg-@(thread.Status == "processing" ? "warning" : thread.Status == "resolved" ? "success" : "secondary")">
+                            @(thread.Status switch { "processing" => "Đang xử lý", "resolved" => "Đã hoàn tất", _ => "Chờ xử lý" })
                         </span>
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <img src="@(string.IsNullOrEmpty(thread.UserAvatar) ? "https://i.pravatar.cc/150" : thread.UserAvatar)"
-                             class="thread-avatar" />
+                             class="thread-avatar"
+                             alt="Ảnh đại diện của @thread.UserName" />
                         <small class="text-muted">@thread.UserName hỏi</small>
                     </div>
 
@@ -43,9 +44,23 @@
                         @thread.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")
                     </small>
 
-<form asp-action="DeleteQaThread" asp-route-id="@thread.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa chủ đề hỏi đáp này?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
-                                </form>
+                    <div class="d-flex flex-wrap gap-2">
+                        @if (thread.Status != "processing")
+                        {
+                            <form asp-action="UpdateQaThreadStatus" asp-route-id="@thread.Id" asp-route-status="processing" method="post" class="flex-fill">
+                                <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Nhận xử lý</button>
+                            </form>
+                        }
+                        @if (thread.Status != "resolved")
+                        {
+                            <form asp-action="UpdateQaThreadStatus" asp-route-id="@thread.Id" asp-route-status="resolved" method="post" class="flex-fill">
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100">Hoàn tất</button>
+                            </form>
+                        }
+                        <form asp-action="DeleteQaThread" asp-route-id="@thread.Id" method="post" class="flex-fill" onsubmit="return confirm('Xóa vĩnh viễn chủ đề hỏi đáp này?');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

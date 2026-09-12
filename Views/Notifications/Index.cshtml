@@ -1,0 +1,116 @@
+@using HomePlant.Models
+@model List<CareNotificationModel>
+
+@{
+    ViewData["Title"] = "Nhắc việc chăm cây";
+    var unreadCount = Model.Count(notification => !notification.IsRead);
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Lịch chăm sóc</span>
+        <h1 class="mb-0">Nhắc việc của bạn</h1>
+        <p class="text-muted mb-0 mt-2">HomePlant nhắc khi đến lịch tưới, bón phân hoặc thay chậu.</p>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-success" id="enableBrowserNotifications">
+            Bật thông báo trình duyệt
+        </button>
+        @if (unreadCount > 0)
+        {
+            <form asp-action="MarkAllRead" method="post">
+                <button type="submit" class="btn btn-success">Đánh dấu đã đọc</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div id="notificationPermissionMessage" class="alert alert-warning d-none" role="status"></div>
+
+<div class="card mb-4">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h5 class="mb-1">Nhắc qua email</h5>
+            <p class="text-muted small mb-0">
+                @if ((bool)ViewBag.EmailAvailable)
+                {
+                    <text>Gửi lời nhắc tới email tài khoản khi đến hạn.</text>
+                }
+                else
+                {
+                    <text>Quản trị viên chưa cấu hình SMTP; lời nhắc trong web vẫn hoạt động.</text>
+                }
+            </p>
+        </div>
+        <form asp-action="Preferences" method="post" class="d-flex align-items-center gap-2">
+            <input type="hidden" name="emailEnabled" value="@(!(bool)ViewBag.EmailEnabled).ToString().ToLowerInvariant()" />
+            <button type="submit"
+                    class="btn @((bool)ViewBag.EmailEnabled ? "btn-outline-danger" : "btn-outline-success")"
+                    disabled="@(!(bool)ViewBag.EmailAvailable ? "disabled" : null)">
+                @((bool)ViewBag.EmailEnabled ? "Tắt email" : "Bật email")
+            </button>
+        </form>
+    </div>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-garden text-center py-5 px-4">
+        <span class="kicker d-block mb-3">Mọi việc đã ổn</span>
+        <h3>Chưa có lời nhắc nào</h3>
+        <p class="text-muted mb-0">Thiết lập tần suất chăm sóc trong phần Sửa cây để HomePlant nhắc bạn đúng lúc.</p>
+    </div>
+}
+else
+{
+    <div class="notification-list">
+        @foreach (var notification in Model)
+        {
+            <article class="notification-item @(!notification.IsRead ? "is-unread" : "")">
+                <div class="notification-dot" aria-hidden="true"></div>
+                <div class="flex-grow-1">
+                    <div class="d-flex flex-wrap justify-content-between gap-2">
+                        <h5 class="mb-1">@notification.Title</h5>
+                        <time class="text-muted small">
+                            @notification.DueAt.ToDateTime().ToUniversalTime().AddHours(7).ToString("dd/MM/yyyy HH:mm")
+                        </time>
+                    </div>
+                    <p class="text-muted mb-3">@notification.Message</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Plant"
+                           asp-action="Details"
+                           asp-route-id="@notification.PlantId"
+                           class="btn btn-outline-success btn-sm">Xem cây</a>
+                        @if (!notification.IsRead)
+                        {
+                            <form asp-action="MarkRead" method="post">
+                                <input type="hidden" name="id" value="@notification.Id" />
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">Đã đọc</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.getElementById("enableBrowserNotifications")?.addEventListener("click", async function () {
+            var message = document.getElementById("notificationPermissionMessage");
+            if (!("Notification" in window)) {
+                message.textContent = "Trình duyệt này chưa hỗ trợ thông báo hệ thống.";
+                message.classList.remove("d-none");
+                return;
+            }
+
+            var permission = await Notification.requestPermission();
+            message.textContent = permission === "granted"
+                ? "Đã bật. HomePlant sẽ hiện thông báo khi trang web đang mở; email vẫn được gửi nếu hệ thống đã cấu hình SMTP."
+                : "Bạn chưa cấp quyền thông báo. Lời nhắc vẫn luôn có trong mục Nhắc việc.";
+            message.classList.remove("d-none");
+        });
+    </script>
+}

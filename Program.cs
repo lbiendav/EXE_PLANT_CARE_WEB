@@ -3,6 +3,7 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using HomePlant.Services;
 using Microsoft.Extensions.FileProviders;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,19 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHttpClient();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 
 var credentialPath = builder.Configuration["Firebase:CredentialPath"];
 var firebaseJson = builder.Configuration["FIREBASE_KEY"];
@@ -99,6 +113,9 @@ builder.Services.AddScoped<ImageStorageService>();
 builder.Services.AddScoped<CommunityPostService>();
 builder.Services.AddScoped<QaThreadService>();
 builder.Services.AddScoped<AiDiagnosisService>();
+builder.Services.AddScoped<EmailNotificationService>();
+builder.Services.AddScoped<CareReminderService>();
+builder.Services.AddHostedService<CareReminderBackgroundService>();
 
 var app = builder.Build();
 
@@ -132,6 +149,8 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseSession();
 

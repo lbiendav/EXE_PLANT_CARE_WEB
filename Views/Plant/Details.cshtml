@@ -3,7 +3,10 @@
 
 @{
     ViewData["Title"] = Model.CustomName;
-    var template = ViewBag.Template as PlantTemplateModel;
+    var species = ViewBag.Species as HomePlant.ViewModels.PlantSpeciesVM;
+    var now = Google.Cloud.Firestore.Timestamp.GetCurrentTimestamp();
+    string FormatDate(Google.Cloud.Firestore.Timestamp? value) =>
+        value.HasValue ? value.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm") : "Chưa thiết lập";
 }
 
 <style>
@@ -32,27 +35,27 @@
             <span class="status-pill bg-@Model.StatusColorClass">@Model.DisplayStatus</span>
         </div>
 
-        @if (template != null)
+        @if (species != null)
         {
             <div class="card mt-3">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-1">@template.Name</h5>
-                    <p class="text-muted fst-italic mb-2">@template.ScientificName</p>
-                    <p class="text-muted mb-3">@template.Description</p>
+                    <h5 class="fw-bold mb-1">@species.Name</h5>
+                    <p class="text-muted fst-italic mb-2">@species.ScientificName</p>
+                    <p class="text-muted mb-3">@species.Description</p>
 
-                    @if (template.CareInstructions != null)
+                    @if (species.Care != null)
                     {
                         <div class="field-row">
                             <span class="field-label">Ánh sáng</span>
-                            <span class="field-value">@template.CareInstructions.Light</span>
+                            <span class="field-value">@species.Care.Light</span>
                         </div>
                         <div class="field-row">
                             <span class="field-label">Nước</span>
-                            <span class="field-value">@template.CareInstructions.Water</span>
+                            <span class="field-value">@species.Care.Water</span>
                         </div>
                         <div class="field-row">
                             <span class="field-label">Đất</span>
-                            <span class="field-value">@template.CareInstructions.Soil</span>
+                            <span class="field-value">@species.Care.Soil</span>
                         </div>
                     }
                 </div>
@@ -70,30 +73,12 @@
                 <h6 class="kicker mb-3">Thông tin chung</h6>
 
                 <div class="field-row">
-                    <span class="field-label">Mã cây (Plant ID)</span>
-                    <span class="field-value">@Model.PlantId</span>
+                    <span class="field-label">Loài cây</span>
+                    <span class="field-value">@(species?.Name ?? "Chưa xác định")</span>
                 </div>
                 <div class="field-row">
-                    <span class="field-label">Mã tài liệu Firestore</span>
-                    <span class="field-value">@Model.Id</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Mã loại cây (Template ID)</span>
-                    <span class="field-value">@Model.TemplateId</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Trạng thái</span>
-                    <span class="field-value">
-                        <span class="badge bg-@Model.StatusColorClass">@Model.DisplayStatus</span>
-                    </span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Ngày tạo</span>
-                    <span class="field-value">@Model.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Ngày trồng</span>
-                    <span class="field-value">@Model.PlantedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                    <span class="field-label">Bắt đầu chăm từ</span>
+                    <span class="field-value">@Model.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span>
                 </div>
             </div>
         </div>
@@ -102,35 +87,29 @@
             <div class="card-body p-4">
                 <h6 class="kicker mb-3">Lịch chăm sóc</h6>
 
-                <div class="field-row">
-                    <span class="field-label">Tưới nước gần nhất</span>
-                    <span class="field-value">
-                        @(Model.LastWatered.HasValue ? Model.LastWatered.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
-                    </span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Tần suất tưới nước</span>
-                    <span class="field-value">@(Model.WateringFrequency.HasValue ? $"{Model.WateringFrequency} ngày/lần" : "Chưa thiết lập")</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Bón phân gần nhất</span>
-                    <span class="field-value">
-                        @(Model.LastFertilized.HasValue ? Model.LastFertilized.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
-                    </span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Tần suất bón phân</span>
-                    <span class="field-value">@(Model.FertilizingFrequency.HasValue ? $"{Model.FertilizingFrequency} ngày/lần" : "Chưa thiết lập")</span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Thay chậu gần nhất</span>
-                    <span class="field-value">
-                        @(Model.LastRepotted.HasValue ? Model.LastRepotted.Value.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Chưa có")
-                    </span>
-                </div>
-                <div class="field-row">
-                    <span class="field-label">Tần suất thay chậu</span>
-                    <span class="field-value">@(Model.RepottingFrequency.HasValue ? $"{Model.RepottingFrequency} ngày/lần" : "Chưa thiết lập")</span>
+                <div class="care-grid">
+                    @foreach (var task in new[]
+                    {
+                        new { Type = "Watering", Label = "Tưới nước", Last = Model.LastWatered, Next = Model.NextWateringAt, Frequency = Model.WateringFrequency },
+                        new { Type = "Fertilizing", Label = "Bón phân", Last = Model.LastFertilized, Next = Model.NextFertilizingAt, Frequency = Model.FertilizingFrequency },
+                        new { Type = "Repotting", Label = "Thay chậu", Last = Model.LastRepotted, Next = Model.NextRepottingAt, Frequency = Model.RepottingFrequency }
+                    })
+                    {
+                        var isDue = task.Next.HasValue && task.Next.Value <= now;
+                        <div class="care-task @(isDue ? "is-due" : "")">
+                            <div class="care-task-label">@task.Label</div>
+                            <div class="care-task-date">@(isDue ? "Đã đến hạn · " : "")@FormatDate(task.Next)</div>
+                            <div class="text-muted small mb-3">
+                                @(task.Frequency.HasValue ? $"Mỗi {task.Frequency} ngày" : "Chưa đặt tần suất")
+                                <br />Lần gần nhất: @(task.Last.HasValue ? task.Last.Value.ToDateTime().AddHours(7).ToString("dd/MM/yyyy") : "Chưa ghi nhận")
+                            </div>
+                            <form asp-controller="CareLog" asp-action="QuickCreate" method="post">
+                                <input type="hidden" name="plantId" value="@Model.Id" />
+                                <input type="hidden" name="actionType" value="@task.Type" />
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100">Đã @task.Label.ToLowerInvariant()</button>
+                            </form>
+                        </div>
+                    }
                 </div>
             </div>
         </div>

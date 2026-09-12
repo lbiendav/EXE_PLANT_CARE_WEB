@@ -47,6 +47,15 @@ public class UserPlantModel
     [FirestoreProperty("repottingFrequency")]
     public int? RepottingFrequency { get; set; }
 
+    [FirestoreProperty("nextWateringAt")]
+    public Timestamp? NextWateringAt { get; set; }
+
+    [FirestoreProperty("nextFertilizingAt")]
+    public Timestamp? NextFertilizingAt { get; set; }
+
+    [FirestoreProperty("nextRepottingAt")]
+    public Timestamp? NextRepottingAt { get; set; }
+
     public string DisplayStatus => Status switch
     {
         "healthy" => "Khỏe mạnh",

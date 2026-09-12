@@ -21,6 +21,17 @@
     </a>
 </div>
 
+@if (Model.Count == 0)
+{
+    <div class="empty-garden text-center py-5 px-4">
+        <span class="kicker d-block mb-3">Chưa có hoạt động</span>
+        <h3>Bắt đầu cuốn nhật ký chăm cây</h3>
+        <p class="text-muted">Ghi lần tưới, bón phân hoặc thay chậu đầu tiên để lịch nhắc tự cập nhật.</p>
+        <a asp-action="Create" asp-route-plantId="@ViewBag.PlantId" class="btn btn-success mt-2">Ghi nhật ký đầu tiên</a>
+    </div>
+}
+else
+{
 <div class="card">
     <div class="table-responsive">
         <table class="table align-middle mb-0">
@@ -40,11 +51,18 @@
                 {
                     <tr>
 
-                        <td>@item.ActionType</td>
+                        <td>@(item.ActionType switch
+                            {
+                                "Watering" => "Tưới nước",
+                                "Fertilizing" => "Bón phân",
+                                "Repotting" => "Thay chậu",
+                                "Observation" => "Quan sát",
+                                _ => item.ActionType
+                            })</td>
 
                         <td>@item.Note</td>
 
-                        <td class="text-muted">@item.CreatedAt</td>
+                        <td class="text-muted">@item.CreatedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm")</td>
 
                         <td class="text-end">
 <form asp-action="Delete" asp-route-plantId="@ViewBag.PlantId" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Xóa bản ghi này?');">
@@ -60,3 +78,4 @@
         </table>
     </div>
 </div>
+}

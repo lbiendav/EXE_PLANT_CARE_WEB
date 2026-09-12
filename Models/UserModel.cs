@@ -31,4 +31,7 @@ public class UserModel
 
     [FirestoreProperty("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [FirestoreProperty("emailCareReminders")]
+    public bool EmailCareReminders { get; set; }
 }
