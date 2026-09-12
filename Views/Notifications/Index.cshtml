@@ -35,22 +35,30 @@
             <p class="text-muted small mb-0">
                 @if ((bool)ViewBag.EmailAvailable)
                 {
-                    <text>Gửi lời nhắc tới email tài khoản khi đến hạn.</text>
+                    <text>@((bool)ViewBag.EmailEnabled ? "Đang bật" : "Đang tắt") · Gửi lời nhắc tới @ViewBag.EmailAddress khi đến lịch tưới nước, bón phân hoặc thay chậu.</text>
                 }
                 else
                 {
-                    <text>Quản trị viên chưa cấu hình SMTP; lời nhắc trong web vẫn hoạt động.</text>
+                    <text>Email tạm thời chưa sẵn sàng. Bạn vẫn có thể xem lời nhắc tại đây.</text>
                 }
             </p>
         </div>
+        <div class="d-flex flex-wrap gap-2">
         <form asp-action="Preferences" method="post" class="d-flex align-items-center gap-2">
-            <input type="hidden" name="emailEnabled" value="@(!(bool)ViewBag.EmailEnabled).ToString().ToLowerInvariant()" />
+            <input type="hidden" name="emailEnabled" value="@((!(bool)ViewBag.EmailEnabled).ToString().ToLowerInvariant())" />
             <button type="submit"
                     class="btn @((bool)ViewBag.EmailEnabled ? "btn-outline-danger" : "btn-outline-success")"
-                    disabled="@(!(bool)ViewBag.EmailAvailable ? "disabled" : null)">
+                    disabled="@(!(bool)ViewBag.EmailAvailable && !(bool)ViewBag.EmailEnabled ? "disabled" : null)">
                 @((bool)ViewBag.EmailEnabled ? "Tắt email" : "Bật email")
             </button>
         </form>
+        @if ((bool)ViewBag.EmailAvailable)
+        {
+            <form asp-action="TestEmail" method="post">
+                <button type="submit" class="btn btn-outline-secondary">Gửi email kiểm tra</button>
+            </form>
+        }
+        </div>
     </div>
 </div>
 

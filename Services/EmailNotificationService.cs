@@ -18,7 +18,10 @@ public sealed class EmailNotificationService
 
     public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(_configuration["Smtp:Host"]) &&
-        !string.IsNullOrWhiteSpace(_configuration["Smtp:FromAddress"]);
+        MailAddress.TryCreate(_configuration["Smtp:FromAddress"], out _) &&
+        (!int.TryParse(_configuration["Smtp:Port"] ?? "587", out var port) ? false : port is > 0 and <= 65535) &&
+        (string.IsNullOrWhiteSpace(_configuration["Smtp:Username"]) ||
+         !string.IsNullOrWhiteSpace(_configuration["Smtp:Password"]));
 
     public async Task<bool> SendCareReminder(
         string recipient,
@@ -26,7 +29,7 @@ public sealed class EmailNotificationService
         string message,
         CancellationToken cancellationToken)
     {
-        if (!IsConfigured || string.IsNullOrWhiteSpace(recipient))
+        if (!IsConfigured || !MailAddress.TryCreate(recipient, out _))
             return false;
 
         try
@@ -47,7 +50,14 @@ public sealed class EmailNotificationService
                     _configuration["Smtp:FromAddress"]!,
                     _configuration["Smtp:FromName"] ?? "HomePlant"),
                 Subject = subject,
-                Body = $"{message}\n\nMở HomePlant để xem và ghi lại hoạt động chăm sóc: {publicBaseUrl}/Notifications",
+                Body = $"{message}\n\n" +
+                    (Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var baseUri) &&
+                     (baseUri.Scheme == "https" || baseUri.Scheme == "http")
+                        ? $"Mở HomePlant để xem và ghi lại hoạt động chăm sóc: {publicBaseUrl}/Notifications"
+                        : "Mở HomePlant, vào mục Nhắc việc để xem lịch chăm sóc.") +
+                    "\n\nBạn có thể tắt email bất cứ lúc nào tại mục Nhắc việc trong HomePlant.",
+                BodyEncoding = System.Text.Encoding.UTF8,
+                SubjectEncoding = System.Text.Encoding.UTF8,
                 IsBodyHtml = false
             };
             mail.To.Add(recipient);
@@ -60,7 +70,17 @@ public sealed class EmailNotificationService
             if (!string.IsNullOrWhiteSpace(username))
                 smtp.Credentials = new NetworkCredential(username, password);
 
-            await smtp.SendMailAsync(mail).WaitAsync(cancellationToken);
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(30));
+            try
+            {
+                await smtp.SendMailAsync(mail, timeout.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("Care reminder email delivery timed out.");
+                return false;
+            }
             return true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

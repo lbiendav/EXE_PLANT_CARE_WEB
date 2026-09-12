@@ -24,6 +24,7 @@ public class NotificationsController : Controller
             HttpContext.RequestAborted);
         ViewBag.EmailEnabled = await _reminders.GetEmailPreference(uid, HttpContext.RequestAborted);
         ViewBag.EmailAvailable = _reminders.EmailDeliveryAvailable;
+        ViewBag.EmailAddress = HttpContext.Session.GetString("Email");
         return View(await _reminders.GetAll(uid, HttpContext.RequestAborted));
     }
 
@@ -63,10 +64,27 @@ public class NotificationsController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
+        if (emailEnabled && !_reminders.EmailDeliveryAvailable)
+        {
+            TempData["Warning"] = "Email chưa sẵn sàng. Vui lòng thử lại sau.";
+            return RedirectToAction(nameof(Index));
+        }
+
         await _reminders.SetEmailPreference(uid, emailEnabled, HttpContext.RequestAborted);
         TempData["Success"] = emailEnabled
             ? "Đã bật nhắc việc qua email."
             : "Đã tắt nhắc việc qua email.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> TestEmail()
+    {
+        var uid = HttpContext.Session.GetString("Uid");
+        if (uid == null)
+            return RedirectToAction("Login", "Account");
+
+        TempData["Warning"] = await _reminders.SendTestEmail(uid, HttpContext.RequestAborted);
         return RedirectToAction(nameof(Index));
     }
 

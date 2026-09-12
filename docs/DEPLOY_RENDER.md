@@ -248,6 +248,24 @@ trong trang **Nhắc việc**; mặc định không gửi email.
 | `Smtp__FromName` | `HomePlant` |
 | `Notifications__ScanIntervalMinutes` | `5` |
 
+Sau khi lưu cấu hình và khởi động lại ứng dụng, mở **Nhắc việc**:
+
+1. Bấm **Gửi email kiểm tra**, kiểm tra hộp thư đến và thư rác. Nút này chỉ gửi
+   tới email tài khoản đang đăng nhập, tối đa một lần mỗi 5 phút và không bật
+   nhắc việc tự động.
+2. Bấm **Bật email** để đăng ký nhận nhắc tưới nước, bón phân và thay chậu.
+3. Có thể **Tắt email** kể cả khi cấu hình gửi email đang gặp vấn đề.
+
+SMTP cần host, địa chỉ người gửi hợp lệ, cổng từ 1–65535 và mật khẩu nếu dùng
+username. Dùng STARTTLS (thường cổng 587); dịch vụ SMTP hiện tại không hỗ trợ
+implicit TLS trên cổng 465. Mỗi lần gửi có thời hạn 30 giây; gửi lỗi sẽ chờ
+10 phút trước khi thử lại. Lời nhắc đã gửi thành công không được gửi lại cho
+cùng lịch chăm sóc. Nếu tiến trình dừng sau khi SMTP nhận thư nhưng trước khi
+lưu trạng thái, lần thử lại vẫn có thể tạo thư trùng.
+
+Kiểm tra cục bộ không gửi email ra ngoài:
+`dotnet run --project Tests/EmailNotificationChecks`.
+
 Render Free có thể sleep khi không có traffic. Trong thời gian instance ngủ, email
 có thể được gửi trễ tới khi dịch vụ thức lại; lời nhắc trong ứng dụng vẫn được đồng
 bộ ngay khi người dùng mở trang. Nếu cần SLA gửi đúng phút, chuyển reminder worker

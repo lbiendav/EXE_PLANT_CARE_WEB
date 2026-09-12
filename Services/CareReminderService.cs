@@ -197,12 +197,47 @@ public sealed class CareReminderService
         _db.Collection("users").Document(uid)
             .UpdateAsync("emailCareReminders", enabled, cancellationToken: cancellationToken);
 
+    public async Task<string> SendTestEmail(string uid, CancellationToken cancellationToken = default)
+    {
+        if (!EmailDeliveryAvailable)
+            return "Email chưa sẵn sàng. Vui lòng thử lại sau.";
+
+        var reference = _db.Collection("users").Document(uid);
+        var now = Timestamp.GetCurrentTimestamp();
+        var recipient = await _db.RunTransactionAsync(async transaction =>
+        {
+            var user = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            if (!user.Exists || !user.TryGetValue<string>("email", out var address) ||
+                !System.Net.Mail.MailAddress.TryCreate(address, out _))
+                return null;
+            if (user.TryGetValue<Timestamp>("careEmailTestAt", out var lastTest) &&
+                now.ToDateTime() - lastTest.ToDateTime() < TimeSpan.FromMinutes(5))
+                return "";
+            transaction.Update(reference, "careEmailTestAt", now);
+            return address;
+        }, cancellationToken: cancellationToken);
+
+        if (recipient == null)
+            return "Tài khoản chưa có địa chỉ email hợp lệ.";
+        if (recipient.Length == 0)
+            return "Vui lòng chờ 5 phút giữa các lần gửi email kiểm tra.";
+
+        return await _email.SendCareReminder(recipient, "HomePlant · Email kiểm tra",
+            "Kết nối email của bạn hoạt động. Khi bật nhắc qua email, HomePlant sẽ gửi lời nhắc tưới nước, bón phân hoặc thay chậu khi đến lịch.",
+            cancellationToken)
+            ? "Đã gửi email kiểm tra. Hãy kiểm tra hộp thư đến và thư rác."
+            : "Chưa gửi được email kiểm tra. Vui lòng thử lại sau hoặc liên hệ quản trị viên.";
+    }
+
     private async Task CreateDueNotifications(
         string uid,
         string? email,
         UserPlantModel plant,
         CancellationToken cancellationToken)
     {
+        if (!_email.IsConfigured)
+            email = null;
+
         var now = Timestamp.GetCurrentTimestamp();
         var schedules = new[]
         {
@@ -270,10 +305,9 @@ public sealed class CareReminderService
             }
             else
             {
-                await reference.UpdateAsync(
-                    "emailClaimedAt",
-                    FieldValue.Delete,
-                    cancellationToken: cancellationToken);
+                // Retain the claim on failure: retry after ten minutes, including
+                // when the user polls the notification endpoint repeatedly.
+                _logger.LogWarning("Email delivery deferred for notification {NotificationId}.", notificationId);
             }
         }
     }
