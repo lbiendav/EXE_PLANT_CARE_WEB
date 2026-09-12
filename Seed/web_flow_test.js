@@ -77,7 +77,7 @@ async function run() {
     const speciesSnapshot=await db.collection("sample_plants").limit(2).get();
     if(speciesSnapshot.empty)throw Error("At least one sample plant is required");
     const createSpecies=speciesSnapshot.docs[0];
-    let plantId, plantCreatedAt, plantImageUrl;
+    let plantId, plantCreatedAt, plantImageUrl, reminderId;
     await check("create garden plant with uploaded image",async()=>{
         status(await user.upload("/Plant/Create",{Nickname:marker,PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh",WateringFrequency:"7",FertilizingFrequency:"30",RepottingFrequency:"365"},"Photo"),302);
         const s=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",marker).get();
@@ -98,6 +98,14 @@ async function run() {
             const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.equal(data.customName,marker+" edited");assert.equal(data.templateId,editTemplate.id);assert.equal(data.status,"warning");assert.ok(data.createdAt.isEqual(plantCreatedAt));
         });
+        await check("overdue schedule creates one notification",async()=>{
+            const plantRef=db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId);
+            await plantRef.update({nextWateringAt:Timestamp.fromMillis(Date.now()-60000)});
+            const response=await user.request("/Notifications/UnreadCount");status(response,200);
+            const reminders=await db.collection("users").doc(userAccount.uid).collection("notifications").where("plantId","==",plantId).get();
+            const watering=reminders.docs.filter(doc=>doc.data().careType==="Watering");
+            assert.equal(watering.length,1);assert.equal(watering[0].data().isRead,false);reminderId=watering[0].id;
+        });
         await check("care log form",async()=>status(await user.request("/CareLog/Create?plantId="+plantId),200));
         await check("add care log and enforce current user",async()=>{
             status(await user.post("/CareLog/Create?plantId="+plantId,{ActionType:"Watering",Note:marker,ImageUrl:"",UserId:adminAccount.uid}),302);
@@ -106,6 +114,7 @@ async function run() {
             const plant=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.ok(plant.lastWatered,"Watering did not update the plant summary");
             assert.ok(plant.nextWateringAt.toMillis()>plant.lastWatered.toMillis(),"Watering did not advance the reminder");
+            assert.equal((await db.collection("users").doc(userAccount.uid).collection("notifications").doc(reminderId).get()).data().isRead,true,"Care action did not close its reminder");
         });
         await check("care log list",async()=>status(await user.request("/CareLog/Index?plantId="+plantId),200));
         await check("other account cannot read care logs",async()=>status(await admin.request("/CareLog/Index?plantId="+plantId),404));
@@ -124,6 +133,7 @@ async function run() {
             status(await user.post("/Plant/Delete/"+plantId,{},"/Plant/Index"),302);
             assert.equal((await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).exists,false);
             assert.equal((await db.collection("plants").doc(plantId).collection("careLogs").get()).size,0,"Orphaned care logs after plant deletion");
+            assert.equal((await db.collection("users").doc(userAccount.uid).collection("notifications").where("plantId","==",plantId).get()).size,0,"Orphaned reminders after plant deletion");
             if(plantImageUrl.startsWith("/Image/")){
                 const imageId=plantImageUrl.slice("/Image/".length);
                 assert.equal((await db.collection("uploaded_images").doc(imageId).get()).exists,false,"Orphaned image metadata after plant deletion");

@@ -57,6 +57,20 @@ public class UserPlantService
             foreach (var doc in page.Documents) batch.Delete(doc.Reference);
             await batch.CommitAsync();
         }
+
+        var notifications = _db.Collection("users")
+            .Document(uid)
+            .Collection("notifications")
+            .WhereEqualTo("plantId", id);
+        while (true)
+        {
+            var page = await notifications.Limit(100).GetSnapshotAsync();
+            if (page.Count == 0) break;
+            var batch = _db.StartBatch();
+            foreach (var doc in page.Documents) batch.Delete(doc.Reference);
+            await batch.CommitAsync();
+        }
+
         await Collection(uid).Document(id).DeleteAsync();
     }
 
