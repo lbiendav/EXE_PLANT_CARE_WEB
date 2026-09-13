@@ -334,7 +334,12 @@ public class AdminController : Controller
     [HttpPost]
     public async Task<IActionResult> DeleteAiDiagnosis(string id)
     {
+        var diagnosis = await _aiDiagnosisService.GetById(id);
+        if (diagnosis == null)
+            return NotFound();
+
         await _aiDiagnosisService.Delete(id);
+        await _imageStorage.Delete(diagnosis.UploadedImageUrl, CancellationToken.None);
 
         return RedirectToAction(nameof(AiDiagnoses));
     }

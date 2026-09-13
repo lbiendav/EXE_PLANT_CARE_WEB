@@ -49,6 +49,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
+
+    options.AddPolicy("ai", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 4,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
 });
 
 var credentialPath = builder.Configuration["Firebase:CredentialPath"];
@@ -113,6 +124,10 @@ builder.Services.AddScoped<ImageStorageService>();
 builder.Services.AddScoped<CommunityPostService>();
 builder.Services.AddScoped<QaThreadService>();
 builder.Services.AddScoped<AiDiagnosisService>();
+builder.Services.AddHttpClient<PlantExpertAiService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(45);
+});
 builder.Services.AddHttpClient<EmailNotificationService>()
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<CareReminderService>();

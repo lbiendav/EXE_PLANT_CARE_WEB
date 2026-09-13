@@ -1,0 +1,125 @@
+@model HomePlant.Models.AiDiagnosisModel
+
+@{
+    ViewData["Title"] = "Kết quả tư vấn";
+    var result = Model.Result ?? new HomePlant.Models.AiDiagnosisResultModel();
+    var confidence = Math.Round(Math.Clamp(result.Confidence, 0, 1) * 100);
+    var observations = result.Observations ?? new List<string>();
+    var immediateActions = result.ImmediateActions ?? new List<string>();
+    var sevenDayPlan = result.SevenDayPlan ?? new List<string>();
+    var warnings = result.Warnings ?? new List<string>();
+}
+
+<a asp-action="Index" class="back-link">← Chuyên gia</a>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Kết quả phân tích</span>
+        <h1 class="mb-2">@(string.IsNullOrWhiteSpace(result.DiseaseName) ? "Tư vấn chăm sóc cây" : result.DiseaseName)</h1>
+        <p class="text-muted mb-0">
+            @Model.PlantName · @Model.CreatedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm")
+        </p>
+    </div>
+    <div class="expert-confidence">
+        <small>Mức tin cậy</small>
+        <strong>@confidence%</strong>
+    </div>
+</div>
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-5">
+        @if (!string.IsNullOrWhiteSpace(Model.UploadedImageUrl))
+        {
+            <div class="detail-hero expert-result-image">
+                <img src="@Model.UploadedImageUrl" alt="Ảnh cây được gửi để phân tích" />
+            </div>
+        }
+
+        <div class="card mt-3">
+            <div class="card-body p-4">
+                <span class="kicker">Bạn đã hỏi</span>
+                <p class="mb-0">@Model.Question</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card mb-3 expert-answer-card">
+            <div class="card-body p-4">
+                <span class="kicker">Nhận định nhanh</span>
+                <p class="lead mb-3">@result.Summary</p>
+                @if (!string.IsNullOrWhiteSpace(result.Cause))
+                {
+                    <p class="mb-0"><strong>Nguyên nhân có thể:</strong> @result.Cause</p>
+                }
+            </div>
+        </div>
+
+        @if (observations.Count > 0)
+        {
+            <div class="card mb-3">
+                <div class="card-body p-4">
+                    <h6 class="kicker">Dấu hiệu quan sát được</h6>
+                    <ul class="expert-answer-list mb-0">
+                        @foreach (var item in observations) { <li>@item</li> }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <div class="card mb-3">
+            <div class="card-body p-4">
+                <h6 class="kicker">Việc nên làm ngay</h6>
+                @if (immediateActions.Count > 0)
+                {
+                    <ul class="expert-answer-list mb-3">
+                        @foreach (var item in immediateActions) { <li>@item</li> }
+                    </ul>
+                }
+                <p class="mb-0">@result.Treatment</p>
+            </div>
+        </div>
+
+        @if (sevenDayPlan.Count > 0)
+        {
+            <div class="card mb-3">
+                <div class="card-body p-4">
+                    <h6 class="kicker">Kế hoạch 7 ngày</h6>
+                    <ol class="expert-answer-list mb-0">
+                        @foreach (var item in sevenDayPlan) { <li>@item</li> }
+                    </ol>
+                </div>
+            </div>
+        }
+
+        @if (result.NeedsMoreInfo || !string.IsNullOrWhiteSpace(result.FollowUpQuestion))
+        {
+            <div class="alert alert-warning">
+                <strong>AI cần thêm thông tin.</strong>
+                @if (!string.IsNullOrWhiteSpace(result.FollowUpQuestion))
+                {
+                    <span>@result.FollowUpQuestion</span>
+                }
+            </div>
+        }
+
+        @if (warnings.Count > 0)
+        {
+            <div class="expert-warning mb-3">
+                <strong>Lưu ý an toàn</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach (var item in warnings) { <li>@item</li> }
+                </ul>
+            </div>
+        }
+
+        <p class="expert-privacy-note">Kết quả do AI tạo từ ảnh và thông tin bạn cung cấp, chỉ mang tính tham khảo.</p>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" asp-route-plantId="@Model.PlantId" class="btn btn-success">Đặt câu hỏi mới</a>
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Xóa phiên tư vấn và ảnh liên quan?');">
+                <button type="submit" class="btn btn-outline-danger">Xóa phiên này</button>
+            </form>
+        </div>
+    </div>
+</div>

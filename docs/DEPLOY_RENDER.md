@@ -232,6 +232,12 @@ vào commit để xử lý lỗi authentication.
 | `GOOGLE_APPLICATION_CREDENTIALS` | `/etc/secrets/firebase-key.json` | Đường dẫn secret file ở bước tiếp theo |
 | `Firebase__ProjectId` | Project ID Firebase thử nghiệm | Cùng project với service account và API key |
 | `Firebase__ApiKey` | Firebase Web API Key | Không phải JSON private key |
+| `GEMINI_API_KEY` | Gemini API key từ Google AI Studio | Secret dùng cho mục Chuyên gia; không commit vào Git |
+| `Gemini__Model` | `gemini-2.5-flash-lite` | Model đa phương thức có Free Tier; có thể đổi qua cấu hình |
+
+Gemini Free Tier phù hợp để thử nghiệm và có giới hạn theo project. Ảnh/câu hỏi
+ở tầng miễn phí có thể được Google dùng để cải thiện sản phẩm; giao diện Chuyên gia
+phải thông báo điều này cho người dùng trước khi gửi ảnh.
 
 Thông báo trong web hoạt động không cần dịch vụ ngoài. Email nhắc chăm cây trên
 Render Free dùng **Brevo API qua HTTPS**, mặc định trong code. Render Free chặn

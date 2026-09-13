@@ -181,6 +181,7 @@
 
         <div class="d-flex flex-wrap gap-2">
             <a asp-action="Edit" asp-route-id="@plant.Id" class="btn btn-success">Sửa thông tin cây</a>
+            <a asp-controller="Expert" asp-action="Index" asp-route-plantId="@plant.Id" class="btn btn-outline-success">Hỏi chuyên gia AI</a>
         </div>
     </div>
 </div>

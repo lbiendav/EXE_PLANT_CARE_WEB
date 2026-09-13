@@ -1,0 +1,162 @@
+@model HomePlant.ViewModels.ExpertIndexVM
+
+@{
+    ViewData["Title"] = "Chuyên gia cây xanh";
+}
+
+<div class="expert-heading mb-5">
+    <div>
+        <span class="kicker">Trợ lý sức khỏe cây</span>
+        <h1 class="mb-2">Hỏi <em>Chuyên gia AI</em></h1>
+        <p class="text-muted mb-0">Gửi một ảnh rõ nét cùng triệu chứng để nhận hướng chăm sóc phù hợp.</p>
+    </div>
+</div>
+
+@if (!Model.IsAiConfigured)
+{
+    <div class="alert alert-warning" role="alert">
+        Tính năng đang chờ cấu hình <code>GEMINI_API_KEY</code>. Quản trị viên cần thêm khóa Gemini API vào biến môi trường máy chủ.
+    </div>
+}
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-7">
+        <div class="card expert-form-card">
+            <div class="card-body p-4 p-lg-5">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <form asp-action="Ask" method="post" enctype="multipart/form-data" id="expertForm">
+                    <div class="mb-4">
+                        <label asp-for="PlantId" class="form-label"></label>
+                        <select asp-for="PlantId" asp-items="Model.PlantOptions" class="form-select">
+                            <option value="">Cây chưa có trong vườn</option>
+                        </select>
+                        <div class="form-text">Chọn cây để AI tham khảo trạng thái và lịch sử chăm sóc gần đây.</div>
+                        <span asp-validation-for="PlantId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Photo" class="form-label"></label>
+                        <label class="expert-upload" for="Photo">
+                            <img id="photoPreview" alt="Xem trước ảnh cây" hidden />
+                            <span id="uploadPrompt">
+                                <strong>Chọn ảnh cây</strong>
+                                <small>JPEG, PNG hoặc WebP · tối đa 10 MB</small>
+                            </span>
+                        </label>
+                        <input asp-for="Photo" class="visually-hidden" accept="image/jpeg,image/png,image/webp" />
+                        <span asp-validation-for="Photo" class="text-danger small d-block mt-2"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Question" class="form-label"></label>
+                        <textarea asp-for="Question" class="form-control" rows="5"
+                                  placeholder="Ví dụ: Lá cây vàng từ dưới lên trong một tuần, tôi đang tưới hai lần mỗi tuần..."></textarea>
+                        <span asp-validation-for="Question" class="text-danger small"></span>
+                    </div>
+
+                    <div class="expert-suggestions mb-4" aria-label="Gợi ý câu hỏi">
+                        <button type="button" data-suggestion="Lá cây chuyển vàng và rụng dần, nguyên nhân có thể là gì?">Lá vàng</button>
+                        <button type="button" data-suggestion="Lá cây xuất hiện các đốm bất thường. Tôi nên xử lý thế nào?">Đốm lá</button>
+                        <button type="button" data-suggestion="Cây đang héo dù tôi vẫn tưới nước. Hãy giúp tôi kiểm tra nguyên nhân.">Cây héo</button>
+                        <button type="button" data-suggestion="Tôi thấy dấu hiệu có sâu hoặc côn trùng trên cây. Tôi nên làm gì?">Có sâu</button>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input asp-for="ConsentToAiProcessing" class="form-check-input" />
+                        <label asp-for="ConsentToAiProcessing" class="form-check-label small">
+                            Tôi đồng ý gửi ảnh và câu hỏi tới Gemini để phân tích. Dữ liệu ở Free Tier có thể được Google dùng để cải thiện sản phẩm.
+                        </label>
+                        <span asp-validation-for="ConsentToAiProcessing" class="text-danger small d-block"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100" id="askButton" disabled="@(!Model.IsAiConfigured)">
+                        Phân tích cùng AI
+                    </button>
+                    <p class="expert-privacy-note mb-0 mt-3">
+                        Ảnh và nội dung được gửi đến Gemini để phân tích. Kết quả chỉ mang tính tham khảo và không thay thế chuyên gia thực vật tại chỗ.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="expert-tips mb-4">
+            <span class="kicker">Để kết quả tốt hơn</span>
+            <ol>
+                <li>Chụp đủ sáng, lấy nét vào vùng cây đang bất thường.</li>
+                <li>Mô tả thời gian xuất hiện và tần suất tưới gần đây.</li>
+                <li>Cho biết vị trí đặt cây nếu ánh sáng hoặc độ ẩm có thể liên quan.</li>
+            </ol>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-baseline mb-3">
+            <h5 class="mb-0">Lịch sử tư vấn</h5>
+            <small class="text-muted">@Model.History.Count phiên</small>
+        </div>
+
+        @if (Model.History.Count == 0)
+        {
+            <div class="card">
+                <div class="card-body p-4 text-center">
+                    <p class="text-muted mb-0">Chưa có phiên tư vấn nào.</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="expert-history">
+                @foreach (var item in Model.History)
+                {
+                    <a asp-action="Details" asp-route-id="@item.Id" class="expert-history-item">
+                        @if (!string.IsNullOrWhiteSpace(item.UploadedImageUrl))
+                        {
+                            <img src="@item.UploadedImageUrl" alt="Ảnh của phiên tư vấn" />
+                        }
+                        <span>
+                            <strong>@(item.Result?.DiseaseName ?? "Kết quả tư vấn")</strong>
+                            <small>@(string.IsNullOrWhiteSpace(item.PlantName) ? "Cây chưa xác định" : item.PlantName)</small>
+                            <time>@item.CreatedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy HH:mm")</time>
+                        </span>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const photo = document.getElementById('Photo');
+            const preview = document.getElementById('photoPreview');
+            const prompt = document.getElementById('uploadPrompt');
+            const question = document.getElementById('Question');
+            const form = document.getElementById('expertForm');
+            const button = document.getElementById('askButton');
+
+            photo?.addEventListener('change', () => {
+                const file = photo.files?.[0];
+                if (!file) return;
+                preview.src = URL.createObjectURL(file);
+                preview.hidden = false;
+                prompt.hidden = true;
+            });
+
+            document.querySelectorAll('[data-suggestion]').forEach(item => {
+                item.addEventListener('click', () => {
+                    question.value = item.dataset.suggestion;
+                    question.focus();
+                });
+            });
+
+            form?.addEventListener('submit', () => {
+                if (!form.checkValidity()) return;
+                button.disabled = true;
+                button.textContent = 'AI đang phân tích ảnh…';
+            });
+        })();
+    </script>
+}
