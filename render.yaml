@@ -31,4 +31,4 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: Gemini__Model
-        value: gemini-2.5-flash-lite
+        value: gemini-3.5-flash-lite

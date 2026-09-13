@@ -27,7 +27,7 @@ public sealed class PlantExpertAiService
     }
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(ApiKey);
-    public string Model => _configuration["Gemini:Model"] ?? "gemini-2.5-flash-lite";
+    public string Model => _configuration["Gemini:Model"] ?? "gemini-3.5-flash-lite";
 
     private string ApiKey =>
         _configuration["Gemini:ApiKey"] ??

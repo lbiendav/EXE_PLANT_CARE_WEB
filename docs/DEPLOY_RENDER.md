@@ -233,7 +233,7 @@ vào commit để xử lý lỗi authentication.
 | `Firebase__ProjectId` | Project ID Firebase thử nghiệm | Cùng project với service account và API key |
 | `Firebase__ApiKey` | Firebase Web API Key | Không phải JSON private key |
 | `GEMINI_API_KEY` | Gemini API key từ Google AI Studio | Secret dùng cho mục Chuyên gia; không commit vào Git |
-| `Gemini__Model` | `gemini-2.5-flash-lite` | Model đa phương thức có Free Tier; có thể đổi qua cấu hình |
+| `Gemini__Model` | `gemini-3.5-flash-lite` | Model đa phương thức có Free Tier; có thể đổi qua cấu hình |
 
 Gemini Free Tier phù hợp để thử nghiệm và có giới hạn theo project. Ảnh/câu hỏi
 ở tầng miễn phí có thể được Google dùng để cải thiện sản phẩm; giao diện Chuyên gia
