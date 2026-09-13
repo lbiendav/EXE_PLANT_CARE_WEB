@@ -113,7 +113,8 @@ builder.Services.AddScoped<ImageStorageService>();
 builder.Services.AddScoped<CommunityPostService>();
 builder.Services.AddScoped<QaThreadService>();
 builder.Services.AddScoped<AiDiagnosisService>();
-builder.Services.AddScoped<EmailNotificationService>();
+builder.Services.AddHttpClient<EmailNotificationService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<CareReminderService>();
 builder.Services.AddHostedService<CareReminderBackgroundService>();
 

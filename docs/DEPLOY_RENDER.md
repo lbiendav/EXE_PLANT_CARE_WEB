@@ -233,38 +233,44 @@ vào commit để xử lý lỗi authentication.
 | `Firebase__ProjectId` | Project ID Firebase thử nghiệm | Cùng project với service account và API key |
 | `Firebase__ApiKey` | Firebase Web API Key | Không phải JSON private key |
 
-Thông báo trong web hoạt động không cần dịch vụ ngoài. Để gửi thêm email nhắc chăm
-cây, cấu hình các biến sau trên Render. Người dùng vẫn phải tự bật “Nhắc qua email”
-trong trang **Nhắc việc**; mặc định không gửi email.
+Thông báo trong web hoạt động không cần dịch vụ ngoài. Email nhắc chăm cây trên
+Render Free dùng **Brevo API qua HTTPS**, mặc định trong code. Render Free chặn
+cổng SMTP 25/465/587 nên không dùng Gmail SMTP hoặc Brevo SMTP ở môi trường này.
 
-| Key | Giá trị gợi ý |
+| Key | Giá trị |
 | --- | --- |
-| `Smtp__Host` | Host SMTP của nhà cung cấp email |
-| `Smtp__Port` | `587` |
-| `Smtp__EnableSsl` | `true` |
-| `Smtp__Username` | Tài khoản SMTP |
-| `Smtp__Password` | Mật khẩu/app password, lưu bằng Secret |
-| `Smtp__FromAddress` | Địa chỉ người gửi đã được xác minh |
-| `Smtp__FromName` | `HomePlant` |
+| `Email__Provider` | `Brevo` |
+| `Brevo__ApiKey` | API key Brevo, nhập trực tiếp dưới dạng secret trên Render |
+| `Brevo__FromAddress` | Email người gửi đã xác minh trong Brevo |
+| `Brevo__FromName` | `HomePlant` |
 | `Notifications__ScanIntervalMinutes` | `5` |
 
-Sau khi lưu cấu hình và khởi động lại ứng dụng, mở **Nhắc việc**:
+1. Đăng nhập/tạo tài khoản Brevo Free, hoàn tất xác minh tài khoản và người gửi.
+2. Tạo API key trong Brevo → SMTP & API → API Keys (không dùng SMTP key).
+3. Nhập các biến trên trong Render → Environment, Save và redeploy.
+4. Vào HomePlant → Nhắc việc → **Gửi email kiểm tra**, kiểm tra hộp thư đến/thư rác.
+   Nút này chỉ gửi tới email tài khoản đăng nhập, tối đa một lần mỗi 5 phút.
+5. Bấm **Bật email** để nhận nhắc tưới nước, bón phân và thay chậu khi đến lịch.
+   Có thể tắt email kể cả khi cấu hình dịch vụ gửi thư đang gặp vấn đề.
 
-1. Bấm **Gửi email kiểm tra**, kiểm tra hộp thư đến và thư rác. Nút này chỉ gửi
-   tới email tài khoản đang đăng nhập, tối đa một lần mỗi 5 phút và không bật
-   nhắc việc tự động.
-2. Bấm **Bật email** để đăng ký nhận nhắc tưới nước, bón phân và thay chậu.
-3. Có thể **Tắt email** kể cả khi cấu hình gửi email đang gặp vấn đề.
+Không commit API key hoặc nhập key vào tài liệu/chat. Brevo nhận email người nhận
+và nội dung lời nhắc để thực hiện gửi thư. HTTP 201 chỉ xác nhận Brevo đã tiếp nhận;
+kiểm tra Transactional logs trên Brevo để biết thư đã giao hay bị trả lại.
+Mỗi lần gửi có thời hạn 30 giây. Lỗi API, hết hạn mức, mất kết nối đều giữ lời nhắc
+để thử lại sau 10 phút. Không ghi API key hoặc nội dung phản hồi vào log.
+Nếu tiến trình dừng sau khi nhà cung cấp nhận thư nhưng trước khi lưu trạng thái,
+lần thử lại vẫn có thể tạo thư trùng.
 
-SMTP cần host, địa chỉ người gửi hợp lệ, cổng từ 1–65535 và mật khẩu nếu dùng
-username. Dùng STARTTLS (thường cổng 587); dịch vụ SMTP hiện tại không hỗ trợ
-implicit TLS trên cổng 465. Mỗi lần gửi có thời hạn 30 giây; gửi lỗi sẽ chờ
-10 phút trước khi thử lại. Lời nhắc đã gửi thành công không được gửi lại cho
-cùng lịch chăm sóc. Nếu tiến trình dừng sau khi SMTP nhận thư nhưng trước khi
-lưu trạng thái, lần thử lại vẫn có thể tạo thư trùng.
+SMTP vẫn dùng được ở môi trường hỗ trợ khi đặt `Email__Provider=Smtp` và cấu hình
+`Smtp__Host`, `Smtp__Port` (mặc định 587), `Smtp__EnableSsl` (mặc định true),
+`Smtp__Username`, `Smtp__Password`, `Smtp__FromAddress`, `Smtp__FromName`.
+Dịch vụ SMTP dùng STARTTLS, không hỗ trợ implicit TLS trên cổng 465.
 
-Kiểm tra cục bộ không gửi email ra ngoài:
+Kiểm tra cục bộ bằng SMTP giả lập và HTTP handler giả lập, không gửi email ra ngoài:
 `dotnet run --project Tests/EmailNotificationChecks`.
+
+Nguồn: [Brevo API](https://developers.brevo.com/docs/send-a-transactional-email),
+[Render SMTP restrictions](https://render.com/changelog/free-web-services-will-no-longer-allow-outbound-traffic-to-smtp-ports).
 
 Render Free có thể sleep khi không có traffic. Trong thời gian instance ngủ, email
 có thể được gửi trễ tới khi dịch vụ thức lại; lời nhắc trong ứng dụng vẫn được đồng

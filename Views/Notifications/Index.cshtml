@@ -116,7 +116,7 @@ else
 
             var permission = await Notification.requestPermission();
             message.textContent = permission === "granted"
-                ? "Đã bật. HomePlant sẽ hiện thông báo khi trang web đang mở; email vẫn được gửi nếu hệ thống đã cấu hình SMTP."
+                ? "Đã bật. HomePlant sẽ hiện thông báo khi trang web đang mở; email vẫn được gửi nếu hệ thống đã cấu hình gửi email."
                 : "Bạn chưa cấp quyền thông báo. Lời nhắc vẫn luôn có trong mục Nhắc việc.";
             message.classList.remove("d-none");
         });
