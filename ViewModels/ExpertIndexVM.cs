@@ -7,7 +7,7 @@ namespace HomePlant.ViewModels;
 public sealed class ExpertIndexVM
 {
     [Display(Name = "Cây trong vườn")]
-    public string PlantId { get; set; } = "";
+    public string? PlantId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng mô tả điều bạn muốn hỏi.")]
     [StringLength(1500, MinimumLength = 5, ErrorMessage = "Câu hỏi cần từ 5 đến 1.500 ký tự.")]
