@@ -63,7 +63,11 @@
                     </div>
 
                     <div class="form-check mb-4">
-                        <input asp-for="ConsentToAiProcessing" class="form-check-input" />
+                        <input asp-for="ConsentToAiProcessing"
+                               class="form-check-input"
+                               required
+                               data-val="true"
+                               data-val-required="Bạn cần đồng ý gửi ảnh và câu hỏi tới Gemini để phân tích." />
                         <label asp-for="ConsentToAiProcessing" class="form-check-label small">
                             Tôi đồng ý gửi ảnh và câu hỏi tới Gemini để phân tích. Dữ liệu ở Free Tier có thể được Google dùng để cải thiện sản phẩm.
                         </label>
@@ -136,6 +140,13 @@
             const question = document.getElementById('Question');
             const form = document.getElementById('expertForm');
             const button = document.getElementById('askButton');
+            const buttonLabel = 'Phân tích cùng AI';
+
+            const resetButton = () => {
+                if (!button || !@Model.IsAiConfigured.ToString().ToLowerInvariant()) return;
+                button.disabled = false;
+                button.textContent = buttonLabel;
+            };
 
             photo?.addEventListener('change', () => {
                 const file = photo.files?.[0];
@@ -152,11 +163,19 @@
                 });
             });
 
-            form?.addEventListener('submit', () => {
-                if (!form.checkValidity()) return;
+            form?.addEventListener('submit', event => {
+                const jqueryValid = !window.jQuery || window.jQuery(form).valid();
+                if (event.defaultPrevented || !form.checkValidity() || !jqueryValid) {
+                    resetButton();
+                    return;
+                }
+
                 button.disabled = true;
                 button.textContent = 'AI đang phân tích ảnh…';
             });
+
+            form?.addEventListener('invalid', resetButton, true);
+            window.addEventListener('pageshow', resetButton);
         })();
     </script>
 }

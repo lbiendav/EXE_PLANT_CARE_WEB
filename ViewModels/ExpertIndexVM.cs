@@ -18,7 +18,6 @@ public sealed class ExpertIndexVM
     [Display(Name = "Ảnh cây")]
     public IFormFile? Photo { get; set; }
 
-    [Range(typeof(bool), "true", "true", ErrorMessage = "Bạn cần đồng ý gửi ảnh và câu hỏi tới Gemini để phân tích.")]
     public bool ConsentToAiProcessing { get; set; }
 
     public bool IsAiConfigured { get; set; }

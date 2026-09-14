@@ -54,6 +54,13 @@ public sealed class ExpertController : Controller
         if (imageError != null)
             ModelState.AddModelError(nameof(vm.Photo), imageError);
 
+        if (!vm.ConsentToAiProcessing)
+        {
+            ModelState.AddModelError(
+                nameof(vm.ConsentToAiProcessing),
+                "Bạn cần đồng ý gửi ảnh và câu hỏi tới Gemini để phân tích.");
+        }
+
         UserPlantModel? plant = null;
         if (!string.IsNullOrWhiteSpace(vm.PlantId))
         {
