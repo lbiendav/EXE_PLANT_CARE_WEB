@@ -326,9 +326,89 @@ public class AdminController : Controller
 
     public async Task<IActionResult> AiDiagnoses()
     {
-        var diagnoses = await _aiDiagnosisService.GetAll();
+        var usersTask = _userService.GetAll();
+        var diagnosesTask = _aiDiagnosisService.GetAll();
+        await Task.WhenAll(usersTask, diagnosesTask);
 
-        return View(diagnoses);
+        var usersById = usersTask.Result
+            .GroupBy(user => user.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        var diagnoses = diagnosesTask.Result;
+        var vm = new AdminAiDiagnosesVM
+        {
+            TotalCount = diagnoses.Count,
+            UserGroups = diagnoses
+                .GroupBy(diagnosis => diagnosis.UserId ?? "")
+                .Select(group => new AdminUserGroupVM<AiDiagnosisModel>
+                {
+                    UserId = group.Key,
+                    User = usersById.GetValueOrDefault(group.Key),
+                    Items = group.OrderByDescending(item => item.CreatedAt).ToList()
+                })
+                .OrderBy(group => group.DisplayName)
+                .ToList()
+        };
+
+        return View(vm);
+    }
+
+    public async Task<IActionResult> GardenPlants()
+    {
+        var usersTask = _userService.GetAll();
+        var plantsTask = _userPlantService.GetAllForAdmin();
+        var samplesTask = _samplePlantService.GetAll();
+        var templatesTask = _templateService.GetAll();
+        await Task.WhenAll(usersTask, plantsTask, samplesTask, templatesTask);
+
+        var usersById = usersTask.Result
+            .GroupBy(user => user.Id)
+            .ToDictionary(group => group.Key, group => group.First());
+        var speciesNames = samplesTask.Result
+            .GroupBy(plant => plant.Id)
+            .ToDictionary(group => group.Key, group => group.First().Name);
+        foreach (var template in templatesTask.Result)
+            speciesNames.TryAdd(template.Id, template.Name);
+
+        var plants = plantsTask.Result;
+        var vm = new AdminGardenPlantsVM
+        {
+            TotalCount = plants.Count,
+            UserGroups = plants
+                .GroupBy(item => item.UserId)
+                .Select(group => new AdminUserGroupVM<AdminGardenPlantItemVM>
+                {
+                    UserId = group.Key,
+                    User = usersById.GetValueOrDefault(group.Key),
+                    Items = group
+                        .Select(item => new AdminGardenPlantItemVM
+                        {
+                            Plant = item.Plant,
+                            SpeciesName = speciesNames.GetValueOrDefault(
+                                item.Plant.TemplateId,
+                                "Loại cây chưa xác định")
+                        })
+                        .OrderBy(item => item.Plant.CustomName)
+                        .ToList()
+                })
+                .OrderBy(group => group.DisplayName)
+                .ToList()
+        };
+
+        return View(vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteGardenPlant(string userId, string id)
+    {
+        var plant = await _userPlantService.GetById(userId, id);
+        if (plant == null)
+            return NotFound();
+
+        await _userPlantService.Delete(userId, id);
+        await _imageStorage.Delete(plant.ImageUrl, CancellationToken.None);
+        TempData["Success"] = "Đã xóa cây khỏi vườn của người dùng.";
+
+        return RedirectToAction(nameof(GardenPlants));
     }
 
     [HttpPost]

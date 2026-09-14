@@ -1,0 +1,84 @@
+@model HomePlant.ViewModels.AdminGardenPlantsVM
+@using HomePlant.Services
+
+@{
+    ViewData["Title"] = "Quản lý cây trong vườn";
+}
+
+<a asp-action="Dashboard" class="back-link">← Quản trị</a>
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+        <span class="kicker">Quản trị</span>
+        <h1 class="mb-0">Cây trong vườn theo người dùng</h1>
+        <p class="text-muted mt-2 mb-0">@Model.TotalCount cây · @Model.UserGroups.Count người dùng</p>
+    </div>
+</div>
+
+@if (Model.UserGroups.Count == 0)
+{
+    <div class="card">
+        <div class="card-body p-4 text-center text-muted">Chưa có cây nào trong vườn người dùng.</div>
+    </div>
+}
+else
+{
+    <div class="admin-user-groups">
+        @foreach (var group in Model.UserGroups)
+        {
+            <details class="admin-user-group" open="@(ReferenceEquals(group, Model.UserGroups[0]) ? "open" : null)">
+                <summary>
+                    <span class="admin-user-initial" aria-hidden="true">@group.Initial</span>
+                    <span class="admin-user-identity">
+                        <strong>@group.DisplayName</strong>
+                        <small>@group.Email</small>
+                    </span>
+                    <span class="admin-user-count">@group.Items.Count cây</span>
+                    <span class="admin-group-chevron" aria-hidden="true">⌄</span>
+                </summary>
+
+                <div class="admin-user-content">
+                    <div class="row g-3">
+                        @foreach (var item in group.Items)
+                        {
+                            var plant = item.Plant;
+                            <div class="col-lg-4 col-md-6">
+                                <div class="card admin-garden-card h-100">
+                                    <img src="@(string.IsNullOrWhiteSpace(plant.ImageUrl) ? "https://i.ibb.co/MkMj38WM/plant.png" : plant.ImageUrl)"
+                                         alt="@plant.CustomName" />
+                                    <div class="card-body d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                            <div>
+                                                <h6 class="fw-bold mb-0">@plant.CustomName</h6>
+                                                <small class="text-muted">@item.SpeciesName</small>
+                                            </div>
+                                            <span class="badge bg-@plant.StatusColorClass">@plant.DisplayStatus</span>
+                                        </div>
+
+                                        <div class="admin-plant-schedule mb-3">
+                                            <span>Tưới <strong>@(plant.WateringFrequency.HasValue ? $"{plant.WateringFrequency} {CareScheduleCalculator.UnitLabel(plant.WateringFrequencyUnit)}" : "Chưa đặt")</strong></span>
+                                            <span>Bón phân <strong>@(plant.FertilizingFrequency.HasValue ? $"{plant.FertilizingFrequency} {CareScheduleCalculator.UnitLabel(plant.FertilizingFrequencyUnit)}" : "Chưa đặt")</strong></span>
+                                            <span>Thay chậu <strong>@(plant.RepottingFrequency.HasValue ? $"{plant.RepottingFrequency} {CareScheduleCalculator.UnitLabel(plant.RepottingFrequencyUnit)}" : "Chưa đặt")</strong></span>
+                                        </div>
+
+                                        <small class="text-muted d-block mb-3">
+                                            Thêm ngày @plant.CreatedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")
+                                        </small>
+
+                                        <form asp-action="DeleteGardenPlant"
+                                              asp-route-userId="@group.UserId"
+                                              asp-route-id="@plant.Id"
+                                              method="post" class="mt-auto"
+                                              onsubmit="return confirm('Xóa cây này cùng lịch chăm sóc liên quan?');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">Xóa khỏi vườn</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </details>
+        }
+    </div>
+}

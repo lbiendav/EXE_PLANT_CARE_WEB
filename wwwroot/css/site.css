@@ -845,6 +845,120 @@ hr {
     color: var(--mute);
 }
 
+.admin-user-groups {
+    display: grid;
+    gap: 14px;
+}
+
+.admin-user-group {
+    border: 1px solid var(--hair-soft);
+    background: rgba(17, 35, 28, 0.42);
+}
+
+.admin-user-group[open] {
+    border-color: var(--hair);
+}
+
+.admin-user-group summary {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) auto 22px;
+    gap: 14px;
+    align-items: center;
+    min-height: 78px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.admin-user-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-user-group summary:hover {
+    background: rgba(208, 234, 144, 0.025);
+}
+
+.admin-user-initial {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border: 1px solid var(--hair);
+    border-radius: 50%;
+    color: var(--green);
+    font-family: var(--serif);
+    font-size: 1.25rem;
+}
+
+.admin-user-identity {
+    display: grid;
+    min-width: 0;
+}
+
+.admin-user-identity strong,
+.admin-user-identity small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-user-identity small {
+    color: var(--mute);
+}
+
+.admin-user-count {
+    padding: 5px 10px;
+    border: 1px solid var(--hair-soft);
+    border-radius: 999px;
+    color: var(--bone-dim);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.admin-group-chevron {
+    color: var(--green);
+    font-size: 1.25rem;
+    transition: transform 0.2s;
+}
+
+.admin-user-group[open] .admin-group-chevron {
+    transform: rotate(180deg);
+}
+
+.admin-user-content {
+    padding: 0 20px 20px;
+    border-top: 1px solid var(--hair-soft);
+    padding-top: 20px;
+}
+
+.diag-card img,
+.admin-garden-card > img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.admin-plant-schedule {
+    display: grid;
+    gap: 7px;
+    padding: 12px 0;
+    border-top: 1px solid var(--hair-soft);
+    border-bottom: 1px solid var(--hair-soft);
+}
+
+.admin-plant-schedule span {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--mute);
+    font-size: 12px;
+}
+
+.admin-plant-schedule strong {
+    color: var(--bone-dim);
+    font-weight: 500;
+}
+
 /* ── misc admin ───────────────────────────────────────────── */
 .avatar-sm, .post-avatar, .thread-avatar {
     width: 38px;
@@ -1146,6 +1260,25 @@ hr {
 
     .expert-care-grid {
         grid-template-columns: 1fr;
+    }
+
+    .admin-user-group summary {
+        grid-template-columns: 38px minmax(0, 1fr) 18px;
+        padding: 14px;
+    }
+
+    .admin-user-count {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .admin-group-chevron {
+        grid-column: 3;
+        grid-row: 1 / span 2;
+    }
+
+    .admin-user-content {
+        padding: 14px;
     }
 }
 

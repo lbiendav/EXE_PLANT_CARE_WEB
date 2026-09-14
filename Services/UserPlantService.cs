@@ -82,4 +82,19 @@ public class UserPlantService
 
         return snapshot.Count;
     }
+
+    public async Task<List<OwnedUserPlant>> GetAllForAdmin()
+    {
+        var snapshot = await _db
+            .CollectionGroup("user_plants")
+            .GetSnapshotAsync();
+
+        return snapshot.Documents
+            .Select(document => new OwnedUserPlant(
+                document.Reference.Parent.Parent?.Id ?? "",
+                document.ConvertTo<UserPlantModel>()))
+            .ToList();
+    }
 }
+
+public sealed record OwnedUserPlant(string UserId, UserPlantModel Plant);
