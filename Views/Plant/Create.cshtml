@@ -14,6 +14,19 @@
 </div>
 
 <form method="post" enctype="multipart/form-data" style="max-width:520px;" id="plantCreateForm">
+    <input asp-for="SourceDiagnosisId" type="hidden" />
+
+    @if ((ViewBag.AiScheduleLoaded as bool?) == true)
+    {
+        <div class="alert alert-success mb-4" role="status">
+            <strong>Đã nạp lịch chăm sóc AI.</strong>
+            @if (!string.IsNullOrWhiteSpace(ViewBag.AiIdentifiedPlant as string))
+            {
+                <span>Khuyến nghị dành cho @ViewBag.AiIdentifiedPlant.</span>
+            }
+            Bạn có thể điều chỉnh trước khi lưu cây.
+        </div>
+    }
 
     <div class="mb-3">
         <label for="Photo"
@@ -57,6 +70,10 @@
     <div class="card mb-4">
         <div class="card-body">
             <h6 class="kicker mb-2">Lịch nhắc chăm sóc</h6>
+            @if ((ViewBag.AiScheduleLoaded as bool?) == true)
+            {
+                <span class="expert-applied-badge d-inline-block mb-2">Đề xuất bởi AI</span>
+            }
             <p class="text-muted small">Đặt chu kỳ theo giây, phút, giờ hoặc ngày. Bạn có thể thay đổi lịch sau trong trang chi tiết cây.</p>
             <div class="row g-3">
                 <div class="col-sm-4">

@@ -151,8 +151,8 @@
                     @if (string.IsNullOrWhiteSpace(Model.PlantId))
                     {
                         <div class="alert alert-warning mb-0">
-                            Muốn áp dụng lịch này, hãy thêm cây vào vườn rồi phân tích lại và chọn đúng cây.
-                            <a asp-controller="Plant" asp-action="Create" class="alert-link">Thêm cây vào vườn</a>
+                            Thêm cây vào vườn để sử dụng lịch này. Ba chu kỳ sẽ được điền sẵn và bạn có thể chỉnh lại trước khi lưu.
+                            <a asp-controller="Plant" asp-action="Create" asp-route-diagnosisId="@Model.Id" class="alert-link">Thêm cây vào vườn</a>
                         </div>
                     }
                     else if (!careRecommendations.IsSuitableForAutomation)

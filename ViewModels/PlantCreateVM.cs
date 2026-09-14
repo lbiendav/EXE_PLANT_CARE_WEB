@@ -4,6 +4,8 @@ namespace HomePlant.ViewModels;
 
 public class PlantCreateVM
 {
+    public string? SourceDiagnosisId { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập tên gọi")]
     public string Nickname { get; set; }
 

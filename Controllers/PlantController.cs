@@ -15,6 +15,7 @@ public class PlantController : Controller
     private readonly ImageStorageService _imageStorage;
     private readonly CareLogService _careLogService;
     private readonly CareReminderService _careReminderService;
+    private readonly AiDiagnosisService _diagnosisService;
 
     public PlantController(
         UserPlantService userPlantService,
@@ -22,7 +23,8 @@ public class PlantController : Controller
         PlantSampleService samplePlantService,
         ImageStorageService imageStorage,
         CareLogService careLogService,
-        CareReminderService careReminderService)
+        CareReminderService careReminderService,
+        AiDiagnosisService diagnosisService)
     {
         _userPlantService = userPlantService;
         _templateService = templateService;
@@ -30,6 +32,7 @@ public class PlantController : Controller
         _imageStorage = imageStorage;
         _careLogService = careLogService;
         _careReminderService = careReminderService;
+        _diagnosisService = diagnosisService;
     }
 
     public async Task<IActionResult> Index()
@@ -59,14 +62,22 @@ public class PlantController : Controller
         return View(vm);
     }
 
-    public async Task<IActionResult> Create(string? speciesId = null)
+    public async Task<IActionResult> Create(string? speciesId = null, string? diagnosisId = null)
     {
-        if (HttpContext.Session.GetString("Uid") == null)
+        var uid = HttpContext.Session.GetString("Uid");
+        if (uid == null)
             return RedirectToAction("Login", "Account");
 
         await PopulateSpecies(speciesId);
 
-        return View(new PlantCreateVM { PlantSampleId = speciesId ?? "" });
+        var vm = new PlantCreateVM { PlantSampleId = speciesId ?? "" };
+        if (!string.IsNullOrWhiteSpace(diagnosisId) &&
+            !await LoadAiScheduleDefaults(uid, diagnosisId, vm))
+        {
+            TempData["Warning"] = "Không thể nạp lịch AI từ phiên phân tích này.";
+        }
+
+        return View(vm);
     }
 
     [HttpPost]
@@ -89,6 +100,7 @@ public class PlantController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSpecies(vm.PlantSampleId);
+            await PopulateAiScheduleContext(uid, vm.SourceDiagnosisId);
             return View(vm);
         }
 
@@ -312,6 +324,47 @@ public class PlantController : Controller
         }
 
         ViewBag.PlantSamples = options;
+    }
+
+    private async Task<bool> LoadAiScheduleDefaults(
+        string uid,
+        string diagnosisId,
+        PlantCreateVM vm)
+    {
+        var diagnosis = await _diagnosisService.GetByIdForUser(diagnosisId, uid);
+        if (diagnosis == null ||
+            !CareScheduleCalculator.TryCreateSchedule(
+                diagnosis.Result?.CareRecommendations,
+                out var schedule))
+        {
+            return false;
+        }
+
+        vm.SourceDiagnosisId = diagnosis.Id;
+        vm.WateringFrequency = schedule.WateringFrequency;
+        vm.WateringFrequencyUnit = schedule.WateringFrequencyUnit;
+        vm.FertilizingFrequency = schedule.FertilizingFrequency;
+        vm.FertilizingFrequencyUnit = schedule.FertilizingFrequencyUnit;
+        vm.RepottingFrequency = schedule.RepottingFrequency;
+        vm.RepottingFrequencyUnit = schedule.RepottingFrequencyUnit;
+        SetAiScheduleContext(diagnosis.Result?.IdentifiedPlant);
+        return true;
+    }
+
+    private async Task PopulateAiScheduleContext(string uid, string? diagnosisId)
+    {
+        if (string.IsNullOrWhiteSpace(diagnosisId))
+            return;
+
+        var diagnosis = await _diagnosisService.GetByIdForUser(diagnosisId, uid);
+        if (diagnosis != null)
+            SetAiScheduleContext(diagnosis.Result?.IdentifiedPlant);
+    }
+
+    private void SetAiScheduleContext(string? identifiedPlant)
+    {
+        ViewBag.AiScheduleLoaded = true;
+        ViewBag.AiIdentifiedPlant = identifiedPlant ?? "";
     }
 
     private async Task<PlantSpeciesVM?> GetSpecies(string? id)
