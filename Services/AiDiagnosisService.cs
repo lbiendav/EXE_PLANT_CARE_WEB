@@ -65,4 +65,12 @@ public class AiDiagnosisService
             .Document(id)
             .DeleteAsync();
     }
+
+    public async Task MarkCareRecommendationsApplied(string id, Timestamp appliedAt)
+    {
+        await _db
+            .Collection("ai_diagnoses")
+            .Document(id)
+            .UpdateAsync("careRecommendationsAppliedAt", appliedAt);
+    }
 }

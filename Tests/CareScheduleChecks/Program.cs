@@ -1,4 +1,5 @@
 using Google.Cloud.Firestore;
+using HomePlant.Models;
 using HomePlant.Services;
 
 var start = Timestamp.FromDateTime(new DateTime(2026, 9, 12, 0, 0, 0, DateTimeKind.Utc));
@@ -34,6 +35,33 @@ Require(
 var firstId = CareScheduleCalculator.NotificationId("plant-1", "Watering", sevenDays);
 var secondId = CareScheduleCalculator.NotificationId("plant-1", "Watering", sevenDays);
 Require(firstId == secondId, "Notification IDs must be deterministic to prevent duplicates.");
+
+var aiRecommendations = new AiCareRecommendationsModel
+{
+    IsSuitableForAutomation = true,
+    Watering = new AiCareFrequencyModel { Frequency = 7, Unit = "Days" },
+    Fertilizing = new AiCareFrequencyModel { Frequency = 30, Unit = "Days" },
+    Repotting = new AiCareFrequencyModel { Frequency = 365, Unit = "Days" }
+};
+Require(
+    CareScheduleCalculator.TryCreateSchedule(aiRecommendations, out var aiSchedule),
+    "A safe, in-range AI recommendation must create a care schedule.");
+Require(
+    aiSchedule.WateringFrequency == 7 &&
+    aiSchedule.FertilizingFrequency == 30 &&
+    aiSchedule.RepottingFrequency == 365,
+    "The AI schedule must preserve all recommended frequencies.");
+
+aiRecommendations.IsSuitableForAutomation = false;
+Require(
+    !CareScheduleCalculator.TryCreateSchedule(aiRecommendations, out _),
+    "An uncertain AI recommendation must not be eligible for automatic scheduling.");
+
+aiRecommendations.IsSuitableForAutomation = true;
+aiRecommendations.Watering.Frequency = 0;
+Require(
+    !CareScheduleCalculator.TryCreateSchedule(aiRecommendations, out _),
+    "An out-of-range AI frequency must be rejected server-side.");
 
 Console.WriteLine("Care schedule checks passed.");
 

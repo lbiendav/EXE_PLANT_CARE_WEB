@@ -1,4 +1,6 @@
 using Google.Cloud.Firestore;
+using HomePlant.Models;
+using HomePlant.ViewModels;
 
 namespace HomePlant.Services;
 
@@ -19,6 +21,29 @@ public static class CareScheduleCalculator
         "Hours" => "giờ",
         _ => "ngày"
     };
+
+    public static bool TryCreateSchedule(
+        AiCareRecommendationsModel? recommendations,
+        out CareScheduleVM schedule)
+    {
+        schedule = new CareScheduleVM();
+        if (recommendations == null ||
+            !recommendations.IsSuitableForAutomation ||
+            !IsValidRecommendation(recommendations.Watering, 1, 90) ||
+            !IsValidRecommendation(recommendations.Fertilizing, 7, 365) ||
+            !IsValidRecommendation(recommendations.Repotting, 30, 1825))
+        {
+            return false;
+        }
+
+        schedule.WateringFrequency = recommendations.Watering.Frequency;
+        schedule.WateringFrequencyUnit = NormalizeUnit(recommendations.Watering.Unit);
+        schedule.FertilizingFrequency = recommendations.Fertilizing.Frequency;
+        schedule.FertilizingFrequencyUnit = NormalizeUnit(recommendations.Fertilizing.Unit);
+        schedule.RepottingFrequency = recommendations.Repotting.Frequency;
+        schedule.RepottingFrequencyUnit = NormalizeUnit(recommendations.Repotting.Unit);
+        return true;
+    }
 
     public static Timestamp? NextFrom(Timestamp start, int? frequency, string? unit = "Days")
     {
@@ -60,4 +85,13 @@ public static class CareScheduleCalculator
         var dueUnixSeconds = new DateTimeOffset(dueAt.ToDateTime()).ToUnixTimeSeconds();
         return $"{plantId}-{careType.ToLowerInvariant()}-{dueUnixSeconds}";
     }
+
+    private static bool IsValidRecommendation(
+        AiCareFrequencyModel? recommendation,
+        int minimum,
+        int maximum) =>
+        recommendation != null &&
+        recommendation.Frequency >= minimum &&
+        recommendation.Frequency <= maximum &&
+        string.Equals(recommendation.Unit, "Days", StringComparison.OrdinalIgnoreCase);
 }

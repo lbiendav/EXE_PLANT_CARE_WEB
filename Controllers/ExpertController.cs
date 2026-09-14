@@ -14,17 +14,20 @@ public sealed class ExpertController : Controller
     private readonly AiDiagnosisService _diagnosisService;
     private readonly PlantExpertAiService _expertAi;
     private readonly ImageStorageService _imageStorage;
+    private readonly CareReminderService _careReminderService;
 
     public ExpertController(
         UserPlantService userPlantService,
         AiDiagnosisService diagnosisService,
         PlantExpertAiService expertAi,
-        ImageStorageService imageStorage)
+        ImageStorageService imageStorage,
+        CareReminderService careReminderService)
     {
         _userPlantService = userPlantService;
         _diagnosisService = diagnosisService;
         _expertAi = expertAi;
         _imageStorage = imageStorage;
+        _careReminderService = careReminderService;
     }
 
     [HttpGet]
@@ -128,7 +131,72 @@ public sealed class ExpertController : Controller
             return RedirectToAction("Login", "Account");
 
         var diagnosis = await _diagnosisService.GetByIdForUser(id, uid);
-        return diagnosis == null ? NotFound() : View(diagnosis);
+        if (diagnosis == null)
+            return NotFound();
+
+        ViewBag.LinkedPlantExists = !string.IsNullOrWhiteSpace(diagnosis.PlantId) &&
+            await _userPlantService.GetById(uid, diagnosis.PlantId) != null;
+        return View(diagnosis);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ApplyCareRecommendations(string id)
+    {
+        var uid = HttpContext.Session.GetString("Uid");
+        if (uid == null)
+            return RedirectToAction("Login", "Account");
+
+        var diagnosis = await _diagnosisService.GetByIdForUser(id, uid);
+        if (diagnosis == null)
+            return NotFound();
+
+        if (string.IsNullOrWhiteSpace(diagnosis.PlantId))
+        {
+            TempData["Warning"] = "Phiên tư vấn này chưa liên kết với cây trong vườn nên chưa thể tạo lịch nhắc.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var plant = await _userPlantService.GetById(uid, diagnosis.PlantId);
+        if (plant == null)
+        {
+            TempData["Warning"] = "Không tìm thấy cây đã liên kết với phiên tư vấn này.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (!CareScheduleCalculator.TryCreateSchedule(
+                diagnosis.Result?.CareRecommendations,
+                out var schedule))
+        {
+            TempData["Warning"] = "Khuyến nghị này chưa đủ tin cậy để áp dụng tự động.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var now = Timestamp.GetCurrentTimestamp();
+        plant.NextWateringAt = CareScheduleCalculator.Recalculate(
+            plant.WateringFrequency, plant.WateringFrequencyUnit,
+            schedule.WateringFrequency, schedule.WateringFrequencyUnit,
+            plant.NextWateringAt, plant.LastWatered, now);
+        plant.NextFertilizingAt = CareScheduleCalculator.Recalculate(
+            plant.FertilizingFrequency, plant.FertilizingFrequencyUnit,
+            schedule.FertilizingFrequency, schedule.FertilizingFrequencyUnit,
+            plant.NextFertilizingAt, plant.LastFertilized, now);
+        plant.NextRepottingAt = CareScheduleCalculator.Recalculate(
+            plant.RepottingFrequency, plant.RepottingFrequencyUnit,
+            schedule.RepottingFrequency, schedule.RepottingFrequencyUnit,
+            plant.NextRepottingAt, plant.LastRepotted, now);
+        plant.WateringFrequency = schedule.WateringFrequency;
+        plant.WateringFrequencyUnit = schedule.WateringFrequencyUnit;
+        plant.FertilizingFrequency = schedule.FertilizingFrequency;
+        plant.FertilizingFrequencyUnit = schedule.FertilizingFrequencyUnit;
+        plant.RepottingFrequency = schedule.RepottingFrequency;
+        plant.RepottingFrequencyUnit = schedule.RepottingFrequencyUnit;
+
+        await _userPlantService.Update(uid, plant.Id, plant);
+        await _careReminderService.ClearForPlant(uid, plant.Id, HttpContext.RequestAborted);
+        await _diagnosisService.MarkCareRecommendationsApplied(id, now);
+
+        TempData["Success"] = $"Đã áp dụng lịch chăm sóc AI cho {plant.CustomName}.";
+        return RedirectToAction(nameof(Details), new { id });
     }
 
     [HttpPost]

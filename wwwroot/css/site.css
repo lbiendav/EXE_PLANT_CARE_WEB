@@ -1056,6 +1056,77 @@ hr {
     margin-top: 8px;
 }
 
+.expert-care-recommendations {
+    border-color: rgba(208, 234, 144, 0.28);
+    background: linear-gradient(145deg, rgba(208, 234, 144, 0.055), var(--bg2) 58%);
+}
+
+.expert-care-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.expert-care-item {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--hair-soft);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.expert-care-icon {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--green);
+    font-size: 1.2rem;
+}
+
+.expert-care-item small,
+.expert-care-item strong {
+    display: block;
+}
+
+.expert-care-item small {
+    margin-bottom: 3px;
+    color: var(--mute);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.expert-care-item strong {
+    color: var(--green);
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.expert-care-item p {
+    margin: 8px 0 0;
+    color: var(--mute);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.expert-care-note {
+    margin: 0 0 18px;
+    padding-left: 12px;
+    border-left: 2px solid var(--copper);
+    color: var(--bone-dim);
+    font-size: 13px;
+}
+
+.expert-applied-badge {
+    padding: 5px 9px;
+    border: 1px solid rgba(208, 234, 144, 0.35);
+    border-radius: 999px;
+    color: var(--green);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
 .expert-warning {
     padding: 18px 20px;
     border: 1px solid rgba(230, 159, 112, 0.36);
@@ -1070,6 +1141,10 @@ hr {
     }
 
     .care-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .expert-care-grid {
         grid-template-columns: 1fr;
     }
 }

@@ -8,6 +8,17 @@
     var immediateActions = result.ImmediateActions ?? new List<string>();
     var sevenDayPlan = result.SevenDayPlan ?? new List<string>();
     var warnings = result.Warnings ?? new List<string>();
+    var careRecommendations = result.CareRecommendations ?? new HomePlant.Models.AiCareRecommendationsModel();
+    var wateringRecommendation = careRecommendations.Watering ?? new HomePlant.Models.AiCareFrequencyModel();
+    var fertilizingRecommendation = careRecommendations.Fertilizing ?? new HomePlant.Models.AiCareFrequencyModel();
+    var repottingRecommendation = careRecommendations.Repotting ?? new HomePlant.Models.AiCareFrequencyModel();
+    var hasCareRecommendations =
+        wateringRecommendation.Frequency > 0 &&
+        fertilizingRecommendation.Frequency > 0 &&
+        repottingRecommendation.Frequency > 0;
+    var canApplyRecommendations =
+        (ViewBag.LinkedPlantExists as bool?) == true &&
+        HomePlant.Services.CareScheduleCalculator.TryCreateSchedule(careRecommendations, out _);
 }
 
 <a asp-action="Index" class="back-link">← Chuyên gia</a>
@@ -88,6 +99,85 @@
                     <ol class="expert-answer-list mb-0">
                         @foreach (var item in sevenDayPlan) { <li>@item</li> }
                     </ol>
+                </div>
+            </div>
+        }
+
+        @if (hasCareRecommendations)
+        {
+            <div class="card mb-3 expert-care-recommendations">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                        <div>
+                            <h6 class="kicker mb-2">Lịch chăm sóc AI khuyến nghị</h6>
+                            @if (!string.IsNullOrWhiteSpace(result.IdentifiedPlant))
+                            {
+                                <p class="mb-0">Dựa trên loại cây: <strong>@result.IdentifiedPlant</strong></p>
+                            }
+                        </div>
+                        @if (Model.CareRecommendationsAppliedAt.HasValue)
+                        {
+                            <span class="expert-applied-badge">Đã áp dụng</span>
+                        }
+                    </div>
+
+                    <div class="expert-care-grid">
+                        @foreach (var item in new[]
+                        {
+                            new { Icon = "💧", Label = "Tưới nước", Value = wateringRecommendation },
+                            new { Icon = "✦", Label = "Bón phân", Value = fertilizingRecommendation },
+                            new { Icon = "♻", Label = "Thay chậu", Value = repottingRecommendation }
+                        })
+                        {
+                            <div class="expert-care-item">
+                                <span class="expert-care-icon" aria-hidden="true">@item.Icon</span>
+                                <div>
+                                    <small>@item.Label</small>
+                                    <strong>Mỗi @item.Value.Frequency @HomePlant.Services.CareScheduleCalculator.UnitLabel(item.Value.Unit)</strong>
+                                    @if (!string.IsNullOrWhiteSpace(item.Value.Reason))
+                                    {
+                                        <p>@item.Value.Reason</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(careRecommendations.GeneralNote))
+                    {
+                        <p class="expert-care-note">@careRecommendations.GeneralNote</p>
+                    }
+
+                    @if (string.IsNullOrWhiteSpace(Model.PlantId))
+                    {
+                        <div class="alert alert-warning mb-0">
+                            Muốn áp dụng lịch này, hãy thêm cây vào vườn rồi phân tích lại và chọn đúng cây.
+                            <a asp-controller="Plant" asp-action="Create" class="alert-link">Thêm cây vào vườn</a>
+                        </div>
+                    }
+                    else if (!careRecommendations.IsSuitableForAutomation)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            AI chưa đủ tự tin để tự động tạo lịch. Hãy bổ sung ảnh hoặc thông tin rõ hơn.
+                        </div>
+                    }
+                    else if ((ViewBag.LinkedPlantExists as bool?) != true)
+                    {
+                        <div class="alert alert-warning mb-0">Cây liên kết với phiên tư vấn này không còn tồn tại.</div>
+                    }
+                    else if (canApplyRecommendations)
+                    {
+                        <form asp-action="ApplyCareRecommendations" asp-route-id="@Model.Id" method="post"
+                              onsubmit="return confirm('Áp dụng cả ba chu kỳ AI khuyến nghị cho cây này?');">
+                            <button type="submit" class="btn btn-success w-100">
+                                @(Model.CareRecommendationsAppliedAt.HasValue ? "Áp dụng lại lịch khuyến nghị" : "Chấp thuận và tạo lịch nhắc")
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mb-0">Dữ liệu khuyến nghị không hợp lệ nên không thể áp dụng tự động.</div>
+                    }
                 </div>
             </div>
         }

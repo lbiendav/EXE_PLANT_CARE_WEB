@@ -90,6 +90,12 @@ public sealed class PlantExpertAiService
             diseaseName là tên vấn đề có khả năng nhất hoặc "Chưa đủ thông tin".
             confidence là số từ 0 đến 1. treatment là hướng xử lý tổng quát, ngắn gọn.
             sevenDayPlan nên là các bước thực tế theo ngày hoặc giai đoạn trong 7 ngày.
+            identifiedPlant là tên loại cây có khả năng nhất; nếu không nhận diện được, ghi "Chưa xác định".
+            Luôn đề xuất chu kỳ tưới, bón phân và thay chậu phù hợp với loại cây nhận diện được và tình trạng hiện tại.
+            Mỗi chu kỳ dùng unit="Days". watering.frequency từ 1 đến 90, fertilizing.frequency từ 7 đến 365,
+            repotting.frequency từ 30 đến 1825. Nêu lý do ngắn gọn cho từng chu kỳ.
+            Chỉ đặt careRecommendations.isSuitableForAutomation=true khi ảnh đủ rõ và bạn đủ tự tin rằng lịch này an toàn để tạo nhắc việc tự động.
+            Nếu chưa đủ thông tin, vẫn cung cấp giá trị tham khảo thận trọng nhưng đặt isSuitableForAutomation=false và giải thích trong generalNote.
             """;
         var userPrompt = $"Bối cảnh cây: {plantContext}\nCâu hỏi của người dùng: {question}";
 
@@ -98,6 +104,7 @@ public sealed class PlantExpertAiService
             type = "object",
             properties = new
             {
+                identifiedPlant = new { type = "string" },
                 diseaseName = new { type = "string" },
                 confidence = new { type = "number", minimum = 0, maximum = 1 },
                 cause = new { type = "string" },
@@ -108,13 +115,29 @@ public sealed class PlantExpertAiService
                 sevenDayPlan = new { type = "array", items = new { type = "string" } },
                 warnings = new { type = "array", items = new { type = "string" } },
                 needsMoreInfo = new { type = "boolean" },
-                followUpQuestion = new { type = "string" }
+                followUpQuestion = new { type = "string" },
+                careRecommendations = new
+                {
+                    type = "object",
+                    properties = new
+                    {
+                        isSuitableForAutomation = new { type = "boolean" },
+                        generalNote = new { type = "string" },
+                        watering = FrequencySchema(1, 90),
+                        fertilizing = FrequencySchema(7, 365),
+                        repotting = FrequencySchema(30, 1825)
+                    },
+                    required = new[]
+                    {
+                        "isSuitableForAutomation", "generalNote", "watering", "fertilizing", "repotting"
+                    }
+                }
             },
             required = new[]
             {
-                "diseaseName", "confidence", "cause", "treatment", "summary",
+                "identifiedPlant", "diseaseName", "confidence", "cause", "treatment", "summary",
                 "observations", "immediateActions", "sevenDayPlan", "warnings",
-                "needsMoreInfo", "followUpQuestion"
+                "needsMoreInfo", "followUpQuestion", "careRecommendations"
             }
         };
 
@@ -139,7 +162,7 @@ public sealed class PlantExpertAiService
             generationConfig = new
             {
                 temperature = 0.2,
-                maxOutputTokens = 1400,
+                maxOutputTokens = 1800,
                 responseMimeType = "application/json",
                 responseSchema = schema
             }
@@ -206,6 +229,18 @@ public sealed class PlantExpertAiService
 
     private static string FormatTimestamp(Google.Cloud.Firestore.Timestamp? value) =>
         value.HasValue ? value.Value.ToDateTime().ToString("O") : "chưa ghi nhận";
+
+    private static object FrequencySchema(int minimum, int maximum) => new
+    {
+        type = "object",
+        properties = new
+        {
+            frequency = new { type = "integer", minimum, maximum },
+            unit = new { type = "string", @enum = new[] { "Days" } },
+            reason = new { type = "string" }
+        },
+        required = new[] { "frequency", "unit", "reason" }
+    };
 }
 
 public sealed class PlantAiException : Exception

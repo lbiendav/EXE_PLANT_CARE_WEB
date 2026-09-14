@@ -5,6 +5,9 @@ namespace HomePlant.Models;
 [FirestoreData]
 public class AiDiagnosisResultModel
 {
+    [FirestoreProperty("identifiedPlant")]
+    public string IdentifiedPlant { get; set; } = "";
+
     [FirestoreProperty("diseaseName")]
     public string DiseaseName { get; set; } = "";
 
@@ -37,6 +40,41 @@ public class AiDiagnosisResultModel
 
     [FirestoreProperty("followUpQuestion")]
     public string FollowUpQuestion { get; set; } = "";
+
+    [FirestoreProperty("careRecommendations")]
+    public AiCareRecommendationsModel CareRecommendations { get; set; } = new();
+}
+
+[FirestoreData]
+public class AiCareRecommendationsModel
+{
+    [FirestoreProperty("isSuitableForAutomation")]
+    public bool IsSuitableForAutomation { get; set; }
+
+    [FirestoreProperty("generalNote")]
+    public string GeneralNote { get; set; } = "";
+
+    [FirestoreProperty("watering")]
+    public AiCareFrequencyModel Watering { get; set; } = new();
+
+    [FirestoreProperty("fertilizing")]
+    public AiCareFrequencyModel Fertilizing { get; set; } = new();
+
+    [FirestoreProperty("repotting")]
+    public AiCareFrequencyModel Repotting { get; set; } = new();
+}
+
+[FirestoreData]
+public class AiCareFrequencyModel
+{
+    [FirestoreProperty("frequency")]
+    public int Frequency { get; set; }
+
+    [FirestoreProperty("unit")]
+    public string Unit { get; set; } = "Days";
+
+    [FirestoreProperty("reason")]
+    public string Reason { get; set; } = "";
 }
 
 [FirestoreData]
@@ -71,4 +109,7 @@ public class AiDiagnosisModel
 
     [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }
+
+    [FirestoreProperty("careRecommendationsAppliedAt")]
+    public Timestamp? CareRecommendationsAppliedAt { get; set; }
 }
