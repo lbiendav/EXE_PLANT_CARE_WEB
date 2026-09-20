@@ -43,6 +43,7 @@
                 <div asp-validation-summary="All" class="auth-alert"></div>
 
                 <form method="post">
+                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
                     <div class="auth-field">
                         <label asp-for="FullName">Họ và tên</label>
                         <div class="auth-input">
@@ -72,7 +73,13 @@
                     <div class="auth-field">
                         <label asp-for="Phone">Số điện thoại <small>(tuỳ chọn)</small></label>
                         <div class="auth-input">
-                            <input asp-for="Phone" placeholder="09xx xxx xxx" autocomplete="tel" />
+                            <input asp-for="Phone"
+                                   placeholder="Nhập 8 chữ số"
+                                   autocomplete="tel"
+                                   inputmode="numeric"
+                                   pattern="[0-9]{8}"
+                                   maxlength="8"
+                                   title="Số điện thoại phải gồm đúng 8 chữ số" />
                         </div>
                         <span asp-validation-for="Phone" class="auth-err"></span>
                     </div>

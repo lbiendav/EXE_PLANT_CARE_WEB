@@ -15,19 +15,22 @@ public sealed class ExpertController : Controller
     private readonly PlantExpertAiService _expertAi;
     private readonly ImageStorageService _imageStorage;
     private readonly CareReminderService _careReminderService;
+    private readonly AiQuotaService _quotaService;
 
     public ExpertController(
         UserPlantService userPlantService,
         AiDiagnosisService diagnosisService,
         PlantExpertAiService expertAi,
         ImageStorageService imageStorage,
-        CareReminderService careReminderService)
+        CareReminderService careReminderService,
+        AiQuotaService quotaService)
     {
         _userPlantService = userPlantService;
         _diagnosisService = diagnosisService;
         _expertAi = expertAi;
         _imageStorage = imageStorage;
         _careReminderService = careReminderService;
+        _quotaService = quotaService;
     }
 
     [HttpGet]
@@ -78,6 +81,16 @@ public sealed class ExpertController : Controller
         if (!ModelState.IsValid || vm.Photo == null)
             return View("Index", await BuildIndexViewModel(uid, vm));
 
+        try
+        {
+            await _quotaService.Reserve(uid, vm.RequestId);
+        }
+        catch (AiQuotaException exception)
+        {
+            ModelState.AddModelError("", exception.Message);
+            return View("Index", await BuildIndexViewModel(uid, vm));
+        }
+
         AiDiagnosisResultModel result;
         try
         {
@@ -89,11 +102,26 @@ public sealed class ExpertController : Controller
         }
         catch (PlantAiException exception)
         {
+            await _quotaService.Release(uid, vm.RequestId);
             ModelState.AddModelError("", exception.Message);
             return View("Index", await BuildIndexViewModel(uid, vm));
         }
+        catch
+        {
+            await _quotaService.Release(uid, vm.RequestId);
+            throw;
+        }
 
-        var imageUrl = await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted);
+        string? imageUrl;
+        try
+        {
+            imageUrl = await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted);
+        }
+        catch
+        {
+            await _quotaService.Release(uid, vm.RequestId);
+            throw;
+        }
         var diagnosis = new AiDiagnosisModel
         {
             UserId = uid,
@@ -109,10 +137,11 @@ public sealed class ExpertController : Controller
         string diagnosisId;
         try
         {
-            diagnosisId = await _diagnosisService.Add(diagnosis);
+            diagnosisId = await _quotaService.Complete(uid, vm.RequestId, diagnosis);
         }
         catch
         {
+            await _quotaService.Release(uid, vm.RequestId);
             await _imageStorage.Delete(imageUrl, CancellationToken.None);
             throw;
         }

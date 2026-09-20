@@ -1,0 +1,85 @@
+@model HomePlant.ViewModels.PlansVM
+@using HomePlant.Models
+@{
+    ViewData["Title"] = "Gói đăng ký";
+    var durations = new[] { 1, 6, 12 };
+    var selectedDuration = Model.Plans.FirstOrDefault(x => x.Sku == Model.SelectedSku)?.DurationMonths ?? 1;
+}
+<section class="plans-page">
+    <div class="text-center mb-5">
+        <span class="kicker">Gói đăng ký</span>
+        <h1>Bắt đầu miễn phí, <em>nâng cấp khi cần</em>.</h1>
+        <p class="text-muted">Thanh toán một lần · gia hạn thủ công · hạn mức AI làm mới mỗi tháng dương lịch Việt Nam.</p>
+        @if (!Model.SubscriptionsEnabled) { <div class="alert alert-warning">Tính năng tạo đơn chưa được bật trên môi trường này.</div> }
+    </div>
+
+    <div class="duration-switch" role="group" aria-label="Chọn kỳ hạn">
+        @foreach (var months in durations)
+        {
+            <button type="button" class="btn @(months == selectedDuration ? "active" : "")" data-duration="@months">@months tháng</button>
+        }
+    </div>
+
+    <div class="row g-4 align-items-stretch mt-2">
+        <div class="col-lg-4">
+            <article class="plan-card h-100">
+                <span class="kicker">Free</span><h2>0đ</h2><p class="text-muted">Không thời hạn</p>
+                <ul><li>2 cây trong vườn</li><li>3 lượt AI / tháng</li><li>Thư viện, lịch chăm và nhắc việc</li><li>Cộng đồng khi mở nhóm</li></ul>
+                <a class="btn btn-outline-success w-100" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí</a>
+            </article>
+        </div>
+        @foreach (var tier in new[] { SubscriptionTiers.Silver, SubscriptionTiers.Gold })
+        {
+            var tierPlans = Model.Plans.Where(x => x.Tier == tier).OrderBy(x => x.DurationMonths).ToArray();
+            var first = tierPlans[0];
+            var blocked = Model.CurrentExpiresAt > DateTimeOffset.UtcNow && Model.CurrentTier != tier;
+            <div class="col-lg-4">
+                <article class="plan-card h-100 @(tier == SubscriptionTiers.Silver ? "plan-card--featured" : "")">
+                    @if (tier == SubscriptionTiers.Silver) { <span class="plan-label">Đề xuất cho vườn cá nhân</span> }
+                    <span class="kicker">@tier</span>
+                    @foreach (var plan in tierPlans)
+                    {
+                        var listPrice = plan.MonthlyListPriceVnd * plan.DurationMonths;
+                        var saved = listPrice - plan.AmountVnd;
+                        <div class="plan-price @(plan.DurationMonths == selectedDuration ? "active" : "")" data-plan-duration="@plan.DurationMonths">
+                            <h2>@plan.AmountVnd.ToString("N0")đ</h2>
+                            <p class="text-muted mb-1">Tổng thanh toán cho @plan.DurationMonths tháng</p>
+                            @if (saved > 0) { <small>Tiết kiệm @saved.ToString("N0")đ</small> }
+                        </div>
+                    }
+                    <ul><li>@first.PlantLimit cây trong vườn</li><li>@first.MonthlyAiLimit lượt AI / tháng</li><li>Đầy đủ thư viện, lịch chăm và nhắc việc</li><li>Xem lại toàn bộ dữ liệu đã tạo</li></ul>
+                    @foreach (var plan in tierPlans)
+                    {
+                        <div class="plan-action @(plan.DurationMonths == selectedDuration ? "active" : "")" data-plan-duration="@plan.DurationMonths">
+                            @if (!Model.IsSignedIn)
+                            {
+                                <a class="btn btn-success w-100" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans?sku=@plan.Sku">Chọn gói</a>
+                            }
+                            else if (blocked)
+                            {
+                                <button class="btn btn-secondary w-100" disabled>Chờ gói hiện tại hết hạn</button>
+                            }
+                            else
+                            {
+                                <form asp-controller="Checkout" asp-action="Create" method="post">
+                                    <input type="hidden" name="sku" value="@plan.Sku" />
+                                    <input type="hidden" name="requestKey" value="@Guid.NewGuid().ToString("N")" />
+                                    <button class="btn btn-success w-100" type="submit" disabled="@(!Model.SubscriptionsEnabled)">@(Model.CurrentTier == tier ? "Gia hạn" : "Chọn gói")</button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </article>
+            </div>
+        }
+    </div>
+    <div class="mt-5 small text-muted"><strong>Lưu ý:</strong> Không tự động gia hạn. Gói 6/12 tháng vẫn nhận hạn mức AI theo từng tháng, không nhận dồn. MVP chưa hỗ trợ đổi Silver ↔ Gold khi gói đang còn hạn.</div>
+</section>
+@section Scripts {
+<script>
+document.querySelectorAll('[data-duration]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-duration]').forEach(x => x.classList.toggle('active', x === button));
+  document.querySelectorAll('[data-plan-duration]').forEach(x => x.classList.toggle('active', x.dataset.planDuration === button.dataset.duration));
+}));
+</script>
+}

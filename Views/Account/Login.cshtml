@@ -43,6 +43,7 @@
                 <div asp-validation-summary="All" class="auth-alert"></div>
 
                 <form method="post">
+                    <input asp-for="ReturnUrl" type="hidden" />
                     <div class="auth-field">
                         <label asp-for="Email">Email</label>
                         <div class="auth-input">
@@ -65,7 +66,7 @@
 
                 <div class="auth-foot auth-foot--split">
                     <a asp-action="ForgotPassword">Quên mật khẩu?</a>
-                    <span>Chưa có tài khoản? <a asp-action="Register">Đăng ký ngay</a></span>
+                    <span>Chưa có tài khoản? <a asp-action="Register" asp-route-returnUrl="@Model.ReturnUrl">Đăng ký ngay</a></span>
                 </div>
             </div>
         </section>

@@ -1288,3 +1288,27 @@ hr {
         animation: none !important;
     }
 }
+
+/* subscription, community and demo checkout */
+.feature-hero, .plans-page, .checkout-page { padding: clamp(24px, 5vw, 64px) 0; }
+.community-coming, .plan-card, .status-panel { border: 1px solid var(--hair); background: linear-gradient(145deg, rgba(208,234,144,.04), var(--bg2)); padding: clamp(22px, 4vw, 36px); }
+.community-coming { max-width: 680px; margin-inline: auto; }
+.duration-switch { display: flex; justify-content: center; gap: 8px; }
+.duration-switch .btn { border: 1px solid var(--hair); color: var(--mute); }
+.duration-switch .btn.active { background: var(--green); color: var(--bg0); }
+.plan-card { position: relative; display: flex; flex-direction: column; }
+.plan-card--featured { border-color: rgba(208,234,144,.5); }
+.plan-card ul { flex: 1; padding-left: 1.2rem; color: var(--bone-dim); }
+.plan-card li { margin-bottom: 10px; }
+.plan-label, .demo-badge { display: inline-block; color: var(--bg0); background: var(--copper); padding: 3px 8px; font: 600 9px/1.5 var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.plan-label { position: absolute; right: 18px; top: 18px; }
+.plan-price, .plan-action { display: none; }
+.plan-price.active, .plan-action.active { display: block; }
+.plan-price small { color: var(--green); }
+.demo-warning { border: 1px solid var(--copper); color: var(--copper); text-align: center; padding: 10px; margin-bottom: 28px; font-weight: 600; letter-spacing: .1em; }
+.bank-qr { display: block; width: min(100%, 320px); height: auto; margin: auto; background: white; }
+.qr-placeholder { display: grid; place-items: center; min-height: 260px; border: 1px dashed var(--hair); color: var(--mute); }
+.progress { background: rgba(0,0,0,.25); }
+.progress-bar { background: var(--green); }
+.table { --bs-table-bg: transparent; --bs-table-color: var(--bone-dim); --bs-table-border-color: var(--hair); }
+@media (max-width: 991px) { .custom-navbar .nav-link { margin: 3px 0; } }

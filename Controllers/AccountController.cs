@@ -18,22 +18,24 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
-        return View();
+        return View(new LoginVM { ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null });
     }
 
     [HttpGet]
-    public IActionResult Register()
+    public IActionResult Register(string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
         return View();
     }
 
     [HttpPost]
     [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register(
-        RegisterVM vm)
+        RegisterVM vm, string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
         if (!ModelState.IsValid)
             return View(vm);
 
@@ -65,6 +67,8 @@ public class AccountController : Controller
             return View(vm);
         }
 
+        if (Url.IsLocalUrl(returnUrl))
+            HttpContext.Session.SetString("PostLoginReturnUrl", returnUrl);
         return View("RegisterPending", vm.Email);
     }
 
@@ -158,9 +162,16 @@ public class AccountController : Controller
 
         SetSession(result.User);
 
-        return RedirectToAction(
-            "Index",
-            "Home");
+        if (Url.IsLocalUrl(vm.ReturnUrl))
+            return LocalRedirect(vm.ReturnUrl);
+        var savedReturnUrl = HttpContext.Session.GetString("PostLoginReturnUrl");
+        if (Url.IsLocalUrl(savedReturnUrl))
+        {
+            HttpContext.Session.Remove("PostLoginReturnUrl");
+            return LocalRedirect(savedReturnUrl);
+        }
+
+        return RedirectToAction("Index", "Home");
     }
 
     private void SetSession(UserModel user)

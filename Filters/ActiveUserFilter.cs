@@ -20,7 +20,12 @@ public sealed class ActiveUserFilter(FirebaseAuthService authService) : IAsyncAc
             if (user == null || user.IsLocked)
             {
                 session.Clear();
-                context.Result = new RedirectToActionResult("Login", "Account", null);
+                var wantsJson = context.HttpContext.Request.Path.StartsWithSegments("/Checkout") &&
+                    (context.HttpContext.Request.Path.Value?.EndsWith("/Status", StringComparison.OrdinalIgnoreCase) == true ||
+                     context.HttpContext.Request.Headers.Accept.Any(x => x?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true));
+                context.Result = wantsJson
+                    ? new JsonResult(new { code = "account_inactive", message = "Tài khoản không còn hoạt động." }) { StatusCode = StatusCodes.Status403Forbidden }
+                    : new RedirectToActionResult("Login", "Account", null);
                 return;
             }
             session.SetString("Role", user.Role ?? "user");

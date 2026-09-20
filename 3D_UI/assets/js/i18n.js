@@ -17,6 +17,8 @@
 
     'head.guide': 'Guide&nbsp;№&nbsp;01&nbsp;—&nbsp;Sanctuary',
     'head.join': 'Join',
+    'head.community': 'Community',
+    'head.plans': 'Plans',
 
     'hero.kicker': 'Indoor&nbsp;Plant&nbsp;Studio&nbsp;·&nbsp;Est.&nbsp;in&nbsp;stillness',
     'hero.sub': 'Sanctuary — our first plant-care guide.<br>Twelve species for busy people.',
@@ -107,7 +109,7 @@
     'cta.t1': 'Care,',
     'cta.t2': 'on <em>Sundays.</em>',
     'cta.copy': 'What to water, What to mist,<br>What to leave alone.<br>No worries.',
-    'cta.fine': 'Join now for free.',
+    'cta.fine': 'Start free, upgrade when you need.',
 
     'foot.mid': 'Guide № 01 — <em>Sanctuary</em> · twelve species for busy people',
     'foot.right': '© 2026 · made in stillness',

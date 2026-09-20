@@ -17,6 +17,16 @@ services:
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
+      - key: App__DeploymentStage
+        value: Staging
+      - key: Subscriptions__Enabled
+        value: "false"
+      - key: Subscriptions__EnforceLimits
+        value: "false"
+      - key: Payments__Mode
+        value: Disabled
+      - key: Payments__DemoEnabled
+        value: "false"
       # Only enable behind Render's edge proxy, not on a directly exposed server.
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"

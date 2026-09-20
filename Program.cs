@@ -113,6 +113,14 @@ builder.Services.AddSingleton(provider =>
 });
 
 builder.Services.AddScoped<FirestoreService>();
+builder.Services.AddSingleton<PlanCatalogService>();
+builder.Services.AddSingleton<ISubscriptionClock, SystemSubscriptionClock>();
+builder.Services.AddScoped<EntitlementService>();
+builder.Services.AddScoped<UsageService>();
+builder.Services.AddScoped<AiQuotaService>();
+builder.Services.AddScoped<SubscriptionOrderService>();
+builder.Services.AddScoped<DemoPaymentService>();
+builder.Services.AddSingleton<IBankQrService, VietQrService>();
 builder.Services.AddScoped<FirebaseAuthService>();
 builder.Services.AddScoped<CareLogService>();
 builder.Services.AddScoped<ArticleService>();

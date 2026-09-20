@@ -203,8 +203,17 @@ body:not(.is-loading) .head { opacity: 1; }
 .head__right {
   display: flex;
   align-items: baseline;
+  gap: 22px;
   margin-right: 78px;
 }
+.head__nav {
+  color: var(--bone-dim);
+  font: 500 10px/1 var(--sans);
+  letter-spacing: .16em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.head__nav:hover { color: var(--bone); }
 .lang {
   position: fixed;
   top: 26px;
@@ -873,6 +882,7 @@ body:not(.is-loading) .head { opacity: 1; }
 }
 @media (max-width: 760px) {
   .head__guide { display: none; }
+  .head__nav { display: none; }
   .grid { grid-template-columns: repeat(2, 1fr); }
   .card { min-height: 190px; }
   .hero__deg { display: none; }

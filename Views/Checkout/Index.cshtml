@@ -1,0 +1,34 @@
+@model HomePlant.ViewModels.CheckoutVM
+@{
+    ViewData["Title"] = "Thanh toán demo";
+    var pending = Model.Order.Status == "Pending";
+}
+<section class="checkout-page mx-auto">
+    <div class="demo-warning">DEMO — KHÔNG THỰC HIỆN CHUYỂN TIỀN</div>
+    <span class="kicker">Đơn @Model.Order.TransferReference</span>
+    <h1>@Model.Order.Tier · @Model.Order.DurationMonths tháng</h1>
+    <div class="row g-4 mt-2">
+        <div class="col-md-6"><div class="status-panel h-100">
+            <p>Tổng thanh toán</p><h2>@Model.Order.AmountVnd.ToString("N0")đ</h2>
+            <p>Trạng thái: <strong>@Model.Order.Status</strong></p>
+            <p>Hết hạn: <time id="order-expiry" datetime="@Model.Order.ExpiresAt.ToDateTimeOffset().ToString("O")">@Model.Order.ExpiresAt.ToDateTimeOffset().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time></p>
+            @if (pending) { <p>Còn lại: <strong id="countdown">--:--</strong></p> }
+            <p>Nội dung: <code>@Model.Order.TransferReference</code></p>
+        </div></div>
+        <div class="col-md-6"><div class="status-panel h-100 text-center">
+            @if (Model.Qr.IsConfigured) { <img class="bank-qr" src="@Model.Qr.ImageUrl" alt="QR chuyển khoản cho đơn @Model.Order.TransferReference" /> }
+            else { <div class="qr-placeholder">QR ngân hàng<br />chưa được cấu hình</div> }
+            <p class="small text-muted mt-3">@Model.Qr.Message</p>
+            @if (Model.Qr.IsConfigured) { <dl class="text-start"><dt>Ngân hàng/BIN</dt><dd>@Model.Order.BankBin</dd><dt>Số tài khoản</dt><dd>@Model.Order.BankAccountNumber</dd><dt>Người nhận</dt><dd>@Model.Order.BankAccountName</dd></dl> }
+        </div></div>
+    </div>
+    @if (pending) { <div class="d-flex flex-wrap gap-2 mt-4">
+        <form method="post" action="/Checkout/@Model.Order.Id/SimulateSuccess"><button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button></form>
+        <form method="post" action="/Checkout/@Model.Order.Id/Cancel"><button class="btn btn-outline-danger" type="submit">Hủy đơn</button></form>
+    </div> }
+    @if (!Model.CanSimulate && pending) { <p class="small text-warning mt-3">Simulator đang bị khóa bởi cấu hình môi trường.</p> }
+</section>
+@section Scripts { <script>
+const expiry = new Date(document.getElementById('order-expiry')?.dateTime || 0); const out = document.getElementById('countdown');
+function tick(){ if(!out)return; const s=Math.max(0,Math.floor((expiry-Date.now())/1000)); out.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; } tick(); setInterval(tick,1000);
+</script> }

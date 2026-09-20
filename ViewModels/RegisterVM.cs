@@ -14,5 +14,6 @@ public class RegisterVM
     [Required]
     public string Password { get; set; }
 
-    public string Phone { get; set; }
+    [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "Số điện thoại phải gồm đúng 8 chữ số.")]
+    public string? Phone { get; set; }
 }

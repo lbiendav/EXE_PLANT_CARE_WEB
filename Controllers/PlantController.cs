@@ -104,6 +104,18 @@ public class PlantController : Controller
             return View(vm);
         }
 
+        try
+        {
+            await _userPlantService.EnsureCanAdd(uid);
+        }
+        catch (PlantLimitException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
+            await PopulateSpecies(vm.PlantSampleId);
+            await PopulateAiScheduleContext(uid, vm.SourceDiagnosisId);
+            return View(vm);
+        }
+
         var now = Timestamp.GetCurrentTimestamp();
 
         var imageUrl = await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted);
@@ -131,6 +143,12 @@ public class PlantController : Controller
         try
         {
             await _userPlantService.Add(uid, plant);
+        }
+        catch (PlantLimitException ex)
+        {
+            await _imageStorage.Delete(imageUrl, CancellationToken.None);
+            TempData["Warning"] = ex.Message;
+            return RedirectToAction(nameof(Index));
         }
         catch
         {

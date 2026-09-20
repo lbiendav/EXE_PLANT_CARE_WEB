@@ -6,6 +6,7 @@ namespace HomePlant.ViewModels;
 
 public sealed class ExpertIndexVM
 {
+    public string RequestId { get; set; } = Guid.NewGuid().ToString("D");
     [Display(Name = "Cây trong vườn")]
     public string? PlantId { get; set; }
 
