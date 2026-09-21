@@ -20,13 +20,15 @@ services:
       - key: App__DeploymentStage
         value: Staging
       - key: Subscriptions__Enabled
-        value: "false"
+        value: "true"
       - key: Subscriptions__EnforceLimits
         value: "false"
       - key: Payments__Mode
-        value: Disabled
+        value: Demo
       - key: Payments__DemoEnabled
-        value: "false"
+        value: "true"
+      - key: Payments__AllowedDemoProjectIds__0
+        value: homeplant-staging-dav
       # Only enable behind Render's edge proxy, not on a directly exposed server.
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"
