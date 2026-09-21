@@ -26,4 +26,5 @@ public sealed class CheckoutVM
     public required SubscriptionOrderModel Order { get; init; }
     public required BankQrDetails Qr { get; init; }
     public bool CanSimulate { get; init; }
+    public bool IsCheckoutOpen { get; init; }
 }

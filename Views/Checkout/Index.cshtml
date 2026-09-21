@@ -1,7 +1,8 @@
 @model HomePlant.ViewModels.CheckoutVM
 @{
     ViewData["Title"] = "Thanh toán demo";
-    var pending = Model.Order.Status == "Pending";
+    var pending = Model.IsCheckoutOpen;
+    var vietnamTime = Model.Order.ExpiresAt.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7));
 }
 <section class="checkout-page mx-auto">
     <div class="demo-warning">DEMO — KHÔNG THỰC HIỆN CHUYỂN TIỀN</div>
@@ -11,15 +12,18 @@
         <div class="col-md-6"><div class="status-panel h-100">
             <p>Tổng thanh toán</p><h2>@Model.Order.AmountVnd.ToString("N0")đ</h2>
             <p>Trạng thái: <strong>@Model.Order.Status</strong></p>
-            <p>Hết hạn: <time id="order-expiry" datetime="@Model.Order.ExpiresAt.ToDateTimeOffset().ToString("O")">@Model.Order.ExpiresAt.ToDateTimeOffset().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</time></p>
+            <p>Hết hạn: <time id="order-expiry" datetime="@Model.Order.ExpiresAt.ToDateTimeOffset().ToString("O")">@vietnamTime.ToString("dd/MM/yyyy HH:mm") (UTC+7)</time></p>
             @if (pending) { <p>Còn lại: <strong id="countdown">--:--</strong></p> }
-            <p>Nội dung: <code>@Model.Order.TransferReference</code></p>
+            <p>Nội dung: <code>@Model.Order.TransferReference</code> <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.TransferReference">Sao chép</button></p>
         </div></div>
         <div class="col-md-6"><div class="status-panel h-100 text-center">
-            @if (Model.Qr.IsConfigured) { <img class="bank-qr" src="@Model.Qr.ImageUrl" alt="QR chuyển khoản cho đơn @Model.Order.TransferReference" /> }
+            @if (Model.Qr.IsConfigured) {
+                <img id="bank-qr" class="bank-qr" src="@Model.Qr.ImageUrl" alt="QR chuyển khoản cho đơn @Model.Order.TransferReference" />
+                <div id="qr-error" class="qr-placeholder d-none">Không tải được ảnh QR.<br /><button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="retry-qr">Thử lại</button></div>
+            }
             else { <div class="qr-placeholder">QR ngân hàng<br />chưa được cấu hình</div> }
             <p class="small text-muted mt-3">@Model.Qr.Message</p>
-            @if (Model.Qr.IsConfigured) { <dl class="text-start"><dt>Ngân hàng/BIN</dt><dd>@Model.Order.BankBin</dd><dt>Số tài khoản</dt><dd>@Model.Order.BankAccountNumber</dd><dt>Người nhận</dt><dd>@Model.Order.BankAccountName</dd></dl> }
+            @if (Model.Qr.IsConfigured) { <dl class="text-start"><dt>Ngân hàng/BIN</dt><dd>@Model.Order.BankBin</dd><dt>Số tài khoản</dt><dd>@Model.Order.BankAccountNumber <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.BankAccountNumber">Sao chép</button></dd><dt>Số tiền</dt><dd>@Model.Order.AmountVnd.ToString("N0")đ <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.AmountVnd">Sao chép</button></dd><dt>Người nhận</dt><dd>@Model.Order.BankAccountName</dd></dl> }
         </div></div>
     </div>
     @if (pending) { <div class="d-flex flex-wrap gap-2 mt-4">
@@ -30,5 +34,8 @@
 </section>
 @section Scripts { <script>
 const expiry = new Date(document.getElementById('order-expiry')?.dateTime || 0); const out = document.getElementById('countdown');
-function tick(){ if(!out)return; const s=Math.max(0,Math.floor((expiry-Date.now())/1000)); out.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; } tick(); setInterval(tick,1000);
+let tickTimer; function tick(){ if(!out)return; const s=Math.max(0,Math.floor((expiry-Date.now())/1000)); out.textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; if(s===0) clearInterval(tickTimer); } tick(); tickTimer=setInterval(tick,1000);
+document.querySelectorAll('.copy-value').forEach(button => button.addEventListener('click', async () => { try { await navigator.clipboard.writeText(button.dataset.copy || ''); const old=button.textContent; button.textContent='Đã chép'; setTimeout(()=>button.textContent=old,1200); } catch { button.textContent='Không thể chép'; } }));
+const qr=document.getElementById('bank-qr'), qrError=document.getElementById('qr-error'); if(qr){ qr.addEventListener('error',()=>{qr.classList.add('d-none');qrError?.classList.remove('d-none');}); document.getElementById('retry-qr')?.addEventListener('click',()=>{qrError?.classList.add('d-none');qr.classList.remove('d-none');const url=new URL(qr.src);url.searchParams.set('_retry',Date.now());qr.src=url.toString();}); }
+let pollDelay=4000, pollTimer; async function poll(){ if(document.hidden){schedule();return;} try{const response=await fetch('@Url.Action("Status", "Checkout", new { orderId = Model.Order.Id })',{cache:'no-store',headers:{'Accept':'application/json'}});if(!response.ok)throw new Error();const data=await response.json();if(data.status!=='Pending'){location.reload();return;}pollDelay=4000;}catch{pollDelay=Math.min(pollDelay*2,20000);}schedule();} function schedule(){pollTimer=setTimeout(poll,pollDelay);} if(@pending.ToString().ToLowerInvariant()){schedule();document.addEventListener('visibilitychange',()=>{if(!document.hidden){clearTimeout(pollTimer);pollDelay=4000;schedule();}});}
 </script> }

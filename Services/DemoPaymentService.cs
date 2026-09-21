@@ -5,14 +5,13 @@ namespace HomePlant.Services;
 
 public sealed class DemoPaymentService(
     FirestoreService firestore,
-    IConfiguration configuration,
+    PaymentModePolicy paymentPolicy,
     ISubscriptionClock clock)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
     public async Task<SubscriptionOrderModel> Confirm(string uid, string orderId)
     {
-        EnsureDemoAllowed();
         var now = clock.UtcNow;
         var orderRef = _db.Collection("subscription_orders").Document(orderId);
         var subscriptionRef = _db.Collection("subscriptions").Document(uid);
@@ -31,6 +30,9 @@ public sealed class DemoPaymentService(
             if (!orderSnapshot.Exists || orderSnapshot.GetValue<string>("userId") != uid)
                 return (Order: (SubscriptionOrderModel?)null, Error: "not_found");
             var order = orderSnapshot.ConvertTo<SubscriptionOrderModel>();
+            var policy = paymentPolicy.CanSimulate(order);
+            if (!policy.Allowed)
+                return (Order: order, Error: policy.Code);
             if (order.Status == "Paid" && eventSnapshot.Exists)
                 return (Order: order, Error: (string?)null);
             if (!userSnapshot.Exists || (userSnapshot.TryGetValue<bool>("isLocked", out var locked) && locked))
@@ -60,6 +62,9 @@ public sealed class DemoPaymentService(
             var expiresAt = SubscriptionTime.AddCalendarMonths(baseTime, order.DurationMonths);
             var paidAt = Timestamp.FromDateTimeOffset(now);
             order.Status = "Paid";
+            order.CheckoutStatus = "Closed";
+            order.PaymentStatus = "ReceivedExact";
+            order.FulfillmentStatus = "Granted";
             order.PaidAt = paidAt;
             order.ActivationStartsAt = Timestamp.FromDateTimeOffset(startsAt);
             order.ActivationExpiresAt = Timestamp.FromDateTimeOffset(expiresAt);
@@ -82,7 +87,8 @@ public sealed class DemoPaymentService(
             transaction.Set(subscriptionRef, subscription);
             transaction.Update(orderRef, new Dictionary<string, object>
             {
-                ["status"] = "Paid", ["paidAt"] = paidAt,
+                ["status"] = "Paid", ["checkoutStatus"] = "Closed",
+                ["paymentStatus"] = "ReceivedExact", ["fulfillmentStatus"] = "Granted", ["paidAt"] = paidAt,
                 ["activationStartsAt"] = order.ActivationStartsAt.Value,
                 ["activationExpiresAt"] = order.ActivationExpiresAt.Value
             });
@@ -98,22 +104,10 @@ public sealed class DemoPaymentService(
                 "account_inactive" => new SubscriptionDomainException(result.Error, "Tài khoản không còn hoạt động."),
                 "order_expired" => new SubscriptionDomainException(result.Error, "Đơn đã hết hạn. Vui lòng tạo đơn mới."),
                 "tier_change_not_supported" => new SubscriptionDomainException(result.Error, "Chưa hỗ trợ đổi hạng khi gói hiện tại còn hạn."),
+                "live_order_not_simulatable" => new SubscriptionDomainException(result.Error, "Đơn thanh toán thật không thể được xác nhận bằng simulator."),
+                "demo_disabled" or "demo_project_not_allowed" => new SubscriptionDomainException(result.Error, "Mô phỏng thanh toán không được phép trong môi trường này."),
                 _ => new SubscriptionDomainException(result.Error, "Đơn không còn có thể xác nhận.")
             };
         return result.Order!;
-    }
-
-    private void EnsureDemoAllowed()
-    {
-        var stage = configuration["App:DeploymentStage"] ?? "Production";
-        var mode = configuration["Payments:Mode"] ?? "Disabled";
-        var enabled = configuration.GetValue<bool?>("Payments:DemoEnabled") ?? false;
-        var projectId = configuration["Firebase:ProjectId"] ?? "";
-        var allowed = configuration.GetSection("Payments:AllowedDemoProjectIds").Get<string[]>() ?? [];
-        var emulator = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST"));
-        if (stage.Equals("Production", StringComparison.OrdinalIgnoreCase) ||
-            !mode.Equals("Demo", StringComparison.OrdinalIgnoreCase) || !enabled ||
-            (!emulator && !allowed.Contains(projectId, StringComparer.Ordinal)))
-            throw new SubscriptionDomainException("demo_disabled", "Mô phỏng thanh toán không được phép trong môi trường này.");
     }
 }

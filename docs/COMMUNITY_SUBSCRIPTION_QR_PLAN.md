@@ -1,6 +1,8 @@
 # HomePlant — Kế hoạch Cộng đồng, gói đăng ký và thanh toán QR demo
 
-Ngày khảo sát: 20/09/2026. Trạng thái: **Đề xuất để chủ dự án duyệt; chưa triển khai tính năng.**
+Ngày khảo sát: 20/09/2026. Trạng thái lúc lập: **Đề xuất để chủ dự án duyệt; chưa triển khai tính năng.**
+
+> Cập nhật 21/09/2026: mã nguồn hiện đã có module demo. Phần mô tả hiện trạng trong tài liệu này là bản khảo sát ngày 20/09. Kế hoạch tiếp theo cho thanh toán thật và baseline mới nằm tại [LIVE_PAYMENT_PLAN.md](LIVE_PAYMENT_PLAN.md); xem [SUBSCRIPTION_DEMO_RUNBOOK.md](SUBSCRIPTION_DEMO_RUNBOOK.md) để vận hành demo hiện có.
 
 Tài liệu này là đặc tả bàn giao cho AI Agent. Giá Silver 48.000đ/tháng và Gold 88.000đ/tháng là yêu cầu đã xác định. Chủ dự án đã chốt giới hạn số cây: **Free 2 cây, Silver 5 cây, Gold 10 cây**. Giá dài hạn, hạn mức AI và các chính sách ghi “đề xuất” bên dưới cần được chủ dự án duyệt trước khi Agent triển khai phần tương ứng.
 

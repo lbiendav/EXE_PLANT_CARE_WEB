@@ -6,7 +6,8 @@ namespace HomePlant.Services;
 public sealed class AiQuotaService(
     FirestoreService firestore,
     IConfiguration configuration,
-    ISubscriptionClock clock)
+    ISubscriptionClock clock,
+    PaymentModePolicy paymentPolicy)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
@@ -129,8 +130,7 @@ public sealed class AiQuotaService(
     {
         if (!snapshot.Exists) return PlanCatalogService.Free.MonthlyAiLimit;
         var subscription = snapshot.ConvertTo<SubscriptionModel>();
-        var stage = configuration["App:DeploymentStage"] ?? "Production";
-        var allowed = !subscription.IsDemo || !stage.Equals("Production", StringComparison.OrdinalIgnoreCase);
+        var allowed = paymentPolicy.IsDemoSubscriptionAllowed(subscription);
         return allowed && subscription.StartsAt.ToDateTimeOffset() <= now && now < subscription.ExpiresAt.ToDateTimeOffset()
             ? subscription.MonthlyAiLimit : PlanCatalogService.Free.MonthlyAiLimit;
     }

@@ -5,7 +5,7 @@ namespace HomePlant.Services;
 
 public sealed class EntitlementService(
     FirestoreService firestore,
-    IConfiguration configuration,
+    PaymentModePolicy paymentPolicy,
     ISubscriptionClock clock)
 {
     private readonly FirestoreDb _db = firestore.Db;
@@ -18,8 +18,7 @@ public sealed class EntitlementService(
 
         var subscription = snapshot.ConvertTo<SubscriptionModel>();
         var now = clock.UtcNow;
-        var stage = configuration["App:DeploymentStage"] ?? "Production";
-        var demoAllowed = !subscription.IsDemo || !stage.Equals("Production", StringComparison.OrdinalIgnoreCase);
+        var demoAllowed = paymentPolicy.IsDemoSubscriptionAllowed(subscription);
         var active = demoAllowed && subscription.StartsAt.ToDateTimeOffset() <= now && now < subscription.ExpiresAt.ToDateTimeOffset();
         if (!active)
             return new CurrentEntitlement(PlanCatalogService.Free, subscription, false);

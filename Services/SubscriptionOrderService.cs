@@ -9,14 +9,18 @@ public sealed class SubscriptionOrderService(
     FirestoreService firestore,
     PlanCatalogService catalog,
     ISubscriptionClock clock,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    PaymentModePolicy paymentPolicy)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
     public async Task<SubscriptionOrderModel> Create(string uid, string sku, string requestKey)
     {
-        if (!(configuration.GetValue<bool?>("Subscriptions:Enabled") ?? false))
-            throw new SubscriptionDomainException("subscriptions_disabled", "Tính năng đăng ký hiện đang tạm đóng.");
+        var policy = paymentPolicy.CanCreateCheckout(uid);
+        if (!policy.Allowed)
+            throw new SubscriptionDomainException(policy.Code, policy.Message);
+        if (policy.Mode == PaymentRuntimeMode.Live)
+            throw new SubscriptionDomainException("live_provider_not_ready", "Adapter payOS live chưa được kích hoạt. Không có đơn hoặc QR thanh toán thật nào được tạo.");
         if (string.IsNullOrWhiteSpace(requestKey) || requestKey.Length > 100)
             throw new SubscriptionDomainException("invalid_request_key", "Yêu cầu tạo đơn không hợp lệ.");
 
@@ -24,7 +28,7 @@ public sealed class SubscriptionOrderService(
         var now = clock.UtcNow;
         var orderRef = _db.Collection("subscription_orders").Document();
         var billingRef = _db.Collection("users").Document(uid).Collection("billing_state").Document("current");
-        var requestHash = Hash(requestKey);
+        var requestHash = Hash($"{policy.Mode}:{requestKey}");
         var requestRef = _db.Collection("users").Document(uid).Collection("order_requests").Document(requestHash);
         var subscriptionRef = _db.Collection("subscriptions").Document(uid);
 
@@ -76,7 +80,7 @@ public sealed class SubscriptionOrderService(
             var bankAccount = configuration["Payments:Bank:AccountNumber"]?.Trim() ?? "";
             var bankName = configuration["Payments:Bank:AccountName"]?.Trim() ?? "";
             var validBank = bankBin.Length is >= 6 and <= 8 && bankBin.All(char.IsDigit) &&
-                bankAccount.Length is >= 4 and <= 30 && bankAccount.All(char.IsDigit) &&
+                bankAccount.Length is >= 4 and <= 19 && bankAccount.All(char.IsDigit) &&
                 bankName.Length is >= 2 and <= 100;
             var created = new SubscriptionOrderModel
             {
@@ -92,8 +96,15 @@ public sealed class SubscriptionOrderService(
                 Status = "Pending",
                 CreatedAt = Timestamp.FromDateTimeOffset(now),
                 ExpiresAt = Timestamp.FromDateTimeOffset(now.AddMinutes(expiryMinutes)),
-                PaymentMode = "Demo",
-                IsDemo = true,
+                PaymentMode = policy.Mode.ToString(),
+                IsDemo = policy.Mode == PaymentRuntimeMode.Demo,
+                Provider = "Simulator",
+                ChannelId = "demo",
+                CheckoutStatus = "Open",
+                PaymentStatus = "Unpaid",
+                FulfillmentStatus = "NotGranted",
+                RefundStatus = "None",
+                SchemaVersion = 2,
                 TransferReference = $"HP{orderRef.Id[..Math.Min(10, orderRef.Id.Length)].ToUpperInvariant()}",
                 BankBin = validBank ? bankBin : "",
                 BankAccountNumber = validBank ? bankAccount : "",
@@ -113,13 +124,7 @@ public sealed class SubscriptionOrderService(
         var snapshot = await orderRef.GetSnapshotAsync(cancellationToken);
         if (!snapshot.Exists) return null;
         var order = snapshot.ConvertTo<SubscriptionOrderModel>();
-        if (order.UserId != uid) return null;
-        if (order.Status == "Pending" && clock.UtcNow >= order.ExpiresAt.ToDateTimeOffset())
-        {
-            try { order = await Cancel(uid, orderId); }
-            catch (SubscriptionDomainException) { snapshot = await orderRef.GetSnapshotAsync(cancellationToken); order = snapshot.ConvertTo<SubscriptionOrderModel>(); }
-        }
-        return order;
+        return order.UserId == uid ? order : null;
     }
 
     public async Task<IReadOnlyList<SubscriptionOrderModel>> History(string uid, int page, int pageSize = 10)
@@ -148,7 +153,8 @@ public sealed class SubscriptionOrderService(
             if (order.Status != "Pending")
                 throw new SubscriptionDomainException("order_terminal", "Đơn này không còn có thể hủy.");
             order.Status = now >= order.ExpiresAt.ToDateTimeOffset() ? "Expired" : "Cancelled";
-            transaction.Update(orderRef, new Dictionary<string, object> { ["status"] = order.Status });
+            order.CheckoutStatus = order.Status;
+            transaction.Update(orderRef, new Dictionary<string, object> { ["status"] = order.Status, ["checkoutStatus"] = order.CheckoutStatus });
             if (billingSnapshot.Exists && billingSnapshot.TryGetValue<string>("pendingOrderId", out var pendingId) && pendingId == orderId)
                 transaction.Update(billingRef, new Dictionary<string, object> { ["pendingOrderId"] = "", ["updatedAt"] = Timestamp.FromDateTimeOffset(now) });
             return order;

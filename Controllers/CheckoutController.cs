@@ -9,7 +9,7 @@ public sealed class CheckoutController(
     SubscriptionOrderService orders,
     DemoPaymentService demoPayments,
     IBankQrService qrService,
-    IConfiguration configuration) : Controller
+    PaymentModePolicy paymentPolicy) : Controller
 {
     [HttpPost("/Checkout/Create")]
     public async Task<IActionResult> Create(string sku, string requestKey)
@@ -35,11 +35,15 @@ public sealed class CheckoutController(
         if (uid == null) return RedirectToAction("Login", "Account", new { returnUrl = $"/Checkout/{Uri.EscapeDataString(orderId)}" });
         var order = await orders.GetOwned(uid, orderId);
         if (order == null) return NotFound();
-        var stage = configuration["App:DeploymentStage"] ?? "Production";
-        var canSimulate = !stage.Equals("Production", StringComparison.OrdinalIgnoreCase) &&
-            (configuration["Payments:Mode"] ?? "").Equals("Demo", StringComparison.OrdinalIgnoreCase) &&
-            (configuration.GetValue<bool?>("Payments:DemoEnabled") ?? false);
-        return View(new CheckoutVM { Order = order, Qr = qrService.Build(order), CanSimulate = canSimulate });
+        var isCheckoutOpen = order.Status == "Pending" && !order.IsCheckoutExpired(DateTimeOffset.UtcNow);
+        var canSimulate = isCheckoutOpen && paymentPolicy.CanSimulate(order).Allowed;
+        return View(new CheckoutVM
+        {
+            Order = order,
+            Qr = isCheckoutOpen ? qrService.Build(order) : new BankQrDetails(false, null, "Đơn không còn mở; QR đã được ẩn."),
+            CanSimulate = canSimulate,
+            IsCheckoutOpen = isCheckoutOpen
+        });
     }
 
     [HttpGet("/Checkout/{orderId}/Status")]
@@ -49,7 +53,17 @@ public sealed class CheckoutController(
         var uid = HttpContext.Session.GetString("Uid");
         if (uid == null) return Unauthorized(new { code = "not_authenticated" });
         var order = await orders.GetOwned(uid, orderId);
-        return order == null ? NotFound(new { code = "not_found" }) : Ok(new { order.Status, expiresAt = order.ExpiresAt.ToDateTimeOffset(), order.PaidAt });
+        if (order == null) return NotFound(new { code = "not_found" });
+        var effectiveStatus = order.IsCheckoutExpired(DateTimeOffset.UtcNow) ? "Expired" : order.Status;
+        return Ok(new
+        {
+            status = effectiveStatus,
+            order.CheckoutStatus,
+            order.PaymentStatus,
+            order.FulfillmentStatus,
+            expiresAt = order.ExpiresAt.ToDateTimeOffset(),
+            order.PaidAt
+        });
     }
 
     [HttpPost("/Checkout/{orderId}/SimulateSuccess")]

@@ -8,12 +8,14 @@ public class UserPlantService
     private readonly FirestoreDb _db;
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionClock _clock;
+    private readonly PaymentModePolicy _paymentPolicy;
 
-    public UserPlantService(FirestoreService firestore, IConfiguration configuration, ISubscriptionClock clock)
+    public UserPlantService(FirestoreService firestore, IConfiguration configuration, ISubscriptionClock clock, PaymentModePolicy paymentPolicy)
     {
         _db = firestore.Db;
         _configuration = configuration;
         _clock = clock;
+        _paymentPolicy = paymentPolicy;
     }
 
     private CollectionReference Collection(string uid) =>
@@ -148,8 +150,7 @@ public class UserPlantService
         if (!snapshot.Exists) return PlanCatalogService.Free.PlantLimit;
         var subscription = snapshot.ConvertTo<SubscriptionModel>();
         var now = _clock.UtcNow;
-        var stage = _configuration["App:DeploymentStage"] ?? "Production";
-        var demoAllowed = !subscription.IsDemo || !stage.Equals("Production", StringComparison.OrdinalIgnoreCase);
+        var demoAllowed = _paymentPolicy.IsDemoSubscriptionAllowed(subscription);
         return demoAllowed && subscription.StartsAt.ToDateTimeOffset() <= now && now < subscription.ExpiresAt.ToDateTimeOffset()
             ? subscription.PlantLimit : PlanCatalogService.Free.PlantLimit;
     }

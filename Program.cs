@@ -120,6 +120,7 @@ builder.Services.AddScoped<UsageService>();
 builder.Services.AddScoped<AiQuotaService>();
 builder.Services.AddScoped<SubscriptionOrderService>();
 builder.Services.AddScoped<DemoPaymentService>();
+builder.Services.AddSingleton<PaymentModePolicy>();
 builder.Services.AddSingleton<IBankQrService, VietQrService>();
 builder.Services.AddScoped<FirebaseAuthService>();
 builder.Services.AddScoped<CareLogService>();

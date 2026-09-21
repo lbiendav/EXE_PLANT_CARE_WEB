@@ -70,12 +70,23 @@ public sealed class SubscriptionOrderModel
     [FirestoreProperty("paidAt")] public Timestamp? PaidAt { get; set; }
     [FirestoreProperty("paymentMode")] public string PaymentMode { get; set; } = "Demo";
     [FirestoreProperty("isDemo")] public bool IsDemo { get; set; } = true;
+    [FirestoreProperty("provider")] public string Provider { get; set; } = "Simulator";
+    [FirestoreProperty("channelId")] public string ChannelId { get; set; } = "demo";
+    [FirestoreProperty("checkoutStatus")] public string CheckoutStatus { get; set; } = "Open";
+    [FirestoreProperty("paymentStatus")] public string PaymentStatus { get; set; } = "Unpaid";
+    [FirestoreProperty("fulfillmentStatus")] public string FulfillmentStatus { get; set; } = "NotGranted";
+    [FirestoreProperty("refundStatus")] public string RefundStatus { get; set; } = "None";
+    // Missing on legacy Firestore documents; new orders explicitly set this to 2.
+    [FirestoreProperty("schemaVersion")] public int SchemaVersion { get; set; } = 1;
     [FirestoreProperty("transferReference")] public string TransferReference { get; set; } = "";
     [FirestoreProperty("bankBin")] public string BankBin { get; set; } = "";
     [FirestoreProperty("bankAccountNumber")] public string BankAccountNumber { get; set; } = "";
     [FirestoreProperty("bankAccountName")] public string BankAccountName { get; set; } = "";
     [FirestoreProperty("activationStartsAt")] public Timestamp? ActivationStartsAt { get; set; }
     [FirestoreProperty("activationExpiresAt")] public Timestamp? ActivationExpiresAt { get; set; }
+
+    public bool IsCheckoutExpired(DateTimeOffset now) =>
+        CheckoutStatus == "Open" && now >= ExpiresAt.ToDateTimeOffset();
 }
 
 [FirestoreData]
