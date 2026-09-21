@@ -15,7 +15,7 @@ public sealed class DemoPaymentService(
         var now = clock.UtcNow;
         var orderRef = _db.Collection("subscription_orders").Document(orderId);
         var subscriptionRef = _db.Collection("subscriptions").Document(uid);
-        var billingRef = _db.Collection("users").Document(uid).Collection("billing_state").Document("current");
+        var billingRef = _db.Collection("users").Document(uid).Collection("billing_state").Document("demo");
         var userRef = _db.Collection("users").Document(uid);
         var eventRef = _db.Collection("payment_events").Document($"demo_{orderId}");
 

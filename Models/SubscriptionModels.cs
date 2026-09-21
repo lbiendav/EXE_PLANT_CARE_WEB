@@ -72,6 +72,12 @@ public sealed class SubscriptionOrderModel
     [FirestoreProperty("isDemo")] public bool IsDemo { get; set; } = true;
     [FirestoreProperty("provider")] public string Provider { get; set; } = "Simulator";
     [FirestoreProperty("channelId")] public string ChannelId { get; set; } = "demo";
+    [FirestoreProperty("providerOrderCode")] public long ProviderOrderCode { get; set; }
+    [FirestoreProperty("providerPaymentLinkId")] public string ProviderPaymentLinkId { get; set; } = "";
+    [FirestoreProperty("providerCheckoutUrl")] public string ProviderCheckoutUrl { get; set; } = "";
+    [FirestoreProperty("providerQrCode")] public string ProviderQrCode { get; set; } = "";
+    [FirestoreProperty("rawProviderStatus")] public string RawProviderStatus { get; set; } = "";
+    [FirestoreProperty("isPilot")] public bool IsPilot { get; set; }
     [FirestoreProperty("checkoutStatus")] public string CheckoutStatus { get; set; } = "Open";
     [FirestoreProperty("paymentStatus")] public string PaymentStatus { get; set; } = "Unpaid";
     [FirestoreProperty("fulfillmentStatus")] public string FulfillmentStatus { get; set; } = "NotGranted";

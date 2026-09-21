@@ -1,11 +1,12 @@
 @model HomePlant.ViewModels.CheckoutVM
 @{
-    ViewData["Title"] = "Thanh toán demo";
+    ViewData["Title"] = Model.Order.IsDemo ? "Thanh toán demo" : "Thanh toán payOS";
     var pending = Model.IsCheckoutOpen;
     var vietnamTime = Model.Order.ExpiresAt.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7));
 }
 <section class="checkout-page mx-auto">
-    <div class="demo-warning">DEMO — KHÔNG THỰC HIỆN CHUYỂN TIỀN</div>
+    @if (Model.Order.IsDemo) { <div class="demo-warning">DEMO — KHÔNG THỰC HIỆN CHUYỂN TIỀN</div> }
+    else { <div class="alert alert-info">Thanh toán thật qua payOS. Gói chỉ được kích hoạt sau khi HomePlant nhận webhook đã xác minh.</div> }
     <span class="kicker">Đơn @Model.Order.TransferReference</span>
     <h1>@Model.Order.Tier · @Model.Order.DurationMonths tháng</h1>
     <div class="row g-4 mt-2">
@@ -17,12 +18,15 @@
             <p>Nội dung: <code>@Model.Order.TransferReference</code> <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.TransferReference">Sao chép</button></p>
         </div></div>
         <div class="col-md-6"><div class="status-panel h-100 text-center">
-            @if (Model.Qr.IsConfigured) {
+            @if (!Model.Order.IsDemo && !string.IsNullOrWhiteSpace(Model.Order.ProviderCheckoutUrl)) {
+                <div class="qr-placeholder"><a class="btn btn-success" href="@Model.Order.ProviderCheckoutUrl" rel="noopener noreferrer">Mở trang thanh toán payOS</a></div>
+            }
+            else if (Model.Qr.IsConfigured) {
                 <img id="bank-qr" class="bank-qr" src="@Model.Qr.ImageUrl" alt="QR chuyển khoản cho đơn @Model.Order.TransferReference" />
                 <div id="qr-error" class="qr-placeholder d-none">Không tải được ảnh QR.<br /><button class="btn btn-sm btn-outline-secondary mt-2" type="button" id="retry-qr">Thử lại</button></div>
             }
             else { <div class="qr-placeholder">QR ngân hàng<br />chưa được cấu hình</div> }
-            <p class="small text-muted mt-3">@Model.Qr.Message</p>
+            <p class="small text-muted mt-3">@(Model.Order.IsDemo ? Model.Qr.Message : "Không dùng URL quay về để xác nhận tiền. Trạng thái sẽ tự cập nhật sau webhook payOS.")</p>
             @if (Model.Qr.IsConfigured) { <dl class="text-start"><dt>Ngân hàng/BIN</dt><dd>@Model.Order.BankBin</dd><dt>Số tài khoản</dt><dd>@Model.Order.BankAccountNumber <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.BankAccountNumber">Sao chép</button></dd><dt>Số tiền</dt><dd>@Model.Order.AmountVnd.ToString("N0")đ <button class="btn btn-sm btn-outline-secondary copy-value" type="button" data-copy="@Model.Order.AmountVnd">Sao chép</button></dd><dt>Người nhận</dt><dd>@Model.Order.BankAccountName</dd></dl> }
         </div></div>
     </div>

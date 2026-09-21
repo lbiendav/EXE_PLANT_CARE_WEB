@@ -40,7 +40,9 @@ public sealed class CheckoutController(
         return View(new CheckoutVM
         {
             Order = order,
-            Qr = isCheckoutOpen ? qrService.Build(order) : new BankQrDetails(false, null, "Đơn không còn mở; QR đã được ẩn."),
+            Qr = isCheckoutOpen && order.IsDemo
+                ? qrService.Build(order)
+                : new BankQrDetails(false, null, order.IsDemo ? "Đơn không còn mở; QR đã được ẩn." : "Thanh toán thật sử dụng checkout do payOS cung cấp."),
             CanSimulate = canSimulate,
             IsCheckoutOpen = isCheckoutOpen
         });
@@ -64,6 +66,13 @@ public sealed class CheckoutController(
             expiresAt = order.ExpiresAt.ToDateTimeOffset(),
             order.PaidAt
         });
+    }
+
+    [HttpGet("/Checkout/{orderId}/Return")]
+    public IActionResult Return(string orderId)
+    {
+        // Query parameters from the browser are not financial evidence. The webhook updates payment state.
+        return RedirectToAction(nameof(Index), new { orderId });
     }
 
     [HttpPost("/Checkout/{orderId}/SimulateSuccess")]

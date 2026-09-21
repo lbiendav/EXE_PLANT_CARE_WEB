@@ -2,6 +2,7 @@ using Google.Cloud.Firestore;
 using HomePlant.Models;
 using HomePlant.Services;
 using Microsoft.Extensions.Configuration;
+using PayOS.Models.Webhooks;
 
 var oldEmulator = Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST");
 Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", null);
@@ -27,6 +28,9 @@ try
     Check(!Policy(Demo()).IsDemoSubscriptionAllowed(new SubscriptionModel { IsDemo = true }), "demo entitlement rejected in Production");
     Check(!Policy().IsDemoSubscriptionAllowed(new SubscriptionModel { IsDemo = true }), "demo entitlement rejected while payments are disabled");
     Check(Policy().IsDemoSubscriptionAllowed(new SubscriptionModel { IsDemo = false }), "live entitlement is not controlled by demo switch");
+    await CheckThrows<InvalidOperationException>(
+        () => new PayOsPaymentProvider(new ConfigurationBuilder().Build()).VerifyWebhook(new Webhook()),
+        "payOS provider fails closed without credentials");
 
     var qr = new VietQrService();
     Check(!qr.Build(Order("Demo", true)).IsConfigured, "QR absent when bank snapshot is absent");
@@ -40,6 +44,16 @@ try
     Check(!qr.Build(validOrder).IsConfigured, "QR rejects overlong account number");
     validOrder.BankAccountNumber = "123456789"; validOrder.TransferReference = "HP&UNSAFE";
     Check(!qr.Build(validOrder).IsConfigured, "QR rejects unsafe transfer content");
+
+    var liveOrder = Order("Live", false);
+    liveOrder.Provider = "PayOS"; liveOrder.ProviderOrderCode = 1234567; liveOrder.ProviderPaymentLinkId = "link-1"; liveOrder.AmountVnd = 48_000;
+    var verified = new VerifiedPayment(1234567, 48_000, "VND", "link-1", "bank-ref-1", "HP1234567", "receiver", "2026-09-21 21:00:00", "00");
+    Check(LivePaymentService.ValidateEvidence(liveOrder, verified) == "ok", "verified exact payOS evidence is grantable");
+    Check(LivePaymentService.ValidateEvidence(liveOrder, verified with { Amount = 47_000 }) == "amount_mismatch", "wrong amount is held for review");
+    Check(LivePaymentService.ValidateEvidence(liveOrder, verified with { PaymentLinkId = "other" }) == "payment_link_mismatch", "wrong payment link is held for review");
+    Check(LivePaymentService.ValidateEvidence(liveOrder, verified with { Reference = "" }) == "reference_missing", "missing bank reference is held for review");
+    liveOrder.IsDemo = true;
+    Check(LivePaymentService.ValidateEvidence(liveOrder, verified) == "order_not_live_payos", "live webhook cannot grant a demo order");
 
     Console.WriteLine("Payment checks passed.");
 }
@@ -75,4 +89,11 @@ static void Check(bool condition, string name)
 {
     if (!condition) throw new Exception($"FAIL {name}");
     Console.WriteLine($"PASS {name}");
+}
+
+static async Task CheckThrows<T>(Func<Task> action, string name) where T : Exception
+{
+    try { await action(); }
+    catch (T) { Console.WriteLine($"PASS {name}"); return; }
+    throw new Exception($"FAIL {name}");
 }

@@ -8,7 +8,9 @@ Tài liệu tiếp nối `docs/COMMUNITY_SUBSCRIPTION_QR_PLAN.md` và dựa trê
 
 Đã hoàn thành lát cắt an toàn đầu tiên trong mã nguồn: policy dùng chung cho Disabled/Demo/Live; tách ranh giới theo deployment stage và Firebase project; live checkout fail-closed; simulator không thể xác nhận đơn Live; GET checkout không còn đổi trạng thái tài chính; order schema v2 có các trục checkout/payment/fulfillment/refund; entitlement demo dùng chung một policy; QR demo được kiểm tra chặt và checkout có sao chép, fallback ảnh, giờ Việt Nam cùng polling có backoff. Bộ `PaymentChecks` kiểm tra các ranh giới này mà không chứa thông tin tài khoản thật.
 
-Chưa bật nhận tiền thật. Chưa có adapter payOS, webhook được xác thực, inbox/receipt/ledger, worker, reconciliation, admin review và production pilot. Ảnh QR ngân hàng được cung cấp không thay thế Client ID/API Key/Checksum Key của payOS và không được đưa vào source. Staging chỉ được phép chạy simulator; các cờ live vẫn đóng cho đến khi hoàn tất onboarding, production project/host, pilot UID, chính sách hoàn tiền và duyệt hạ tầng luôn hoạt động.
+Chưa bật nhận tiền thật. Ảnh QR ngân hàng được cung cấp không thay thế Client ID/API Key/Checksum Key của payOS và không được đưa vào source. Staging chỉ được phép chạy simulator; các cờ live vẫn đóng cho đến khi hoàn tất onboarding, production project/host, pilot UID, chính sách hoàn tiền và duyệt hạ tầng luôn hoạt động.
+
+**Cập nhật triển khai:** adapter SDK `payOS` 2.1.0, tạo/hủy checkout, mapping order code, endpoint webhook xác minh chữ ký, receipt/transaction/grant chống lặp và fulfillment live nguyên tử đã được bổ sung trong source. Return URL vẫn chỉ điều hướng giao diện. Tiền sai amount/currency/link/reference, tài khoản khóa hoặc xung đột hạng được lưu `NeedsReview` và không cấp quyền. Phần còn thiếu trước pilot gồm credentials/kênh payOS, đăng ký webhook, production project/host luôn hoạt động, reconciliation khi mất webhook, worker retry, admin review/audit và kiểm thử emulator/concurrency.
 
 ## 1. Phương án đề xuất
 
