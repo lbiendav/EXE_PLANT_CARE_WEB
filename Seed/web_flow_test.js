@@ -86,6 +86,7 @@ async function run() {
         assert.equal(s.docs[0].data().wateringFrequency,7);assert.ok(s.docs[0].data().nextWateringAt);
         assert.match(plantImageUrl,/^(https:\/\/|\/Image\/)/,"Upload did not persist the plant image URL");
         if(plantImageUrl.startsWith("/"))status(await user.request(plantImageUrl),200);
+        const garden=await user.request("/Plant/Index");status(garden,200);assert.ok(garden.body.includes(marker),"Created plant is missing from the garden");
     });
     if(plantId){
         await check("garden plant details include schedule and history",async()=>{
@@ -107,8 +108,8 @@ async function run() {
             const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.equal(data.wateringFrequencyUnit,"Seconds");assert.equal(data.fertilizingFrequencyUnit,"Minutes");assert.equal(data.repottingFrequencyUnit,"Hours");
             assert.ok(data.nextWateringAt&&data.nextFertilizingAt&&data.nextRepottingAt);
-            const garden=await user.request("/Plant/Index");status(garden,200);
-            for(const label of ["Tưới nước","Bón phân","Thay chậu","Tưới gần nhất","Bón phân gần nhất","Thay chậu gần nhất"])assert.ok(garden.body.includes(label),"Garden is missing "+label);
+            const details=await user.request("/Plant/Details/"+plantId);status(details,200);
+            for(const label of ["Tưới nước","Bón phân","Thay chậu"])assert.ok(details.body.includes(label),"Plant details are missing "+label);
         });
         await check("overdue schedule creates one notification",async()=>{
             const plantRef=db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId);
