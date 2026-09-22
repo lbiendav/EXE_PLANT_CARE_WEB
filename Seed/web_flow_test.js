@@ -160,6 +160,44 @@ async function run() {
             }
         });
     }
+    const aiFlowDiagnosisId="qa-ai-flow-"+Date.now();
+    const aiFlowPlantName=marker+" AI linked";
+    await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).set({
+        diagnosisId:aiFlowDiagnosisId,userId:userAccount.uid,uploadedImageUrl:"",plantId:"",plantName:"Cây chưa lưu trong vườn",
+        question:"Synthetic AI-to-garden flow",aiModel:"qa-fixture",createdAt:Timestamp.now(),
+        result:{identifiedPlant:createSpecies.data().name||"QA plant",diseaseName:"QA",confidence:0.9,cause:"Synthetic",treatment:"Synthetic",summary:"Synthetic",
+            observations:[],immediateActions:[],sevenDayPlan:[],warnings:[],needsMoreInfo:false,followUpQuestion:"",
+            careRecommendations:{isSuitableForAutomation:true,generalNote:"QA schedule",
+                watering:{frequency:3,unit:"Days",reason:"QA"},fertilizing:{frequency:14,unit:"Days",reason:"QA"},repotting:{frequency:180,unit:"Days",reason:"QA"}}}
+    });
+    let aiFlowPlantId;
+    await check("AI diagnosis opens prefilled add-plant form",async()=>{
+        const r=await user.request("/Plant/Create?diagnosisId="+aiFlowDiagnosisId);status(r,200);
+        assert.ok(r.body.includes("Đã nạp lịch chăm sóc AI"));assert.ok(r.body.includes('value="3"'));
+    });
+    await check("add unlinked AI plant and return to diagnosis",async()=>{
+        const r=await user.upload("/Plant/Create?diagnosisId="+aiFlowDiagnosisId,{SourceDiagnosisId:aiFlowDiagnosisId,Nickname:aiFlowPlantName,PlantSampleId:createSpecies.id,CurrentStatus:"Cần chú ý",WateringFrequency:"3",WateringFrequencyUnit:"Days",FertilizingFrequency:"14",FertilizingFrequencyUnit:"Days",RepottingFrequency:"180",RepottingFrequencyUnit:"Days"},"Photo");
+        status(r,302);
+        const plants=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",aiFlowPlantName).get();
+        assert.equal(plants.size,1);aiFlowPlantId=plants.docs[0].id;
+        const diagnosis=(await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).get()).data();
+        assert.equal(diagnosis.plantId,aiFlowPlantId);assert.equal(diagnosis.plantName,aiFlowPlantName);
+        assert.equal(r.location,"/Expert/Details/"+aiFlowDiagnosisId);
+    });
+    if(aiFlowPlantId){
+        await check("linked diagnosis offers AI schedule action",async()=>{
+            const r=await user.request("/Expert/Details/"+aiFlowDiagnosisId);status(r,200);assert.ok(r.body.includes("Chấp thuận và tạo lịch nhắc"));
+        });
+        await check("apply AI recommendations to newly added plant",async()=>{
+            const r=await user.post("/Expert/ApplyCareRecommendations?id="+aiFlowDiagnosisId,{},"/Expert/Details/"+aiFlowDiagnosisId);status(r,302);
+            const plant=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(aiFlowPlantId).get()).data();
+            assert.equal(plant.wateringFrequency,3);assert.equal(plant.fertilizingFrequency,14);assert.equal(plant.repottingFrequency,180);
+            assert.ok(plant.nextWateringAt&&plant.nextFertilizingAt&&plant.nextRepottingAt);
+            const diagnosis=(await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).get()).data();assert.ok(diagnosis.careRecommendationsAppliedAt);
+        });
+        await check("clean up AI-linked QA plant",async()=>status(await user.post("/Plant/Delete/"+aiFlowPlantId,{},"/Plant/Index"),302));
+    }
+    await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).delete();
     let articleId,articleTime;
     const article={Title:marker,Content:"Synthetic article for QA",CoverImage:""};
     await check("blank article rejected",async()=>status(await admin.post("/Article/Create",{Title:"",Content:""}),200));

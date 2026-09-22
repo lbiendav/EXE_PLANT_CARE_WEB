@@ -89,6 +89,14 @@ public class PlantController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
+        AiDiagnosisModel? sourceDiagnosis = null;
+        if (!string.IsNullOrWhiteSpace(vm.SourceDiagnosisId))
+        {
+            sourceDiagnosis = await _diagnosisService.GetByIdForUser(vm.SourceDiagnosisId, uid);
+            if (sourceDiagnosis == null)
+                ModelState.AddModelError(nameof(vm.SourceDiagnosisId), "Phiên phân tích AI không tồn tại hoặc không thuộc tài khoản của bạn.");
+        }
+
         if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
             (vm.PlantSampleId.Contains('/') || await _samplePlantService.GetById(vm.PlantSampleId) == null))
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
@@ -159,6 +167,16 @@ public class PlantController : Controller
         TempData["Success"] = "Đã thêm cây vào vườn.";
         if (vm.Photo != null && imageUrl == null)
             TempData["Warning"] = "Cây đã được thêm, nhưng dịch vụ ảnh chưa nhận được file. Bạn có thể chọn lại ảnh trong mục Sửa cây.";
+
+        if (sourceDiagnosis != null)
+        {
+            if (await _diagnosisService.LinkPlant(sourceDiagnosis.Id, uid, plant.Id, plant.CustomName))
+            {
+                TempData["Success"] = "Đã thêm cây vào vườn và liên kết với phiên tư vấn AI.";
+                return RedirectToAction("Details", "Expert", new { id = sourceDiagnosis.Id });
+            }
+            TempData["Warning"] = "Cây đã được thêm nhưng chưa thể liên kết với phiên tư vấn AI.";
+        }
 
         return RedirectToAction(nameof(Index));
     }

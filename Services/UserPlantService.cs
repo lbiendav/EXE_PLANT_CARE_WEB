@@ -44,10 +44,13 @@ public class UserPlantService
     {
         if (!(_configuration.GetValue<bool?>("Subscriptions:EnforceLimits") ?? false))
         {
-            await Collection(uid).AddAsync(plant);
+            var document = Collection(uid).Document();
+            plant.Id = document.Id;
+            await document.SetAsync(plant);
             return;
         }
 
+        var initialCount = await ReadPlantCount(uid);
         var plantRef = Collection(uid).Document();
         var counterRef = _db.Collection("users").Document(uid).Collection("usage_state").Document("current");
         var subscriptionRef = _db.Collection("subscriptions").Document(uid);
@@ -55,15 +58,15 @@ public class UserPlantService
         {
             var counter = await transaction.GetSnapshotAsync(counterRef);
             var subscription = await transaction.GetSnapshotAsync(subscriptionRef);
-            if (!counter.Exists)
-                throw new PlantLimitException("Chưa chuẩn bị xong bộ đếm khu vườn. Vui lòng thử lại sau.");
-            var count = counter.GetValue<int>("plantCount");
+            var count = counter.Exists && counter.TryGetValue<int>("plantCount", out var storedCount)
+                ? storedCount
+                : initialCount;
             var limit = EffectivePlantLimit(subscription);
             if (count >= limit)
                 throw new PlantLimitException($"Gói hiện tại cho phép tối đa {limit} cây.");
             plant.Id = plantRef.Id;
             transaction.Set(plantRef, plant);
-            transaction.Update(counterRef, new Dictionary<string, object> { ["plantCount"] = count + 1, ["updatedAt"] = Timestamp.FromDateTimeOffset(_clock.UtcNow) });
+            transaction.Set(counterRef, new Dictionary<string, object> { ["plantCount"] = count + 1, ["updatedAt"] = Timestamp.FromDateTimeOffset(_clock.UtcNow) }, SetOptions.MergeAll);
         });
     }
 
@@ -73,9 +76,9 @@ public class UserPlantService
         var counterTask = _db.Collection("users").Document(uid).Collection("usage_state").Document("current").GetSnapshotAsync();
         var subscriptionTask = _db.Collection("subscriptions").Document(uid).GetSnapshotAsync();
         await Task.WhenAll(counterTask, subscriptionTask);
-        if (!counterTask.Result.Exists)
-            throw new PlantLimitException("Chưa chuẩn bị xong bộ đếm khu vườn. Vui lòng thử lại sau.");
-        var count = counterTask.Result.GetValue<int>("plantCount");
+        var count = counterTask.Result.Exists && counterTask.Result.TryGetValue<int>("plantCount", out var storedCount)
+            ? storedCount
+            : (await Collection(uid).GetSnapshotAsync()).Count;
         var limit = EffectivePlantLimit(subscriptionTask.Result);
         if (count >= limit) throw new PlantLimitException($"Gói hiện tại cho phép tối đa {limit} cây.");
     }
@@ -96,6 +99,7 @@ public class UserPlantService
         var plantRef = Collection(uid).Document(id);
         if (_configuration.GetValue<bool?>("Subscriptions:EnforceLimits") ?? false)
         {
+            var initialCount = await ReadPlantCount(uid);
             var counterRef = _db.Collection("users").Document(uid).Collection("usage_state").Document("current");
             var cleanupRef = _db.Collection("users").Document(uid).Collection("plant_cleanup").Document(id);
             var deleted = await _db.RunTransactionAsync(async transaction =>
@@ -104,10 +108,11 @@ public class UserPlantService
                 var counterSnapshot = await transaction.GetSnapshotAsync(counterRef);
                 var cleanupSnapshot = await transaction.GetSnapshotAsync(cleanupRef);
                 if (!plantSnapshot.Exists) return cleanupSnapshot.Exists;
-                if (!counterSnapshot.Exists) throw new PlantLimitException("Bộ đếm khu vườn chưa sẵn sàng.");
-                var count = counterSnapshot.GetValue<int>("plantCount");
+                var count = counterSnapshot.Exists && counterSnapshot.TryGetValue<int>("plantCount", out var storedCount)
+                    ? storedCount
+                    : Math.Max(1, initialCount);
                 transaction.Delete(plantRef);
-                transaction.Update(counterRef, new Dictionary<string, object> { ["plantCount"] = Math.Max(0, count - 1), ["updatedAt"] = Timestamp.FromDateTimeOffset(_clock.UtcNow) });
+                transaction.Set(counterRef, new Dictionary<string, object> { ["plantCount"] = Math.Max(0, count - 1), ["updatedAt"] = Timestamp.FromDateTimeOffset(_clock.UtcNow) }, SetOptions.MergeAll);
                 transaction.Set(cleanupRef, new { plantId = id, createdAt = Timestamp.FromDateTimeOffset(_clock.UtcNow) });
                 return true;
             });
@@ -153,6 +158,15 @@ public class UserPlantService
         var demoAllowed = _paymentPolicy.IsDemoSubscriptionAllowed(subscription);
         return demoAllowed && subscription.StartsAt.ToDateTimeOffset() <= now && now < subscription.ExpiresAt.ToDateTimeOffset()
             ? subscription.PlantLimit : PlanCatalogService.Free.PlantLimit;
+    }
+
+    private async Task<int> ReadPlantCount(string uid)
+    {
+        var state = await _db.Collection("users").Document(uid)
+            .Collection("usage_state").Document("current").GetSnapshotAsync();
+        if (state.Exists && state.TryGetValue<int>("plantCount", out var count))
+            return count;
+        return (await Collection(uid).GetSnapshotAsync()).Count;
     }
 
     public async Task<int> CountAll()

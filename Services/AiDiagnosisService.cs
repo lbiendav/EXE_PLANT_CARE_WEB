@@ -73,4 +73,21 @@ public class AiDiagnosisService
             .Document(id)
             .UpdateAsync("careRecommendationsAppliedAt", appliedAt);
     }
+
+    public async Task<bool> LinkPlant(string id, string userId, string plantId, string plantName)
+    {
+        var reference = _db.Collection("ai_diagnoses").Document(id);
+        return await _db.RunTransactionAsync(async transaction =>
+        {
+            var snapshot = await transaction.GetSnapshotAsync(reference);
+            if (!snapshot.Exists || snapshot.GetValue<string>("userId") != userId)
+                return false;
+            transaction.Update(reference, new Dictionary<string, object>
+            {
+                ["plantId"] = plantId,
+                ["plantName"] = plantName
+            });
+            return true;
+        });
+    }
 }
