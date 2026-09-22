@@ -193,6 +193,37 @@ public sealed class RevenueAdminService(
         await Audit(adminUid, adminEmail, "AddSupportNote", "user", userId, note, new { }, new { note = note.Trim() });
     }
 
+    public async Task SetAiUsage(string userId, int aiUsed, string adminUid, string adminEmail, string reason)
+    {
+        RequireReason(reason);
+        if (aiUsed is < 0 or > 1_000_000)
+            throw new SubscriptionDomainException("invalid_ai_usage", "Số lượt AI đã dùng phải từ 0 đến 1.000.000.");
+
+        var now = clock.UtcNow;
+        var userRef = _db.Collection("users").Document(userId);
+        var usageRef = userRef.Collection("usage").Document(SubscriptionTime.UsageMonth(now));
+        var auditRef = _db.Collection("revenue_audit_logs").Document();
+        await _db.RunTransactionAsync(async transaction =>
+        {
+            var user = await transaction.GetSnapshotAsync(userRef);
+            if (!user.Exists) throw new SubscriptionDomainException("not_found", "Không tìm thấy người dùng.");
+
+            var current = await transaction.GetSnapshotAsync(usageRef);
+            var before = current.Exists ? current.ConvertTo<UsageMonthModel>() : new UsageMonthModel();
+            var after = new UsageMonthModel
+            {
+                AiUsed = aiUsed,
+                // Reservations represent AI requests currently in progress and must not be reset by an admin edit.
+                AiReserved = before.AiReserved,
+                UpdatedAt = Timestamp.FromDateTimeOffset(now)
+            };
+            transaction.Set(usageRef, after);
+            transaction.Set(auditRef, AuditData(adminUid, adminEmail, "SetAiUsage", "user", userId, reason,
+                SafeJson(new { month = usageRef.Id, before.AiUsed, before.AiReserved }),
+                SafeJson(new { month = usageRef.Id, after.AiUsed, after.AiReserved }), now));
+        });
+    }
+
     public async Task ResendReceipt(string orderId, string adminUid, string adminEmail, string reason, CancellationToken cancellationToken)
     {
         RequireReason(reason);

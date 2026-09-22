@@ -41,6 +41,13 @@ public sealed class RevenueController(RevenueAdminService revenue, ILogger<Reven
     [HttpPost("Customers/{userId}/Notes")]
     public Task<IActionResult> AddNote(string userId, string note) => Execute(() => revenue.AddNote(userId, Uid, Email, note), "Đã thêm ghi chú nội bộ.", "customers");
 
+    [HttpPost("Customers/{userId}/AiUsage")]
+    public Task<IActionResult> SetAiUsage(string userId, int aiUsed, string reason) => Execute(async () =>
+    {
+        RequireRole("admin", "super_admin");
+        await revenue.SetAiUsage(userId, aiUsed, Uid, Email, reason);
+    }, "Đã cập nhật số lượt AI đã sử dụng trong tháng.", "customers");
+
     private string Uid => HttpContext.Session.GetString("Uid")!;
     private string Email => HttpContext.Session.GetString("Email") ?? Uid;
     private void RequireRole(params string[] roles)
