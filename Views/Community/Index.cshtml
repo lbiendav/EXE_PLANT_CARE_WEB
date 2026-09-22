@@ -1,5 +1,7 @@
+@model List<HomePlant.Models.CommunityPostModel>
 @{
     ViewData["Title"] = "Cộng đồng";
+    var facebookGroupUrl = ViewBag.FacebookGroupUrl as string;
 }
 <section class="feature-hero text-center mx-auto">
     <span class="kicker">Cộng đồng HomePlant</span>
@@ -7,10 +9,39 @@
     <p class="lead text-muted mx-auto" style="max-width: 680px">
         Nơi chia sẻ kinh nghiệm chăm cây, hỏi đáp khi cây cần giúp đỡ và khoe những góc xanh bạn yêu quý.
     </p>
-    <div class="community-coming mt-4">
-        <span class="badge text-bg-warning mb-3">Sắp ra mắt</span>
-        <h2>Nhóm Facebook đang được chuẩn bị</h2>
-        <p>Liên kết tham gia sẽ xuất hiện tại đây ngay khi nhóm sẵn sàng.</p>
-        <button class="btn btn-success" type="button" disabled aria-disabled="true">Tham gia nhóm Facebook</button>
+    @if (!string.IsNullOrWhiteSpace(facebookGroupUrl))
+    {
+        <div class="community-coming mt-4">
+            <span class="badge text-bg-success mb-3">Cộng đồng chính thức</span>
+            <h2>Tham gia nhóm HomePlant trên Facebook</h2>
+            <p>Đăng ảnh khu vườn, trao đổi kinh nghiệm và nhận hỗ trợ từ những người cùng yêu cây.</p>
+            <a class="btn btn-success btn-lg" href="@facebookGroupUrl" target="_blank" rel="noopener noreferrer">
+                Tham gia nhóm Facebook ↗
+            </a>
+        </div>
+    }
+</section>
+
+<section class="container mt-5" aria-labelledby="community-posts-title">
+    <div class="mb-4">
+        <span class="kicker">Chia sẻ từ cộng đồng</span>
+        <h2 id="community-posts-title">Góc xanh tuần này</h2>
+    </div>
+    <div class="row g-4">
+        @foreach (var post in Model)
+        {
+            <div class="col-lg-6">
+                <article class="card h-100 border-0 shadow-sm">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between gap-3 mb-3">
+                            <strong>@post.AuthorName</strong>
+                            <small class="text-muted">@post.CreatedAt.ToDateTime().ToLocalTime().ToString("dd/MM/yyyy")</small>
+                        </div>
+                        <p class="mb-3" style="white-space:pre-line">@post.Content</p>
+                        <div class="small text-muted">♥ @post.LikeCount lượt thích · 💬 @post.CommentCount bình luận</div>
+                    </div>
+                </article>
+            </div>
+        }
     </div>
 </section>

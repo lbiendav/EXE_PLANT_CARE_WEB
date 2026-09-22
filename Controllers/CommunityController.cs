@@ -1,23 +1,29 @@
 using Microsoft.AspNetCore.Mvc;
 
+using HomePlant.Services;
+
 namespace HomePlant.Controllers;
 
-public sealed class CommunityController(IConfiguration configuration, ILogger<CommunityController> logger) : Controller
+public sealed class CommunityController(
+    CommunityPostService posts,
+    IConfiguration configuration,
+    ILogger<CommunityController> logger) : Controller
 {
     [HttpGet("/Community")]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var configured = configuration["Community:FacebookGroupUrl"];
-        if (string.IsNullOrWhiteSpace(configured)) return View();
+        const string defaultGroupUrl = "https://www.facebook.com/share/g/1BncNcnzpy/";
+        var configured = configuration["Community:FacebookGroupUrl"] ?? defaultGroupUrl;
         if (Uri.TryCreate(configured, UriKind.Absolute, out var uri) &&
             uri.Scheme == Uri.UriSchemeHttps &&
             uri.IsDefaultPort && string.IsNullOrEmpty(uri.UserInfo) &&
             (uri.Host.Equals("facebook.com", StringComparison.OrdinalIgnoreCase) || uri.Host.Equals("www.facebook.com", StringComparison.OrdinalIgnoreCase)) &&
-            uri.AbsolutePath.StartsWith("/groups/", StringComparison.OrdinalIgnoreCase) &&
-            uri.AbsolutePath.Length > "/groups/".Length)
-            return Redirect(uri.AbsoluteUri);
+            (uri.AbsolutePath.StartsWith("/groups/", StringComparison.OrdinalIgnoreCase) ||
+             uri.AbsolutePath.StartsWith("/share/g/", StringComparison.OrdinalIgnoreCase)))
+            ViewBag.FacebookGroupUrl = uri.AbsoluteUri;
+        else
+            logger.LogError("Community Facebook group URL is invalid; hiding the Facebook CTA.");
 
-        logger.LogError("Community Facebook group URL is invalid; showing the coming-soon page.");
-        return View();
+        return View((await posts.GetAll()).Where(post => post.Status == "active").ToList());
     }
 }

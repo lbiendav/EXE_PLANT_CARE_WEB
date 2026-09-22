@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test *.test.js",
     "seed:staging": "node staging_seed.js",
-    "seed:production": "node production_seed.js"
+    "seed:production": "node production_seed.js",
+    "seed:curated-production": "node curated_content_seed.js"
   },
   "keywords": [],
   "author": "",
