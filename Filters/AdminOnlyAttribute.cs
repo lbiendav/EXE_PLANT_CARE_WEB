@@ -9,7 +9,7 @@ public class AdminOnlyAttribute : ActionFilterAttribute
     {
         var role = context.HttpContext.Session.GetString("Role");
 
-        if (string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase))
+        if (role is not null && new[] { "admin", "super_admin", "content_admin" }.Contains(role, StringComparer.OrdinalIgnoreCase))
             return;
 
         if (context.HttpContext.Session.GetString("Uid") == null)

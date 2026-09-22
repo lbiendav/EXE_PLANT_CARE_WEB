@@ -24,6 +24,9 @@ public sealed class SubscriptionOrderService(
             throw new SubscriptionDomainException("invalid_request_key", "Yêu cầu tạo đơn không hợp lệ.");
 
         var plan = catalog.Get(sku);
+        var planSetting = await _db.Collection("plan_settings").Document(plan.Sku).GetSnapshotAsync();
+        if (planSetting.Exists && planSetting.TryGetValue<bool>("enabled", out var planEnabled) && !planEnabled)
+            throw new SubscriptionDomainException("plan_disabled", "Gói này đang tạm ngừng đăng ký.");
         var now = clock.UtcNow;
         var orderRef = _db.Collection("subscription_orders").Document();
         var billingScope = policy.Mode == PaymentRuntimeMode.Live ? "live" : "demo";

@@ -108,4 +108,7 @@ public sealed class EmailNotificationService
             return false;
         }
     }
+
+    public Task<bool> SendTransactional(string recipient, string subject, string message, CancellationToken cancellationToken) =>
+        SendCareReminder(recipient, subject, message, cancellationToken);
 }

@@ -50,7 +50,7 @@
                         <td>@user.Email</td>
 
                         <td>
-                            <span class="badge role-badge bg-@(user.Role == "admin" ? "danger" : user.Role == "expert" ? "info" : "secondary")">
+                            <span class="badge role-badge bg-@(user.Role is "admin" or "super_admin" ? "danger" : user.Role is "finance" or "support" ? "info" : "secondary")">
                                 @user.Role
                             </span>
                         </td>
@@ -81,6 +81,17 @@
                             {
 <form asp-action="UnBan" asp-route-id="@user.Id" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-outline-success btn-sm">Mở khóa</button>
+                                </form>
+                            }
+                            @if (user.Id != Context.Session.GetString("Uid"))
+                            {
+                                <form asp-action="UpdateRole" asp-route-id="@user.Id" method="post" class="d-flex gap-1 mt-2">
+                                    <select class="form-select form-select-sm" name="role" aria-label="Vai trò">
+                                        @foreach (var role in new[] { "user", "support", "finance", "content_admin", "admin", "super_admin" })
+                                        { <option value="@role" selected="@(user.Role == role)">@role</option> }
+                                    </select>
+                                    <input class="form-control form-control-sm" name="reason" required minlength="5" placeholder="Lý do" />
+                                    <button class="btn btn-outline-secondary btn-sm">Lưu quyền</button>
                                 </form>
                             }
                         </td>

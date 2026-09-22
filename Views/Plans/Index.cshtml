@@ -39,17 +39,20 @@
                     <span class="kicker">@tier</span>
                     @foreach (var plan in tierPlans)
                     {
+                        var setting = Model.PlanSettings.GetValueOrDefault(plan.Sku);
                         var listPrice = plan.MonthlyListPriceVnd * plan.DurationMonths;
                         var saved = listPrice - plan.AmountVnd;
                         <div class="plan-price @(plan.DurationMonths == selectedDuration ? "active" : "")" data-plan-duration="@plan.DurationMonths">
                             <h2>@plan.AmountVnd.ToString("N0")đ</h2>
                             <p class="text-muted mb-1">Tổng thanh toán cho @plan.DurationMonths tháng</p>
                             @if (saved > 0) { <small>Tiết kiệm @saved.ToString("N0")đ</small> }
+                            @if (!string.IsNullOrWhiteSpace(setting?.Description)) { <p class="small mt-2 mb-0">@setting.Description</p> }
                         </div>
                     }
                     <ul><li>@first.PlantLimit cây trong vườn</li><li>@first.MonthlyAiLimit lượt AI / tháng</li><li>Đầy đủ thư viện, lịch chăm và nhắc việc</li><li>Xem lại toàn bộ dữ liệu đã tạo</li></ul>
                     @foreach (var plan in tierPlans)
                     {
+                        var setting = Model.PlanSettings.GetValueOrDefault(plan.Sku);
                         <div class="plan-action @(plan.DurationMonths == selectedDuration ? "active" : "")" data-plan-duration="@plan.DurationMonths">
                             @if (!Model.IsSignedIn)
                             {
@@ -64,7 +67,7 @@
                                 <form asp-controller="Checkout" asp-action="Create" method="post">
                                     <input type="hidden" name="sku" value="@plan.Sku" />
                                     <input type="hidden" name="requestKey" value="@Guid.NewGuid().ToString("N")" />
-                                    <button class="btn btn-success w-100" type="submit" disabled="@(!Model.SubscriptionsEnabled)">@(Model.CurrentTier == tier ? "Gia hạn" : "Chọn gói")</button>
+                                    <button class="btn btn-success w-100" type="submit" disabled="@(!Model.SubscriptionsEnabled || setting?.Enabled == false)">@(setting?.Enabled == false ? "Tạm ngừng đăng ký" : Model.CurrentTier == tier ? "Gia hạn" : "Chọn gói")</button>
                                 </form>
                             }
                         </div>

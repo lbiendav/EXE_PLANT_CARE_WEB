@@ -6,6 +6,7 @@ namespace HomePlant.Controllers;
 
 public sealed class PlansController(
     PlanCatalogService catalog,
+    PlanSettingsService planSettings,
     EntitlementService entitlements,
     IConfiguration configuration) : Controller
 {
@@ -21,7 +22,8 @@ public sealed class PlansController(
             CurrentExpiresAt = current?.IsPaidActive == true ? current.Subscription?.ExpiresAt.ToDateTimeOffset() : null,
             SelectedSku = catalog.Find(sku)?.Sku,
             IsSignedIn = uid != null,
-            SubscriptionsEnabled = configuration.GetValue<bool?>("Subscriptions:Enabled") ?? false
+            SubscriptionsEnabled = configuration.GetValue<bool?>("Subscriptions:Enabled") ?? false,
+            PlanSettings = await planSettings.GetAll()
         });
     }
 }

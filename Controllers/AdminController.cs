@@ -42,6 +42,7 @@ public class AdminController : Controller
         _imageStorage = imageStorage;
     }
 
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> Dashboard()
     {
         var users = await _userService.GetAll();
@@ -68,6 +69,7 @@ public class AdminController : Controller
         return View(vm);
     }
 
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> Users()
     {
         var users = await _userService.GetAll();
@@ -76,6 +78,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> Ban(string id)
     {
         if (id == HttpContext.Session.GetString("Uid"))
@@ -90,10 +93,31 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> UnBan(string id)
     {
         await _userService.UnBanUser(id);
 
+        return RedirectToAction(nameof(Users));
+    }
+
+    [HttpPost]
+    [PrivilegedAdminOnly]
+    public async Task<IActionResult> UpdateRole(string id, string role, string reason)
+    {
+        var allowed = new[] { "user", "support", "finance", "content_admin", "admin", "super_admin" };
+        if (!allowed.Contains(role, StringComparer.OrdinalIgnoreCase)) return BadRequest();
+        if (id == HttpContext.Session.GetString("Uid"))
+        {
+            TempData["Warning"] = "Không thể tự thay đổi quyền của tài khoản đang sử dụng.";
+            return RedirectToAction(nameof(Users));
+        }
+        try
+        {
+            await _userService.UpdateRole(id, role.ToLowerInvariant(), HttpContext.Session.GetString("Uid")!, HttpContext.Session.GetString("Email") ?? "", reason);
+            TempData["Success"] = "Đã cập nhật vai trò người dùng.";
+        }
+        catch (SubscriptionDomainException ex) { TempData["Warning"] = ex.Message; }
         return RedirectToAction(nameof(Users));
     }
 
@@ -324,6 +348,7 @@ public class AdminController : Controller
         return RedirectToAction(nameof(QaThreads));
     }
 
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> AiDiagnoses()
     {
         var usersTask = _userService.GetAll();
@@ -352,6 +377,7 @@ public class AdminController : Controller
         return View(vm);
     }
 
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> GardenPlants()
     {
         var usersTask = _userService.GetAll();
@@ -398,6 +424,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> DeleteGardenPlant(string userId, string id)
     {
         var plant = await _userPlantService.GetById(userId, id);
@@ -412,6 +439,7 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [PrivilegedAdminOnly]
     public async Task<IActionResult> DeleteAiDiagnosis(string id)
     {
         var diagnosis = await _aiDiagnosisService.GetById(id);

@@ -114,6 +114,7 @@ builder.Services.AddSingleton(provider =>
 
 builder.Services.AddScoped<FirestoreService>();
 builder.Services.AddSingleton<PlanCatalogService>();
+builder.Services.AddScoped<PlanSettingsService>();
 builder.Services.AddSingleton<ISubscriptionClock, SystemSubscriptionClock>();
 builder.Services.AddScoped<EntitlementService>();
 builder.Services.AddScoped<UsageService>();
@@ -121,6 +122,7 @@ builder.Services.AddScoped<AiQuotaService>();
 builder.Services.AddScoped<SubscriptionOrderService>();
 builder.Services.AddScoped<DemoPaymentService>();
 builder.Services.AddScoped<LivePaymentService>();
+builder.Services.AddScoped<RevenueAdminService>();
 builder.Services.AddSingleton<PaymentModePolicy>();
 builder.Services.AddSingleton<IPaymentProvider, PayOsPaymentProvider>();
 builder.Services.AddSingleton<IBankQrService, VietQrService>();

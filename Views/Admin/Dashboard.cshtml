@@ -13,6 +13,13 @@
 <div class="row g-3">
 
     <div class="col-lg-3 col-md-4 col-sm-6">
+        <a asp-controller="Revenue" asp-action="Index" class="admin-stat-card">
+            <div class="stat-number">₫</div>
+            <div class="stat-label">Doanh thu</div>
+        </a>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
         <a asp-action="Users" class="admin-stat-card">
             <div class="stat-number">@Model.UserCount</div>
             <div class="stat-label">Người dùng</div>

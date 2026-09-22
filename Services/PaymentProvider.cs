@@ -36,10 +36,19 @@ public sealed record VerifiedPayment(
     string TransactionDateTime,
     string ProviderCode);
 
+public sealed record ProviderPaymentStatus(
+    long OrderCode,
+    long Amount,
+    long AmountPaid,
+    string PaymentLinkId,
+    string Status,
+    VerifiedPayment? Payment);
+
 public interface IPaymentProvider
 {
     Task<ProviderCheckout> CreateCheckout(ProviderCheckoutRequest request, CancellationToken cancellationToken = default);
     Task CancelCheckout(long orderCode, string reason, CancellationToken cancellationToken = default);
+    Task<ProviderPaymentStatus> GetCheckout(long orderCode, CancellationToken cancellationToken = default);
     Task<VerifiedPayment> VerifyWebhook(Webhook webhook);
 }
 
@@ -74,6 +83,24 @@ public sealed class PayOsPaymentProvider(IConfiguration configuration) : IPaymen
     public async Task CancelCheckout(long orderCode, string reason, CancellationToken cancellationToken = default)
     {
         await CreateClient().PaymentRequests.CancelAsync(orderCode, reason);
+    }
+
+    public async Task<ProviderPaymentStatus> GetCheckout(long orderCode, CancellationToken cancellationToken = default)
+    {
+        var response = await CreateClient().PaymentRequests.GetAsync(orderCode);
+        var transaction = response.Transactions?.FirstOrDefault();
+        var payment = transaction == null ? null : new VerifiedPayment(
+            response.OrderCode,
+            transaction.Amount,
+            "VND",
+            response.Id,
+            transaction.Reference,
+            transaction.Description,
+            transaction.CounterAccountNumber ?? "",
+            transaction.TransactionDateTime,
+            "00");
+        return new ProviderPaymentStatus(response.OrderCode, response.Amount, response.AmountPaid,
+            response.Id, response.Status.ToString(), payment);
     }
 
     public async Task<VerifiedPayment> VerifyWebhook(Webhook webhook)

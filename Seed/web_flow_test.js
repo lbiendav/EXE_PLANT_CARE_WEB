@@ -59,6 +59,7 @@ async function run() {
     await check("user login",()=>login(user,userAccount));
     await check("admin login",()=>login(admin,adminAccount));
     await check("user cannot open admin dashboard",async()=>status(await user.request("/Admin/Dashboard"),302));
+    await check("user cannot open revenue admin",async()=>status(await user.request("/Admin/Revenue"),302));
     await check("missing article gives 404",async()=>status(await anonymous.request("/Article/Details/qa-nonexistent"),404));
     await check("POST without antiforgery token rejected",async()=>status(await user.request("/Plant/Create",{Nickname:marker+" csrf",PlantSampleId:"PLANT_MASTER_999"}),400));
     for(const p of ["/Home/Index","/Library/Index","/Article/Index","/Plant/Index","/Plant/Create","/Profile/Index","/Profile/Edit","/Profile/ChangePassword","/Notifications/Index","/Notifications/UnreadCount"])
@@ -71,6 +72,8 @@ async function run() {
     });
     for(const p of ["Dashboard","Users","SamplePlants","PlantTemplates","CommunityPosts","QaThreads","AiDiagnoses","CreateSamplePlant"])
         await check("admin GET "+p,async()=>status(await admin.request("/Admin/"+p),200));
+    for(const tab of ["overview","orders","subscriptions","plans","customers","audit"])
+        await check("admin revenue tab "+tab,async()=>status(await admin.request("/Admin/Revenue?tab="+tab),200));
     await check("edit own profile",async()=>{
         status(await user.post("/Profile/Edit",{FullName:"[TEST] HomePlant user edited",Phone:"",AvatarUrl:"",Id:adminAccount.uid}),302);
         assert.equal((await db.collection("users").doc(userAccount.uid).get()).data().displayName,"[TEST] HomePlant user edited");

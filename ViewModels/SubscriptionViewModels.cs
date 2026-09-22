@@ -11,6 +11,7 @@ public sealed class PlansVM
     public string? SelectedSku { get; init; }
     public bool IsSignedIn { get; init; }
     public bool SubscriptionsEnabled { get; init; }
+    public IReadOnlyDictionary<string, PlanDisplaySetting> PlanSettings { get; init; } = new Dictionary<string, PlanDisplaySetting>();
 }
 
 public sealed class SubscriptionVM

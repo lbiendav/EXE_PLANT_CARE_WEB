@@ -136,6 +136,25 @@ public sealed class LivePaymentService(
         });
     }
 
+    public async Task<PaymentIngestionResult> Reprocess(VerifiedPayment payment)
+    {
+        var channelId = configuration["Payments:PayOS:ChannelId"]?.Trim() ?? "";
+        if (string.IsNullOrWhiteSpace(channelId)) throw new InvalidOperationException("Payment channel is not configured.");
+        var transactionIdentity = string.IsNullOrWhiteSpace(payment.Reference)
+            ? $"missing:{payment.OrderCode}:{payment.PaymentLinkId}:{payment.TransactionDateTime}"
+            : payment.Reference;
+        var receiptRef = _db.Collection("payment_webhook_receipts").Document(Hash($"payos:{channelId}:{transactionIdentity}"));
+        await _db.RunTransactionAsync(async transaction =>
+        {
+            var snapshot = await transaction.GetSnapshotAsync(receiptRef);
+            if (snapshot.Exists && snapshot.TryGetValue<string>("status", out var status) && status == "NeedsReview")
+                transaction.Delete(receiptRef);
+        });
+        // Ingest remains the only granting path. Its subscription_grants document makes
+        // retries safe even if an administrator and a webhook race each other.
+        return await Ingest(payment);
+    }
+
     private static void WriteEvidence(
         Transaction transaction,
         DocumentReference receiptRef,
