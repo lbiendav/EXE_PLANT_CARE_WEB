@@ -63,6 +63,12 @@ async function run() {
     await check("POST without antiforgery token rejected",async()=>status(await user.request("/Plant/Create",{Nickname:marker+" csrf",PlantSampleId:"PLANT_MASTER_999"}),400));
     for(const p of ["/Home/Index","/Library/Index","/Article/Index","/Plant/Index","/Plant/Create","/Profile/Index","/Profile/Edit","/Profile/ChangePassword","/Notifications/Index","/Notifications/UnreadCount"])
         await check("user GET "+p,async()=>status(await user.request(p),200));
+    await check("expert AI is configured and enabled",async()=>{
+        const r=await user.request("/Expert/Index");
+        status(r,200);
+        assert.ok(!r.body.includes("Chưa cấu hình GEMINI_API_KEY"),"Expert AI is missing GEMINI_API_KEY");
+        assert.ok(!r.body.includes("Tính năng đang chờ cấu hình"),"Expert AI form is disabled");
+    });
     for(const p of ["Dashboard","Users","SamplePlants","PlantTemplates","CommunityPosts","QaThreads","AiDiagnoses","CreateSamplePlant"])
         await check("admin GET "+p,async()=>status(await admin.request("/Admin/"+p),200));
     await check("edit own profile",async()=>{
