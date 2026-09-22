@@ -175,27 +175,22 @@ async function run() {
         const r=await user.request("/Plant/Create?diagnosisId="+aiFlowDiagnosisId);status(r,200);
         assert.ok(r.body.includes("Đã nạp lịch chăm sóc AI"));assert.ok(r.body.includes('value="3"'));
     });
-    await check("add unlinked AI plant and return to diagnosis",async()=>{
+    await check("add unlinked AI plant and create schedule in one flow",async()=>{
         const r=await user.upload("/Plant/Create?diagnosisId="+aiFlowDiagnosisId,{SourceDiagnosisId:aiFlowDiagnosisId,Nickname:aiFlowPlantName,PlantSampleId:createSpecies.id,CurrentStatus:"Cần chú ý",WateringFrequency:"3",WateringFrequencyUnit:"Days",FertilizingFrequency:"14",FertilizingFrequencyUnit:"Days",RepottingFrequency:"180",RepottingFrequencyUnit:"Days"},"Photo");
         status(r,302);
         const plants=await db.collection("users").doc(userAccount.uid).collection("user_plants").where("customName","==",aiFlowPlantName).get();
         assert.equal(plants.size,1);aiFlowPlantId=plants.docs[0].id;
         const diagnosis=(await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).get()).data();
-        assert.equal(diagnosis.plantId,aiFlowPlantId);assert.equal(diagnosis.plantName,aiFlowPlantName);
-        assert.equal(r.location,"/Expert/Details/"+aiFlowDiagnosisId);
+        assert.equal(diagnosis.plantId,aiFlowPlantId);assert.equal(diagnosis.plantName,aiFlowPlantName);assert.ok(diagnosis.careRecommendationsAppliedAt);
+        assert.equal(r.location,"/Plant/Details/"+aiFlowPlantId);
+        const plant=plants.docs[0].data();
+        assert.equal(plant.wateringFrequency,3);assert.equal(plant.fertilizingFrequency,14);assert.equal(plant.repottingFrequency,180);
+        assert.ok(plant.nextWateringAt&&plant.nextFertilizingAt&&plant.nextRepottingAt);
     });
     if(aiFlowPlantId){
-        await check("linked diagnosis offers AI schedule action",async()=>{
-            const r=await user.request("/Expert/Details/"+aiFlowDiagnosisId);status(r,200);
-            assert.ok(r.body.includes("ApplyCareRecommendations"));
-            assert.ok(!r.body.includes("Cây liên kết với phiên tư vấn này không còn tồn tại"));
-        });
-        await check("apply AI recommendations to newly added plant",async()=>{
-            const r=await user.post("/Expert/ApplyCareRecommendations?id="+aiFlowDiagnosisId,{},"/Expert/Details/"+aiFlowDiagnosisId);status(r,302);
-            const plant=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(aiFlowPlantId).get()).data();
-            assert.equal(plant.wateringFrequency,3);assert.equal(plant.fertilizingFrequency,14);assert.equal(plant.repottingFrequency,180);
-            assert.ok(plant.nextWateringAt&&plant.nextFertilizingAt&&plant.nextRepottingAt);
-            const diagnosis=(await db.collection("ai_diagnoses").doc(aiFlowDiagnosisId).get()).data();assert.ok(diagnosis.careRecommendationsAppliedAt);
+        await check("AI-created plant details show the active schedule",async()=>{
+            const r=await user.request("/Plant/Details/"+aiFlowPlantId);status(r,200);
+            for(const label of ["Tưới nước","Bón phân","Thay chậu"])assert.ok(r.body.includes(label));
         });
         await check("clean up AI-linked QA plant",async()=>status(await user.post("/Plant/Delete/"+aiFlowPlantId,{},"/Plant/Index"),302));
     }

@@ -172,8 +172,9 @@ public class PlantController : Controller
         {
             if (await _diagnosisService.LinkPlant(sourceDiagnosis.Id, uid, plant.Id, plant.CustomName))
             {
-                TempData["Success"] = "Đã thêm cây vào vườn và liên kết với phiên tư vấn AI.";
-                return RedirectToAction("Details", "Expert", new { id = sourceDiagnosis.Id });
+                await _diagnosisService.MarkCareRecommendationsApplied(sourceDiagnosis.Id, now);
+                TempData["Success"] = "Đã thêm cây và tạo lịch nhắc theo khuyến nghị AI.";
+                return RedirectToAction(nameof(Details), new { id = plant.Id });
             }
             TempData["Warning"] = "Cây đã được thêm nhưng chưa thể liên kết với phiên tư vấn AI.";
         }
