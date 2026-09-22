@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net;
 using System.Text.Json;
 using HomePlant.Models;
 
@@ -28,6 +29,22 @@ public sealed class PlantExpertAiService
 
     public bool IsConfigured => !string.IsNullOrWhiteSpace(ApiKey);
     public string Model => _configuration["Gemini:Model"] ?? "gemini-3.5-flash-lite";
+    public string UsedModel { get; private set; } = "";
+
+    private IReadOnlyList<string> Models
+    {
+        get
+        {
+            var configuredFallbacks = _configuration["Gemini:FallbackModels"]?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                ?? new[] { "gemini-3.1-flash-lite", "gemini-3.5-flash" };
+            return new[] { Model }
+                .Concat(configuredFallbacks)
+                .Where(model => !string.IsNullOrWhiteSpace(model))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+    }
 
     private string ApiKey =>
         _configuration["Gemini:ApiKey"] ??
@@ -168,40 +185,53 @@ public sealed class PlantExpertAiService
             }
         };
 
-        using var request = new HttpRequestMessage(
-            HttpMethod.Post,
-            $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(Model)}:generateContent");
-        request.Headers.Add("x-goog-api-key", ApiKey);
-        request.Content = JsonContent.Create(payload);
-
         try
         {
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            HttpStatusCode? lastStatusCode = null;
+            foreach (var model in Models)
             {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogWarning("Gemini returned {StatusCode}: {Response}", response.StatusCode, errorBody);
+                using var request = new HttpRequestMessage(
+                    HttpMethod.Post,
+                    $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(model)}:generateContent");
+                request.Headers.Add("x-goog-api-key", ApiKey);
+                request.Content = JsonContent.Create(payload);
 
-                if ((int)response.StatusCode == 429)
-                    throw new PlantAiException("Dịch vụ AI đã chạm giới hạn miễn phí. Vui lòng thử lại sau.");
-                throw new PlantAiException("Dịch vụ AI tạm thời không thể phân tích ảnh. Vui lòng thử lại.");
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    lastStatusCode = response.StatusCode;
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    _logger.LogWarning(
+                        "Gemini model {Model} returned {StatusCode}: {Response}",
+                        model, response.StatusCode, errorBody);
+
+                    if (IsFallbackStatus(response.StatusCode))
+                        continue;
+
+                    throw new PlantAiException("Dịch vụ AI từ chối yêu cầu phân tích. Vui lòng kiểm tra ảnh và thử lại.");
+                }
+
+                using var responseJson = JsonDocument.Parse(
+                    await response.Content.ReadAsStringAsync(cancellationToken));
+                var resultText = responseJson.RootElement
+                    .GetProperty("candidates")[0]
+                    .GetProperty("content")
+                    .GetProperty("parts")[0]
+                    .GetProperty("text")
+                    .GetString();
+
+                var result = JsonSerializer.Deserialize<AiDiagnosisResultModel>(resultText ?? "", JsonOptions);
+                if (result == null)
+                    throw new JsonException("Gemini response did not contain a diagnosis.");
+
+                UsedModel = model;
+                result.Confidence = Math.Clamp(result.Confidence, 0, 1);
+                return result;
             }
 
-            using var responseJson = JsonDocument.Parse(
-                await response.Content.ReadAsStringAsync(cancellationToken));
-            var resultText = responseJson.RootElement
-                .GetProperty("candidates")[0]
-                .GetProperty("content")
-                .GetProperty("parts")[0]
-                .GetProperty("text")
-                .GetString();
-
-            var result = JsonSerializer.Deserialize<AiDiagnosisResultModel>(resultText ?? "", JsonOptions);
-            if (result == null)
-                throw new JsonException("Gemini response did not contain a diagnosis.");
-
-            result.Confidence = Math.Clamp(result.Confidence, 0, 1);
-            return result;
+            if (lastStatusCode == HttpStatusCode.TooManyRequests)
+                throw new PlantAiException("Các model AI miễn phí đều đã chạm giới hạn. Vui lòng thử lại sau.");
+            throw new PlantAiException("Các model AI đang bận hoặc tạm thời không khả dụng. Vui lòng thử lại sau.");
         }
         catch (PlantAiException)
         {
@@ -241,6 +271,14 @@ public sealed class PlantExpertAiService
         },
         required = new[] { "frequency", "unit", "reason" }
     };
+
+    private static bool IsFallbackStatus(HttpStatusCode statusCode) =>
+        statusCode == HttpStatusCode.NotFound ||
+        statusCode == HttpStatusCode.TooManyRequests ||
+        statusCode == HttpStatusCode.InternalServerError ||
+        statusCode == HttpStatusCode.BadGateway ||
+        statusCode == HttpStatusCode.ServiceUnavailable ||
+        statusCode == HttpStatusCode.GatewayTimeout;
 }
 
 public sealed class PlantAiException : Exception

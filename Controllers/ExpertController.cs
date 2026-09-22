@@ -129,7 +129,7 @@ public sealed class ExpertController : Controller
             PlantName = plant?.CustomName ?? "Cây chưa lưu trong vườn",
             Question = vm.Question,
             UploadedImageUrl = imageUrl ?? "",
-            AiModel = _expertAi.Model,
+            AiModel = string.IsNullOrWhiteSpace(_expertAi.UsedModel) ? _expertAi.Model : _expertAi.UsedModel,
             Result = result,
             CreatedAt = Timestamp.GetCurrentTimestamp()
         };

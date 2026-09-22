@@ -44,3 +44,5 @@ services:
         sync: false
       - key: Gemini__Model
         value: gemini-3.5-flash-lite
+      - key: Gemini__FallbackModels
+        value: gemini-3.1-flash-lite,gemini-3.5-flash
