@@ -185,17 +185,6 @@
             </div>
         }
 
-        @if (result.NeedsMoreInfo || !string.IsNullOrWhiteSpace(result.FollowUpQuestion))
-        {
-            <div class="alert alert-warning">
-                <strong>AI cần thêm thông tin.</strong>
-                @if (!string.IsNullOrWhiteSpace(result.FollowUpQuestion))
-                {
-                    <span>@result.FollowUpQuestion</span>
-                }
-            </div>
-        }
-
         @if (warnings.Count > 0)
         {
             <div class="expert-warning mb-3">

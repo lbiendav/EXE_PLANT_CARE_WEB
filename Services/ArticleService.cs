@@ -37,6 +37,17 @@ public class ArticleService
         return doc.ConvertTo<ArticleModel>();
     }
 
+    public async Task<ArticleModel?> GetByIdAndIncrementViews(string id)
+    {
+        var reference = _db.Collection("articles").Document(id);
+        var doc = await reference.GetSnapshotAsync();
+        if (!doc.Exists) return null;
+        await reference.UpdateAsync("views", FieldValue.Increment(1));
+        var article = doc.ConvertTo<ArticleModel>();
+        article.Views++;
+        return article;
+    }
+
     public async Task Add(ArticleModel article)
     {
         await _db.Collection("articles")

@@ -39,7 +39,7 @@
                 }
                 else
                 {
-                    <text>Email tạm thời chưa sẵn sàng. Bạn vẫn có thể xem lời nhắc tại đây.</text>
+                    <text>@((bool)ViewBag.EmailEnabled ? "Đã lưu lựa chọn bật email" : "Đang tắt") · Dịch vụ gửi thư Production chưa được kết nối; lời nhắc vẫn hiển thị tại đây.</text>
                 }
             </p>
         </div>
@@ -47,8 +47,7 @@
         <form asp-action="Preferences" method="post" class="d-flex align-items-center gap-2">
             <input type="hidden" name="emailEnabled" value="@((!(bool)ViewBag.EmailEnabled).ToString().ToLowerInvariant())" />
             <button type="submit"
-                    class="btn @((bool)ViewBag.EmailEnabled ? "btn-outline-danger" : "btn-outline-success")"
-                    disabled="@(!(bool)ViewBag.EmailAvailable && !(bool)ViewBag.EmailEnabled ? "disabled" : null)">
+                    class="btn @((bool)ViewBag.EmailEnabled ? "btn-outline-danger" : "btn-outline-success")">
                 @((bool)ViewBag.EmailEnabled ? "Tắt email" : "Bật email")
             </button>
         </form>

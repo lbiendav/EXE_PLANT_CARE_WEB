@@ -70,6 +70,14 @@ async function run() {
         assert.ok(!r.body.includes("Chưa cấu hình GEMINI_API_KEY"),"Expert AI is missing GEMINI_API_KEY");
         assert.ok(!r.body.includes("Tính năng đang chờ cấu hình"),"Expert AI form is disabled");
     });
+    await check("email reminder preference can be toggled even while delivery provider is unavailable",async()=>{
+        const userRef=db.collection("users").doc(userAccount.uid);
+        const before=(await userRef.get()).data().emailCareReminders===true;
+        try{
+            status(await user.post("/Notifications/Preferences",{emailEnabled:String(!before).toLowerCase()},"/Notifications/Index"),302);
+            assert.equal((await userRef.get()).data().emailCareReminders,!before);
+        }finally{await userRef.update({emailCareReminders:before});}
+    });
     for(const p of ["Dashboard","Users","SamplePlants","PlantTemplates","CommunityPosts","QaThreads","AiDiagnoses","CreateSamplePlant"])
         await check("admin GET "+p,async()=>status(await admin.request("/Admin/"+p),200));
     for(const tab of ["overview","orders","subscriptions","plans","customers","audit"])
@@ -216,7 +224,11 @@ async function run() {
             status(await admin.post("/Article/Edit/"+articleId,{...article,Title:marker+" edited"}),302);
             const data=(await db.collection("articles").doc(articleId).get()).data();assert.equal(data.title,marker+" edited");assert.ok(data.createdAt.isEqual(articleTime));
         });
-        await check("public article detail",async()=>status(await anonymous.request("/Article/Details/"+articleId),200));
+        await check("public article detail increments views atomically",async()=>{
+            const before=(await db.collection("articles").doc(articleId).get()).data().views;
+            status(await anonymous.request("/Article/Details/"+articleId),200);
+            assert.equal((await db.collection("articles").doc(articleId).get()).data().views,before+1);
+        });
         await check("normal user cannot delete article",async()=>{status(await user.post("/Article/Delete/"+articleId,{},"/Profile/Edit"),302);assert.equal((await db.collection("articles").doc(articleId).get()).exists,true);});
         await check("GET cannot delete article",async()=>status(await admin.request("/Article/Delete/"+articleId),405));
         await check("admin deletes article",async()=>{status(await admin.post("/Article/Delete/"+articleId,{},"/Article/Index"),302);assert.equal((await db.collection("articles").doc(articleId).get()).exists,false);});

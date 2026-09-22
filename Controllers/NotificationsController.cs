@@ -64,16 +64,11 @@ public class NotificationsController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
-        if (emailEnabled && !_reminders.EmailDeliveryAvailable)
-        {
-            TempData["Warning"] = "Email chưa sẵn sàng. Vui lòng thử lại sau.";
-            return RedirectToAction(nameof(Index));
-        }
-
         await _reminders.SetEmailPreference(uid, emailEnabled, HttpContext.RequestAborted);
-        TempData["Success"] = emailEnabled
-            ? "Đã bật nhắc việc qua email."
-            : "Đã tắt nhắc việc qua email.";
+        if (emailEnabled && !_reminders.EmailDeliveryAvailable)
+            TempData["Warning"] = "Đã lưu lựa chọn bật email. Dịch vụ gửi thư Production chưa được cấu hình nên email sẽ bắt đầu hoạt động sau khi quản trị viên kết nối nhà cung cấp.";
+        else
+            TempData["Success"] = emailEnabled ? "Đã bật nhắc việc qua email." : "Đã tắt nhắc việc qua email.";
         return RedirectToAction(nameof(Index));
     }
 

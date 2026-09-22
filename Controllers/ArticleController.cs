@@ -33,7 +33,7 @@ public class ArticleController : Controller
         string id)
     {
         var article =
-            await _service.GetById(id);
+            await _service.GetByIdAndIncrementViews(id);
 
         if (article == null) return NotFound();
         return View(article);
