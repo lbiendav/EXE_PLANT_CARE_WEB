@@ -10,6 +10,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - HomePlant</title>
+    <link rel="icon" type="image/png" sizes="64x64" href="~/images/brand/homeplant-favicon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="~/images/brand/homeplant-icon-192.png" />
 
     <link rel="stylesheet"
           href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
@@ -33,10 +35,15 @@
 
             <div class="container-fluid nav-container">
 
-                <a class="navbar-brand logo-text"
+                <a class="navbar-brand brand-lockup"
                    asp-controller="Home"
-                   asp-action="Index">
-                    HomePlant
+                   asp-action="Index"
+                   aria-label="HomePlant — Vườn trong nhà">
+                    <img class="brand-lockup__mark" src="~/images/brand/homeplant-mark.png" alt="" />
+                    <span class="brand-lockup__copy">
+                        <strong>HomePlant</strong>
+                        <small><i></i>Vườn trong nhà<i></i></small>
+                    </span>
                 </a>
 
                 <button class="navbar-toggler"
@@ -193,7 +200,13 @@
 
         <div class="container d-flex flex-wrap justify-content-between align-items-baseline gap-3">
 
-            <span class="foot-mark">HomePlant</span>
+            <a class="brand-lockup brand-lockup--footer" asp-controller="Home" asp-action="Index" aria-label="HomePlant — Vườn trong nhà">
+                <img class="brand-lockup__mark" src="~/images/brand/homeplant-mark.png" alt="" />
+                <span class="brand-lockup__copy">
+                    <strong>HomePlant</strong>
+                    <small><i></i>Vườn trong nhà<i></i></small>
+                </span>
+            </a>
 
             <span class="foot-mid">
                 Chăm cây <em>trong nhà</em>, có nhịp có mùa.

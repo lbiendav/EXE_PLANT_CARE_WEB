@@ -112,14 +112,17 @@
     }
 
     .auth-mark {
-        font-family: var(--serif);
-        font-size: 13px;
-        letter-spacing: 0.42em;
-        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
         color: var(--bone);
         text-decoration: none;
     }
     .auth-mark:hover { color: var(--green); }
+    .auth-mark img { width: 44px; height: 44px; object-fit: contain; }
+    .auth-mark__copy { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .auth-mark__copy strong { font-family: var(--serif); font-size: 19px; font-weight: 420; letter-spacing: .18em; text-transform: uppercase; }
+    .auth-mark__copy small { margin-top: 7px; color: var(--bone-dim); font: 500 7px/1 var(--sans); letter-spacing: .34em; text-transform: uppercase; }
 
     .auth-kicker {
         font-size: 11px;

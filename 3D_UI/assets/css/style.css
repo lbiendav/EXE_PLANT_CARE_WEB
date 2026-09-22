@@ -139,6 +139,9 @@ img, canvas { display: block; max-width: 100%; }
 }
 body:not(.is-loading) .loader { opacity: 0; visibility: hidden; }
 .loader__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   font-family: var(--serif);
   font-weight: 350;
   font-size: 15px;
@@ -146,6 +149,7 @@ body:not(.is-loading) .loader { opacity: 0; visibility: hidden; }
   text-indent: 0.55em;
   color: var(--bone);
 }
+.loader__mark img { width: 42px; height: 42px; object-fit: contain; }
 .loader__bar {
   width: 168px; height: 1px;
   background: rgba(234, 230, 217, 0.14);
@@ -187,6 +191,9 @@ body:not(.is-loading) .loader { opacity: 0; visibility: hidden; }
 }
 body:not(.is-loading) .head { opacity: 1; }
 .head__mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   font-family: var(--serif);
   font-size: 14px;
   font-weight: 420;
@@ -194,6 +201,9 @@ body:not(.is-loading) .head { opacity: 1; }
   color: var(--bone);
   text-decoration: none;
 }
+.head__mark img { width: 38px; height: 38px; object-fit: contain; }
+.head__mark span { display: flex; flex-direction: column; align-items: center; }
+.head__mark small { margin-top: 5px; font: 500 6px/1 var(--sans); letter-spacing: .34em; text-transform: uppercase; color: var(--bone-dim); }
 .head__guide {
   font-size: 10.5px;
   letter-spacing: 0.3em;

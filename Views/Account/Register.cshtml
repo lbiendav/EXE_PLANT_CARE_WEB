@@ -9,6 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Đăng ký — HomePlant</title>
+    <link rel="icon" type="image/png" href="~/images/brand/homeplant-favicon.png" />
     <partial name="_AuthStyles" />
 </head>
 <body class="auth-body">
@@ -17,7 +18,10 @@
     <main class="auth-split">
 
         <aside class="auth-aside">
-            <a class="auth-mark" asp-controller="Home" asp-action="Index">HomePlant</a>
+            <a class="auth-mark" asp-controller="Home" asp-action="Index" aria-label="HomePlant — Vườn trong nhà">
+                <img src="~/images/brand/homeplant-mark.png" alt="" />
+                <span class="auth-mark__copy"><strong>HomePlant</strong><small>Vườn trong nhà</small></span>
+            </a>
 
             <div>
                 <p class="auth-kicker">Vườn trong nhà</p>
