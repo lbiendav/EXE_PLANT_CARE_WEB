@@ -186,7 +186,9 @@ async function run() {
     });
     if(aiFlowPlantId){
         await check("linked diagnosis offers AI schedule action",async()=>{
-            const r=await user.request("/Expert/Details/"+aiFlowDiagnosisId);status(r,200);assert.ok(r.body.includes("Chấp thuận và tạo lịch nhắc"));
+            const r=await user.request("/Expert/Details/"+aiFlowDiagnosisId);status(r,200);
+            assert.ok(r.body.includes("ApplyCareRecommendations"));
+            assert.ok(!r.body.includes("Cây liên kết với phiên tư vấn này không còn tồn tại"));
         });
         await check("apply AI recommendations to newly added plant",async()=>{
             const r=await user.post("/Expert/ApplyCareRecommendations?id="+aiFlowDiagnosisId,{},"/Expert/Details/"+aiFlowDiagnosisId);status(r,302);
