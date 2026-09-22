@@ -30,7 +30,7 @@
     <h2>Chăm sóc theo kinh nghiệm</h2>
 </div>
 
-<div class="row g-4">
+<div class="home-guide-scroll" aria-label="Danh sách cẩm nang, cuộn ngang để xem thêm" tabindex="0">
 
     @if (articles != null)
     {
@@ -38,7 +38,7 @@
         {
             var preview = ((string)article.Content).Replace("#", "").Trim();
 
-            <div class="col-md-4">
+            <div class="home-guide-item">
 
                 <div class="card h-100">
 
