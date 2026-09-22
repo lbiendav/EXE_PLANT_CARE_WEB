@@ -30,7 +30,8 @@
         </div></div>
     </div>
     <h2 class="mt-5">Lịch sử đơn</h2>
-    @if (viewModel.Orders.Count == 0) { <p class="text-muted">Chưa có đơn nào.</p> }
+    @if (ViewBag.HistoryLoadError == true) { <div class="alert alert-warning">Thông tin gói vẫn hoạt động, nhưng lịch sử đơn tạm thời chưa tải được. Vui lòng thử lại sau.</div> }
+    else if (viewModel.Orders.Count == 0) { <p class="text-muted">Chưa có đơn nào.</p> }
     else { <div class="table-responsive"><table class="table"><thead><tr><th>Mã</th><th>Gói</th><th>Số tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>
     @foreach (var order in viewModel.Orders) { <tr><td>@order.TransferReference</td><td>@order.Tier · @order.DurationMonths tháng</td><td>@order.AmountVnd.ToString("N0")đ</td><td>@order.Status @if(order.IsDemo){<span class="demo-badge">DEMO</span>}</td><td>@if(order.Status=="Pending"){<a href="/Checkout/@order.Id">Tiếp tục</a>}</td></tr> }
     </tbody></table></div> }

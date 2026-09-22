@@ -4,8 +4,9 @@
   "description": "",
   "main": "plant_library_seed.js",
   "scripts": {
-    "test": "node --test staging_seed.test.js",
-    "seed:staging": "node staging_seed.js"
+    "test": "node --test *.test.js",
+    "seed:staging": "node staging_seed.js",
+    "seed:production": "node production_seed.js"
   },
   "keywords": [],
   "author": "",

@@ -103,7 +103,7 @@ async function run() {
             assert.equal(data.customName,marker+" edited");assert.equal(data.templateId,editTemplate.id);assert.equal(data.status,"warning");assert.ok(data.createdAt.isEqual(plantCreatedAt));
         });
         await check("update all schedules from details with seconds and minutes",async()=>{
-            status(await user.post("/Plant/UpdateSchedule/"+plantId,{"Schedule.WateringFrequency":"30","Schedule.WateringFrequencyUnit":"Seconds","Schedule.FertilizingFrequency":"2","Schedule.FertilizingFrequencyUnit":"Minutes","Schedule.RepottingFrequency":"4","Schedule.RepottingFrequencyUnit":"Hours"}),302);
+            status(await user.post("/Plant/UpdateSchedule/"+plantId,{"Schedule.WateringFrequency":"30","Schedule.WateringFrequencyUnit":"Seconds","Schedule.FertilizingFrequency":"2","Schedule.FertilizingFrequencyUnit":"Minutes","Schedule.RepottingFrequency":"4","Schedule.RepottingFrequencyUnit":"Hours"},"/Plant/Details/"+plantId),302);
             const data=(await db.collection("users").doc(userAccount.uid).collection("user_plants").doc(plantId).get()).data();
             assert.equal(data.wateringFrequencyUnit,"Seconds");assert.equal(data.fertilizingFrequencyUnit,"Minutes");assert.equal(data.repottingFrequencyUnit,"Hours");
             assert.ok(data.nextWateringAt&&data.nextFertilizingAt&&data.nextRepottingAt);

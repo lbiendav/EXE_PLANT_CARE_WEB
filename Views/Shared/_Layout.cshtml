@@ -29,9 +29,9 @@
 
     <header>
 
-        <nav class="navbar navbar-expand-xl custom-navbar">
+        <nav class="navbar navbar-expand-xl custom-navbar" aria-label="Điều hướng chính">
 
-            <div class="container">
+            <div class="container-fluid nav-container">
 
                 <a class="navbar-brand logo-text"
                    asp-controller="Home"
@@ -52,10 +52,10 @@
                 <div class="collapse navbar-collapse"
                      id="navbarContent">
 
-                    <ul class="navbar-nav me-auto">
+                    <ul class="navbar-nav primary-nav me-auto">
 
                         <li class="nav-item">
-                            <a class="nav-link"
+                            <a class="nav-link @(currentController == "Home" ? "active" : "")"
                                asp-controller="Home"
                                asp-action="Index">
                                 Khám phá
@@ -63,7 +63,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link"
+                            <a class="nav-link @(currentController == "Library" ? "active" : "")"
                                asp-controller="Library"
                                asp-action="Index">
                                 Thư viện cây
@@ -71,7 +71,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link"
+                            <a class="nav-link @(currentController == "Article" ? "active" : "")"
                                asp-controller="Article"
                                asp-action="Index">
                                 Cẩm nang
@@ -84,7 +84,7 @@
                         @if (Context.Session.GetString("Email") != null)
                         {
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="nav-link @(currentController == "Plant" ? "active" : "")"
                                    asp-controller="Plant"
                                    asp-action="Index">
                                     Vườn của tôi
@@ -92,7 +92,7 @@
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link"
+                                <a class="nav-link @(currentController == "Expert" ? "active" : "")"
                                    asp-controller="Expert"
                                    asp-action="Index">
                                     Chuyên gia
@@ -100,17 +100,7 @@
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link"
-                                   asp-controller="Profile"
-                                   asp-action="Index">
-                                    Hồ sơ
-                                </a>
-                            </li>
-
-                            <li class="nav-item"><a class="nav-link @(currentController is "Subscription" or "Checkout" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Gói của tôi</a></li>
-
-                            <li class="nav-item">
-                                <a class="nav-link notification-nav-link"
+                                <a class="nav-link notification-nav-link @(currentController == "Notifications" ? "active" : "")"
                                    asp-controller="Notifications"
                                    asp-action="Index"
                                    data-notification-endpoint="@Url.Action("UnreadCount", "Notifications")">
@@ -120,20 +110,9 @@
                             </li>
                         }
 
-                        @if (string.Equals(Context.Session.GetString("Role"), "admin", StringComparison.OrdinalIgnoreCase))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link admin-link"
-                                   asp-controller="Admin"
-                                   asp-action="Dashboard">
-                                    Quản trị
-                                </a>
-                            </li>
-                        }
-
                     </ul>
 
-                    <ul class="navbar-nav align-items-lg-center">
+                    <ul class="navbar-nav account-nav align-items-xl-center">
 
                         @if (Context.Session.GetString("Email") == null)
                         {
@@ -155,18 +134,28 @@
                         }
                         else
                         {
-                            <li class="nav-item">
-                                <span class="user-badge">
-                                    @Context.Session.GetString("Email")
-                                </span>
-                            </li>
-
-                            <li class="nav-item ms-lg-3">
-                                <form asp-controller="Account" asp-action="Logout" method="post">
-                                    <button class="btn btn-outline-danger btn-sm" type="submit">
-                                        Đăng xuất
-                                    </button>
-                                </form>
+                            <li class="nav-item dropdown user-menu">
+                                <button class="user-menu-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <span class="user-menu-avatar" aria-hidden="true">@(Context.Session.GetString("Email")?[0].ToString().ToUpperInvariant())</span>
+                                    <span class="user-menu-copy">
+                                        <small>Tài khoản</small>
+                                        <strong>@Context.Session.GetString("Email")</strong>
+                                    </span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Hồ sơ cá nhân</a></li>
+                                    <li><a class="dropdown-item @(currentController is "Subscription" or "Checkout" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Gói của tôi</a></li>
+                                    @if (string.Equals(Context.Session.GetString("Role"), "admin", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <li><a class="dropdown-item admin-link" asp-controller="Admin" asp-action="Dashboard">Quản trị</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post">
+                                            <button class="dropdown-item logout-item" type="submit">Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                </ul>
                             </li>
                         }
 
