@@ -42,11 +42,18 @@ public class UserPlantService
 
     public async Task Add(string uid, UserPlantModel plant)
     {
+        plant.CustomName = NormalizeName(plant.CustomName);
         if (!(_configuration.GetValue<bool?>("Subscriptions:EnforceLimits") ?? false))
         {
-            var document = Collection(uid).Document();
-            plant.Id = document.Id;
-            await document.SetAsync(plant);
+            var collection = Collection(uid);
+            var document = collection.Document();
+            await _db.RunTransactionAsync(async transaction =>
+            {
+                var plants = await transaction.GetSnapshotAsync(collection);
+                ThrowIfDuplicateName(plants, plant.CustomName);
+                plant.Id = document.Id;
+                transaction.Set(document, plant);
+            });
             return;
         }
 
@@ -58,12 +65,14 @@ public class UserPlantService
         {
             var counter = await transaction.GetSnapshotAsync(counterRef);
             var subscription = await transaction.GetSnapshotAsync(subscriptionRef);
+            var plants = await transaction.GetSnapshotAsync(Collection(uid));
             var count = counter.Exists && counter.TryGetValue<int>("plantCount", out var storedCount)
                 ? storedCount
                 : initialCount;
             var limit = EffectivePlantLimit(subscription);
             if (count >= limit)
-                throw new PlantLimitException($"Gói hiện tại cho phép tối đa {limit} cây.");
+                throw PlantLimitException.For(count, limit);
+            ThrowIfDuplicateName(plants, plant.CustomName);
             plant.Id = plantRef.Id;
             transaction.Set(plantRef, plant);
             transaction.Set(counterRef, new Dictionary<string, object> { ["plantCount"] = count + 1, ["updatedAt"] = Timestamp.FromDateTimeOffset(_clock.UtcNow) }, SetOptions.MergeAll);
@@ -80,18 +89,31 @@ public class UserPlantService
             ? storedCount
             : (await Collection(uid).GetSnapshotAsync()).Count;
         var limit = EffectivePlantLimit(subscriptionTask.Result);
-        if (count >= limit) throw new PlantLimitException($"Gói hiện tại cho phép tối đa {limit} cây.");
+        if (count >= limit) throw PlantLimitException.For(count, limit);
     }
 
     public async Task Update(string uid, string id, UserPlantModel plant)
     {
+        plant.CustomName = NormalizeName(plant.CustomName);
         var plantRef = Collection(uid).Document(id);
         await _db.RunTransactionAsync(async transaction =>
         {
             if (!(await transaction.GetSnapshotAsync(plantRef)).Exists)
                 throw new InvalidOperationException("Cây không còn tồn tại trong vườn.");
+            var plants = await transaction.GetSnapshotAsync(Collection(uid));
+            ThrowIfDuplicateName(plants, plant.CustomName, id);
             transaction.Set(plantRef, plant);
         });
+    }
+
+    private static string NormalizeName(string name) => name.Trim();
+
+    private static void ThrowIfDuplicateName(QuerySnapshot plants, string name, string? exceptId = null)
+    {
+        if (plants.Documents.Any(document =>
+                document.Id != exceptId &&
+                string.Equals(document.ConvertTo<UserPlantModel>().CustomName?.Trim(), name, StringComparison.OrdinalIgnoreCase)))
+            throw new PlantDuplicateNameException("Tên cây này đã có trong vườn. Vui lòng chọn tên khác.");
     }
 
     public async Task Delete(string uid, string id)
@@ -192,6 +214,12 @@ public class UserPlantService
     }
 }
 
-public sealed class PlantLimitException(string message) : Exception(message);
+public sealed class PlantLimitException(string message) : Exception(message)
+{
+    public static PlantLimitException For(int count, int limit) => new(
+        $"Bạn đã có {count}/{limit} cây, đạt giới hạn của gói hiện tại. Hãy xóa bớt cây hoặc nâng cấp gói để thêm cây mới.");
+}
+
+public sealed class PlantDuplicateNameException(string message) : Exception(message);
 
 public sealed record OwnedUserPlant(string UserId, UserPlantModel Plant);

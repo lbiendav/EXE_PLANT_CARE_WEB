@@ -7,6 +7,7 @@ public class PlantEditVM
     public string Id { get; set; } = "";
 
     [Required(ErrorMessage = "Vui lòng nhập tên gọi")]
+    [StringLength(80, ErrorMessage = "Tên cây không được dài quá 80 ký tự")]
     public string Nickname { get; set; } = "";
 
     [Required(ErrorMessage = "Vui lòng chọn loại cây")]

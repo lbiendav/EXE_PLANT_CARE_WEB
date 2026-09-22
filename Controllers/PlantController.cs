@@ -105,6 +105,8 @@ public class PlantController : Controller
         ValidateUnit(vm.FertilizingFrequency, vm.FertilizingFrequencyUnit, nameof(vm.FertilizingFrequencyUnit));
         ValidateUnit(vm.RepottingFrequency, vm.RepottingFrequencyUnit, nameof(vm.RepottingFrequencyUnit));
 
+        vm.Nickname = vm.Nickname?.Trim() ?? "";
+
         if (!ModelState.IsValid)
         {
             await PopulateSpecies(vm.PlantSampleId);
@@ -155,8 +157,18 @@ public class PlantController : Controller
         catch (PlantLimitException ex)
         {
             await _imageStorage.Delete(imageUrl, CancellationToken.None);
-            TempData["Warning"] = ex.Message;
-            return RedirectToAction(nameof(Index));
+            ModelState.AddModelError("", ex.Message);
+            await PopulateSpecies(vm.PlantSampleId);
+            await PopulateAiScheduleContext(uid, vm.SourceDiagnosisId);
+            return View(vm);
+        }
+        catch (PlantDuplicateNameException ex)
+        {
+            await _imageStorage.Delete(imageUrl, CancellationToken.None);
+            ModelState.AddModelError(nameof(vm.Nickname), ex.Message);
+            await PopulateSpecies(vm.PlantSampleId);
+            await PopulateAiScheduleContext(uid, vm.SourceDiagnosisId);
+            return View(vm);
         }
         catch
         {
@@ -239,6 +251,8 @@ public class PlantController : Controller
             (vm.PlantSampleId.Contains('/') || await GetSpecies(vm.PlantSampleId) == null))
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loài cây không tồn tại. Vui lòng chọn lại.");
 
+        vm.Nickname = vm.Nickname?.Trim() ?? "";
+
         if (!ModelState.IsValid)
         {
             vm.Id = id;
@@ -260,6 +274,15 @@ public class PlantController : Controller
         try
         {
             await _userPlantService.Update(uid, id, existing);
+        }
+        catch (PlantDuplicateNameException ex)
+        {
+            await _imageStorage.Delete(uploadedImage, CancellationToken.None);
+            ModelState.AddModelError(nameof(vm.Nickname), ex.Message);
+            vm.Id = id;
+            vm.ExistingImageUrl = previousImage;
+            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true);
+            return View(vm);
         }
         catch
         {

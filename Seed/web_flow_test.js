@@ -94,6 +94,12 @@ async function run() {
         if(plantImageUrl.startsWith("/"))status(await user.request(plantImageUrl),200);
         const garden=await user.request("/Plant/Index");status(garden,200);assert.ok(garden.body.includes(marker),"Created plant is missing from the garden");
     });
+    await check("duplicate garden plant name is rejected",async()=>{
+        const r=await user.post("/Plant/Create",{Nickname:"  "+marker.toUpperCase()+"  ",PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh"});
+        status(r,200);assert.ok(r.body.includes("Tên cây này đã có trong vườn"));
+        const plants=await db.collection("users").doc(userAccount.uid).collection("user_plants").get();
+        assert.equal(plants.docs.filter(x=>(x.data().customName||"").toLowerCase()===marker.toLowerCase()).length,1);
+    });
     if(plantId){
         await check("garden plant details include schedule and history",async()=>{
             const r=await user.request("/Plant/Details/"+plantId);status(r,200);
