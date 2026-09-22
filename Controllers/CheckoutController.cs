@@ -8,7 +8,6 @@ namespace HomePlant.Controllers;
 public sealed class CheckoutController(
     SubscriptionOrderService orders,
     DemoPaymentService demoPayments,
-    IBankQrService qrService,
     PaymentModePolicy paymentPolicy) : Controller
 {
     [HttpPost("/Checkout/Create")]
@@ -40,9 +39,11 @@ public sealed class CheckoutController(
         return View(new CheckoutVM
         {
             Order = order,
-            Qr = isCheckoutOpen && order.IsDemo
-                ? qrService.Build(order)
-                : new BankQrDetails(false, null, order.IsDemo ? "Đơn không còn mở; QR đã được ẩn." : "Thanh toán thật sử dụng checkout do payOS cung cấp."),
+            // Staging demo orders must never expose a payable bank QR. A real bank
+            // transfer cannot be verified by the simulator and could move real money.
+            Qr = new BankQrDetails(false, null, order.IsDemo
+                ? "Staging chỉ mô phỏng trạng thái thanh toán; không gửi giao dịch tới ngân hàng."
+                : "Thanh toán thật sử dụng checkout do payOS cung cấp."),
             CanSimulate = canSimulate,
             IsCheckoutOpen = isCheckoutOpen
         });
