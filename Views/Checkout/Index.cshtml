@@ -26,7 +26,7 @@
                     <strong>Không tạo giao dịch ngân hàng trên staging</strong>
                     <p class="small text-muted mt-2 mb-3">Dùng nút dưới đây để kiểm thử toàn bộ luồng kích hoạt gói mà không chuyển tiền thật.</p>
                     @if (pending) {
-                        <form method="post" action="/Checkout/@Model.Order.Id/SimulateSuccess">
+                        <form asp-controller="Checkout" asp-action="SimulateSuccess" asp-route-orderId="@Model.Order.Id" method="post">
                             <button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button>
                         </form>
                     }
@@ -42,8 +42,8 @@
         </div></div>
     </div>
     @if (pending) { <div class="d-flex flex-wrap gap-2 mt-4">
-        @if (!Model.Order.IsDemo) { <form method="post" action="/Checkout/@Model.Order.Id/SimulateSuccess"><button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button></form> }
-        <form method="post" action="/Checkout/@Model.Order.Id/Cancel"><button class="btn btn-outline-danger" type="submit">Hủy đơn</button></form>
+        @if (!Model.Order.IsDemo) { <form asp-controller="Checkout" asp-action="SimulateSuccess" asp-route-orderId="@Model.Order.Id" method="post"><button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button></form> }
+        <form asp-controller="Checkout" asp-action="Cancel" asp-route-orderId="@Model.Order.Id" method="post"><button class="btn btn-outline-danger" type="submit">Hủy đơn</button></form>
     </div> }
     @if (!Model.CanSimulate && pending) { <p class="small text-warning mt-3">Simulator đang bị khóa bởi cấu hình môi trường.</p> }
 </section>

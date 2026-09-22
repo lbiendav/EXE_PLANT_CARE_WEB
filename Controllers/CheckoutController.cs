@@ -80,7 +80,7 @@ public sealed class CheckoutController(
     public async Task<IActionResult> SimulateSuccess(string orderId)
     {
         var uid = HttpContext.Session.GetString("Uid");
-        if (uid == null) return Unauthorized(new { code = "not_authenticated" });
+        if (uid == null) return RedirectToAction("Login", "Account", new { returnUrl = $"/Checkout/{Uri.EscapeDataString(orderId)}" });
         try
         {
             var order = await demoPayments.Confirm(uid, orderId);
@@ -98,7 +98,7 @@ public sealed class CheckoutController(
     public async Task<IActionResult> Cancel(string orderId)
     {
         var uid = HttpContext.Session.GetString("Uid");
-        if (uid == null) return Unauthorized(new { code = "not_authenticated" });
+        if (uid == null) return RedirectToAction("Login", "Account", new { returnUrl = $"/Checkout/{Uri.EscapeDataString(orderId)}" });
         try { await orders.Cancel(uid, orderId); TempData["Success"] = "Đã hủy đơn."; }
         catch (SubscriptionDomainException ex) { TempData["Warning"] = ex.Message; }
         return RedirectToAction("Index", "Subscription");
