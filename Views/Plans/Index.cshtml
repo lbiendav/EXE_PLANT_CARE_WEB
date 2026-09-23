@@ -23,8 +23,8 @@
     <div class="row g-4 align-items-stretch mt-2">
         <div class="col-lg-4">
             <article class="plan-card h-100">
-                <span class="kicker">Free</span><h2>0đ</h2><p class="text-muted">Không thời hạn</p>
-                <ul><li>2 cây trong vườn</li><li>3 lượt AI / tháng</li><li>Thư viện, lịch chăm và nhắc việc</li><li>Cộng đồng khi mở nhóm</li></ul>
+                <span class="kicker">Basic</span><h2>0đ</h2><p class="text-muted">Không thời hạn</p>
+                <ul><li>3 cây trong vườn</li><li>3 lượt AI / tháng</li><li>Thư viện, lịch chăm và nhắc việc</li><li>Cộng đồng khi mở nhóm</li></ul>
                 <a class="btn btn-outline-success w-100" asp-controller="Account" asp-action="Register">Bắt đầu miễn phí</a>
             </article>
         </div>
@@ -49,7 +49,7 @@
                             @if (!string.IsNullOrWhiteSpace(setting?.Description)) { <p class="small mt-2 mb-0">@setting.Description</p> }
                         </div>
                     }
-                    <ul><li>@first.PlantLimit cây trong vườn</li><li>@first.MonthlyAiLimit lượt AI / tháng</li><li>Đầy đủ thư viện, lịch chăm và nhắc việc</li><li>Xem lại toàn bộ dữ liệu đã tạo</li></ul>
+                    <ul><li>@(first.PlantLimit == 0 ? "Không giới hạn cây trong vườn" : $"{first.PlantLimit} cây trong vườn")</li><li>@first.MonthlyAiLimit lượt AI / tháng</li><li>Đầy đủ thư viện, lịch chăm và nhắc việc</li><li>Xem lại toàn bộ dữ liệu đã tạo</li></ul>
                     @foreach (var plan in tierPlans)
                     {
                         var setting = Model.PlanSettings.GetValueOrDefault(plan.Sku);

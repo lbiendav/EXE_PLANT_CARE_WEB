@@ -10,21 +10,22 @@
 @{
     var viewModel = Model!;
     var current = viewModel.Current;
-    var plantPercent = Math.Min(100, current.PlantLimit == 0 ? 100 : viewModel.Usage.PlantCount * 100 / current.PlantLimit);
+    var tierName = current.Tier == "Free" ? "Basic" : current.Tier;
+    var plantPercent = current.PlantLimit == 0 ? 0 : Math.Min(100, viewModel.Usage.PlantCount * 100 / current.PlantLimit);
     var aiPercent = Math.Min(100, current.MonthlyAiLimit == 0 ? 100 : viewModel.Usage.AiUsed * 100 / current.MonthlyAiLimit);
 }
 <section>
     <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start mb-4">
-        <div><span class="kicker">Gói của tôi</span><h1>@current.Tier @if (current.Subscription?.IsDemo == true) { <span class="demo-badge">DEMO</span> }</h1></div>
+        <div><span class="kicker">Gói của tôi</span><h1>@tierName @if (current.Subscription?.IsDemo == true) { <span class="demo-badge">DEMO</span> }</h1></div>
         <a class="btn btn-success" href="/Plans">@(current.IsPaidActive ? "Gia hạn" : "Nâng cấp")</a>
     </div>
     <div class="row g-4">
-        <div class="col-lg-6"><div class="status-panel h-100"><h2>Trạng thái</h2><p><strong>@(current.IsPaidActive ? "Đang hoạt động" : "Free")</strong></p>
+        <div class="col-lg-6"><div class="status-panel h-100"><h2>Trạng thái</h2><p><strong>@(current.IsPaidActive ? "Đang hoạt động" : "Basic")</strong></p>
             @if (current.IsPaidActive && current.Subscription != null) { <p>Bắt đầu: @current.Subscription.StartsAt.ToDateTimeOffset().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p><p>Hết hạn: @current.Subscription.ExpiresAt.ToDateTimeOffset().ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p><p>Kỳ hạn vừa mua: @current.Subscription.DurationMonths tháng</p> }
         </div></div>
         <div class="col-lg-6"><div class="status-panel h-100"><h2>Hạn mức tháng này</h2>
-            <p>Cây: <strong>@viewModel.Usage.PlantCount / @current.PlantLimit</strong></p><div class="progress"><div class="progress-bar" style="width:@plantPercent%"></div></div>
-            @if (viewModel.Usage.PlantCount > current.PlantLimit) { <small class="text-warning">Bạn đang vượt giới hạn; dữ liệu cũ vẫn được giữ.</small> }
+            <p>Cây: <strong>@viewModel.Usage.PlantCount / @(current.PlantLimit == 0 ? "Không giới hạn" : current.PlantLimit)</strong></p><div class="progress"><div class="progress-bar" style="width:@plantPercent%"></div></div>
+            @if (current.PlantLimit > 0 && viewModel.Usage.PlantCount > current.PlantLimit) { <small class="text-warning">Bạn đang vượt giới hạn; dữ liệu cũ vẫn được giữ.</small> }
             <p class="mt-3">AI đã dùng: <strong>@viewModel.Usage.AiUsed / @current.MonthlyAiLimit</strong></p><div class="progress"><div class="progress-bar" style="width:@aiPercent%"></div></div>
             <small>Đặt lại: @viewModel.Usage.ResetsAt.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</small>
         </div></div>

@@ -6,7 +6,8 @@ namespace HomePlant.Services;
 public sealed class EntitlementService(
     FirestoreService firestore,
     PaymentModePolicy paymentPolicy,
-    ISubscriptionClock clock)
+    ISubscriptionClock clock,
+    PlanCatalogService catalog)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
@@ -23,11 +24,8 @@ public sealed class EntitlementService(
         if (!active)
             return new CurrentEntitlement(PlanCatalogService.Free, subscription, false);
 
-        var entitlements = new EntitlementSnapshot(
-            subscription.Tier,
-            subscription.PlantLimit,
-            subscription.MonthlyAiLimit,
-            subscription.CatalogVersion);
+        // Active subscriptions receive the current benefits for their tier. Order snapshots stay immutable.
+        var entitlements = catalog.CurrentTier(subscription.Tier);
         return new CurrentEntitlement(entitlements, subscription, true);
     }
 }

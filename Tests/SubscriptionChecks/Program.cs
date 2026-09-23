@@ -8,8 +8,10 @@ Check(catalog.Get("silver_12m").AmountVnd == 489_000, "Silver annual price");
 Check(catalog.Get("gold_1m").AmountVnd == 88_000, "Gold monthly price");
 Check(catalog.Get("gold_6m").AmountVnd == 475_000, "Gold six-month price");
 Check(catalog.Get("gold_12m").AmountVnd == 899_000, "Gold annual price");
+Check(catalog.Get("silver_1m").PlantLimit == 10, "Silver allows ten plants");
+Check(catalog.Get("gold_1m").PlantLimit == 0, "Gold has unlimited plants");
 Check(catalog.Get("silver_12m").MonthlyAiLimit == 30, "long duration does not multiply monthly AI quota");
-Check(PlanCatalogService.Free.PlantLimit == 2 && PlanCatalogService.Free.MonthlyAiLimit == 3, "Free entitlements");
+Check(PlanCatalogService.Free.PlantLimit == 3 && PlanCatalogService.Free.MonthlyAiLimit == 3, "Basic entitlements");
 
 var vietnamOffset = TimeSpan.FromHours(7);
 var jan31 = new DateTimeOffset(2024, 1, 31, 10, 15, 0, vietnamOffset);

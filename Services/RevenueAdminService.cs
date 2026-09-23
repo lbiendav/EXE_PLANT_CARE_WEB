@@ -68,7 +68,7 @@ public sealed class RevenueAdminService(
         var paid = allOrders.Where(x => x.Status == "Paid" && x.PaidAt != null).ToList();
         var now = clock.UtcNow;
         var nonPaid = allOrders.Count(x => x.Status is "Cancelled" or "Expired" || x.FulfillmentStatus == "HeldForReview");
-        var tierCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["Free"] = users.Count - subscriptions.Count, ["Silver"] = 0, ["Gold"] = 0 };
+        var tierCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["Basic"] = users.Count - subscriptions.Count, ["Silver"] = 0, ["Gold"] = 0 };
         foreach (var subscription in subscriptions.Values) tierCounts[subscription.Tier] = tierCounts.GetValueOrDefault(subscription.Tier) + 1;
         return new RevenueDashboardVM
         {

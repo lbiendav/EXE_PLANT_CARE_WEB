@@ -9,13 +9,15 @@ public class UserPlantService
     private readonly IConfiguration _configuration;
     private readonly ISubscriptionClock _clock;
     private readonly PaymentModePolicy _paymentPolicy;
+    private readonly PlanCatalogService _catalog;
 
-    public UserPlantService(FirestoreService firestore, IConfiguration configuration, ISubscriptionClock clock, PaymentModePolicy paymentPolicy)
+    public UserPlantService(FirestoreService firestore, IConfiguration configuration, ISubscriptionClock clock, PaymentModePolicy paymentPolicy, PlanCatalogService catalog)
     {
         _db = firestore.Db;
         _configuration = configuration;
         _clock = clock;
         _paymentPolicy = paymentPolicy;
+        _catalog = catalog;
     }
 
     private CollectionReference Collection(string uid) =>
@@ -70,7 +72,7 @@ public class UserPlantService
                 ? storedCount
                 : initialCount;
             var limit = EffectivePlantLimit(subscription);
-            if (count >= limit)
+            if (limit > 0 && count >= limit)
                 throw PlantLimitException.For(count, limit);
             ThrowIfDuplicateName(plants, plant.CustomName);
             plant.Id = plantRef.Id;
@@ -89,7 +91,7 @@ public class UserPlantService
             ? storedCount
             : (await Collection(uid).GetSnapshotAsync()).Count;
         var limit = EffectivePlantLimit(subscriptionTask.Result);
-        if (count >= limit) throw PlantLimitException.For(count, limit);
+        if (limit > 0 && count >= limit) throw PlantLimitException.For(count, limit);
     }
 
     public async Task Update(string uid, string id, UserPlantModel plant)
@@ -179,7 +181,7 @@ public class UserPlantService
         var now = _clock.UtcNow;
         var demoAllowed = _paymentPolicy.IsDemoSubscriptionAllowed(subscription);
         return demoAllowed && subscription.StartsAt.ToDateTimeOffset() <= now && now < subscription.ExpiresAt.ToDateTimeOffset()
-            ? subscription.PlantLimit : PlanCatalogService.Free.PlantLimit;
+            ? _catalog.CurrentTier(subscription.Tier).PlantLimit : PlanCatalogService.Free.PlantLimit;
     }
 
     private async Task<int> ReadPlantCount(string uid)
