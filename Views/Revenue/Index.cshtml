@@ -21,18 +21,51 @@
             <small class="text-muted">Tài khoản mới và doanh thu tính trong 30 ngày gần nhất</small>
         </div>
         <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-md-6"><div class="admin-stat-card h-100"><div class="stat-number">@Model.TotalAccounts</div><div class="stat-label">Tổng tài khoản</div><small class="text-muted">+@Model.NewAccounts30Days tài khoản mới</small></div></div>
-            <div class="col-xl-3 col-md-6"><div class="admin-stat-card h-100"><div class="stat-number">@Model.ActiveSubscriptions</div><div class="stat-label">Gói đang hoạt động</div></div></div>
-            <div class="col-xl-3 col-md-6"><div class="admin-stat-card h-100"><div class="stat-number">@Model.PayingCustomers</div><div class="stat-label">Người đã thanh toán</div><small class="text-muted">@Model.SuccessfulOrders giao dịch thành công</small></div></div>
-            <div class="col-xl-3 col-md-6"><div class="admin-stat-card h-100"><div class="stat-number">@Model.Revenue30Days.ToString("N0")đ</div><div class="stat-label">Doanh thu 30 ngày</div><small class="text-muted">Hôm nay @Model.RevenueToday.ToString("N0")đ · 7 ngày @Model.Revenue7Days.ToString("N0")đ</small></div></div>
+            <div class="col-xl-3 col-md-6"><a class="admin-stat-card revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="accounts" aria-label="Xem danh sách tất cả tài khoản"><div class="stat-number">@Model.TotalAccounts</div><div class="stat-label">Tổng tài khoản</div><small class="text-muted">+@Model.NewAccounts30Days tài khoản mới</small><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-xl-3 col-md-6"><a class="admin-stat-card revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="active-subscriptions" aria-label="Xem các gói đang hoạt động"><div class="stat-number">@Model.ActiveSubscriptions</div><div class="stat-label">Gói đang hoạt động</div><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-xl-3 col-md-6"><a class="admin-stat-card revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="paying-customers" aria-label="Xem người dùng đã thanh toán"><div class="stat-number">@Model.PayingCustomers</div><div class="stat-label">Người đã thanh toán</div><small class="text-muted">@Model.SuccessfulOrders giao dịch thành công</small><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-xl-3 col-md-6"><a class="admin-stat-card revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="revenue-30d" aria-label="Xem các đơn tạo doanh thu 30 ngày"><div class="stat-number">@Model.Revenue30Days.ToString("N0")đ</div><div class="stat-label">Doanh thu 30 ngày</div><small class="text-muted">Hôm nay @Model.RevenueToday.ToString("N0")đ · 7 ngày @Model.Revenue7Days.ToString("N0")đ</small><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
         </div>
         <div class="row g-3 mb-4">
-            <div class="col-lg-3 col-6"><div class="status-panel h-100"><strong class="fs-3">@Model.PendingOrders</strong><div class="text-muted">Đơn đang chờ</div></div></div>
-            <div class="col-lg-3 col-6"><div class="status-panel h-100"><strong class="fs-3 text-danger">@attentionOrders</strong><div class="text-muted">Đơn lỗi / cần xử lý</div>@if (Model.UnmatchedTransactions > 0){<small class="d-block text-warning">@Model.UnmatchedTransactions giao dịch chưa khớp</small>}</div></div>
-            <div class="col-lg-3 col-6"><div class="status-panel h-100"><strong class="fs-3">@Model.FailedOrders</strong><div class="text-muted">Đơn không hoàn tất</div></div></div>
-            <div class="col-lg-3 col-6"><div class="status-panel h-100"><strong class="fs-3">@Model.AbandonmentRate.ToString("0.0")%</strong><div class="text-muted">Tỷ lệ không hoàn tất</div></div></div>
+            <div class="col-lg-3 col-6"><a class="status-panel revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="pending-orders"><strong class="fs-3">@Model.PendingOrders</strong><div class="text-muted">Đơn đang chờ</div><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-lg-3 col-6"><a class="status-panel revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="review-orders"><strong class="fs-3 text-danger">@attentionOrders</strong><div class="text-muted">Đơn lỗi / cần xử lý</div>@if (Model.UnmatchedTransactions > 0){<small class="d-block text-warning">@Model.UnmatchedTransactions giao dịch chưa khớp</small>}<span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-lg-3 col-6"><a class="status-panel revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="incomplete-orders"><strong class="fs-3">@Model.FailedOrders</strong><div class="text-muted">Đơn không hoàn tất</div><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
+            <div class="col-lg-3 col-6"><a class="status-panel revenue-stat-link h-100" asp-action="Index" asp-route-tab="overview" asp-route-detail="abandonment"><strong class="fs-3">@Model.AbandonmentRate.ToString("0.0")%</strong><div class="text-muted">Tỷ lệ không hoàn tất</div><span class="revenue-stat-action">Xem chi tiết →</span></a></div>
         </div>
     </section>
+
+    @if (!string.IsNullOrEmpty(Model.DetailTitle))
+    {
+        <section class="status-panel revenue-detail-panel mb-4" aria-labelledby="revenue-detail-title">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+                <div><span class="kicker">Chi tiết số liệu</span><h2 id="revenue-detail-title" class="h4 mb-1">@Model.DetailTitle</h2><p class="text-muted mb-0">@Model.DetailDescription</p></div>
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index" asp-route-tab="overview">Đóng chi tiết</a>
+            </div>
+            @if (Model.DetailAccounts.Count > 0)
+            {
+                <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Khách hàng</th><th>Ngày tạo</th><th>Đơn thành công</th><th>Đã thanh toán</th></tr></thead><tbody>
+                @foreach (var row in Model.DetailAccounts) { <tr><td><strong>@(string.IsNullOrWhiteSpace(row.User.FullName) ? "Chưa đặt tên" : row.User.FullName)</strong><small class="d-block">@row.User.Email</small><code class="small">@row.User.Id</code></td><td class="text-nowrap">@row.User.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td><td>@row.SuccessfulOrders</td><td>@row.PaidAmount.ToString("N0")đ</td></tr> }
+                </tbody></table></div>
+            }
+            else if (Model.DetailSubscriptions.Count > 0)
+            {
+                <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Khách hàng</th><th>Gói</th><th>Bắt đầu</th><th>Hết hạn</th><th>Loại cấp</th></tr></thead><tbody>
+                @foreach (var row in Model.DetailSubscriptions) { var subscription = row.Subscription!; <tr><td><strong>@row.DisplayName</strong><small class="d-block">@row.Email</small><code class="small">@row.UserId</code></td><td><strong>@subscription.Tier</strong><small class="d-block">@subscription.DurationMonths tháng</small></td><td>@subscription.StartsAt.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</td><td>@subscription.ExpiresAt.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</td><td>@(subscription.IsDemo ? "Demo" : subscription.LastOrderId.StartsWith("admin:") ? "Admin cấp" : "Thanh toán")</td></tr> }
+                </tbody></table></div>
+            }
+            else if (Model.DetailOrders.Count > 0 || Model.DetailUnmatchedPayments.Count > 0)
+            {
+                @if (Model.DetailUnmatchedPayments.Count > 0) { <div class="alert alert-warning"><strong>Giao dịch chưa khớp đơn</strong><ul class="mb-0 mt-2">@foreach (var item in Model.DetailUnmatchedPayments) { <li>payOS @item.GetValueOrDefault("providerOrderCode") · @Convert.ToInt64(item.GetValueOrDefault("amountVnd") ?? 0).ToString("N0")đ · @item.GetValueOrDefault("reason")</li> }</ul></div> }
+                <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Đơn / khách hàng</th><th>Gói</th><th>Số tiền</th><th>Trạng thái</th><th>Thời gian</th><th></th></tr></thead><tbody>
+                @foreach (var row in Model.DetailOrders) { var order = row.Order; var warning = order.PaymentStatus == "NeedsReview" || order.FulfillmentStatus == "HeldForReview"; <tr><td><strong>@order.TransferReference</strong><small class="d-block">@row.Email</small><code class="small">@order.UserId</code></td><td>@order.Tier · @order.DurationMonths tháng</td><td><strong>@order.AmountVnd.ToString("N0")đ</strong>@if(row.ReceivedAmount > 0){<small class="d-block">Thực nhận @row.ReceivedAmount.ToString("N0")đ</small>}</td><td><span class="badge @(warning ? "bg-warning text-dark" : order.Status == "Paid" ? "bg-success" : order.Status == "Pending" ? "bg-primary" : "bg-secondary")">@(warning ? "Cần kiểm tra" : order.Status)</span></td><td>@order.CreatedAt.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yyyy HH:mm")</td><td><a class="btn btn-sm btn-outline-success" asp-action="Order" asp-route-id="@order.Id">Chi tiết</a></td></tr> }
+                </tbody></table></div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">Hiện chưa có bản ghi nào trong nhóm này.</p>
+            }
+        </section>
+    }
 
     <section class="status-panel mb-4" aria-labelledby="ga4-title">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">

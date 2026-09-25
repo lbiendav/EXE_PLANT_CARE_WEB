@@ -7,6 +7,9 @@ public sealed class RevenueDashboardVM
     public string Tab { get; init; } = "overview";
     public string Query { get; init; } = "";
     public string Status { get; init; } = "";
+    public string Detail { get; init; } = "";
+    public string DetailTitle { get; init; } = "";
+    public string DetailDescription { get; init; } = "";
     public long RevenueToday { get; init; }
     public long Revenue7Days { get; init; }
     public long Revenue30Days { get; init; }
@@ -23,6 +26,10 @@ public sealed class RevenueDashboardVM
     public IReadOnlyDictionary<string, int> UsersByTier { get; init; } = new Dictionary<string, int>();
     public string BestSeller { get; init; } = "Chưa có dữ liệu";
     public IReadOnlyList<RevenueOrderRowVM> Orders { get; init; } = [];
+    public IReadOnlyList<RevenueAccountDetailVM> DetailAccounts { get; init; } = [];
+    public IReadOnlyList<RevenueSubscriptionRowVM> DetailSubscriptions { get; init; } = [];
+    public IReadOnlyList<RevenueOrderRowVM> DetailOrders { get; init; } = [];
+    public IReadOnlyList<IReadOnlyDictionary<string, object?>> DetailUnmatchedPayments { get; init; } = [];
     public IReadOnlyList<IReadOnlyDictionary<string, object?>> UnmatchedPayments { get; init; } = [];
     public IReadOnlyList<RevenueSubscriptionRowVM> Subscriptions { get; init; } = [];
     public IReadOnlyList<RevenuePlanRowVM> Plans { get; init; } = [];
@@ -47,6 +54,7 @@ public sealed class GoogleAnalyticsOverviewVM
 public sealed record AnalyticsRowVM(string Label, long Value);
 
 public sealed record RevenueOrderRowVM(SubscriptionOrderModel Order, string Email, string DisplayName, long ReceivedAmount, string ReviewReason);
+public sealed record RevenueAccountDetailVM(UserModel User, int SuccessfulOrders, long PaidAmount);
 public sealed record RevenueSubscriptionRowVM(string UserId, string Email, string DisplayName, SubscriptionModel? Subscription, SubscriptionUsage Usage);
 public sealed record RevenuePlanRowVM(PlanDefinition Plan, bool Enabled, string Description, string Benefits, string Version);
 public sealed record RevenueAuditRowVM(string Id, string AdminEmail, string Action, string TargetType, string TargetId, string Reason, DateTimeOffset CreatedAt, string Before, string After);

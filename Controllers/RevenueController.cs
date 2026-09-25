@@ -10,8 +10,8 @@ namespace HomePlant.Controllers;
 public sealed class RevenueController(RevenueAdminService revenue, ILogger<RevenueController> logger) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Index(string tab = "overview", string query = "", string status = "") =>
-        View(await revenue.Dashboard(tab, query ?? "", status ?? ""));
+    public async Task<IActionResult> Index(string tab = "overview", string query = "", string status = "", string detail = "") =>
+        View(await revenue.Dashboard(tab, query ?? "", status ?? "", detail ?? ""));
 
     [HttpGet("Orders/{id}")]
     public async Task<IActionResult> Order(string id)

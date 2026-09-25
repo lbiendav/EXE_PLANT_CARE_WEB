@@ -1070,6 +1070,23 @@ hr {
 }
 
 .admin-stat-card small { display: block; margin-top: 12px; }
+.revenue-stat-link {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .2s ease, background-color .2s ease, transform .2s ease;
+}
+.revenue-stat-link:hover,
+.revenue-stat-link:focus-visible {
+    color: inherit;
+    border-color: rgba(208, 234, 144, .55);
+    background-color: rgba(208, 234, 144, .06);
+    transform: translateY(-2px);
+}
+.revenue-stat-link:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.revenue-stat-action { display: block; margin-top: 14px; color: var(--green); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.revenue-detail-panel { border-color: rgba(208, 234, 144, .38); scroll-margin-top: 90px; }
+.revenue-detail-panel code { color: var(--green); }
 .analytics-metric { border-left: 2px solid var(--green); padding: 8px 0 8px 18px; }
 .analytics-metric strong { display: block; color: var(--green); font: 340 2.15rem/1 var(--serif); }
 .analytics-metric span { display: block; margin-top: 7px; color: var(--mute); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }

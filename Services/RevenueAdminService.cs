@@ -19,7 +19,7 @@ public sealed class RevenueAdminService(
 {
     private readonly FirestoreDb _db = firestore.Db;
 
-    public async Task<RevenueDashboardVM> Dashboard(string tab, string query, string status)
+    public async Task<RevenueDashboardVM> Dashboard(string tab, string query, string status, string detail = "")
     {
         var analyticsTask = tab == "overview"
             ? analyticsService.GetOverview()
@@ -52,12 +52,23 @@ public sealed class RevenueAdminService(
         if (!string.IsNullOrWhiteSpace(status))
             rows = rows.Where(x => EffectiveStatus(x.Order).Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
 
+        var now = clock.UtcNow;
+        var activeSubscriptionModels = subscriptions.Values
+            .Where(x => x.StartsAt.ToDateTimeOffset() <= now && now < x.ExpiresAt.ToDateTimeOffset())
+            .ToList();
         var subscriptionRows = new List<RevenueSubscriptionRowVM>();
-        if (tab is "subscriptions" or "customers") foreach (var user in users.OrderBy(x => x.Email))
+        var usersNeededForSubscriptions = tab is "subscriptions" or "customers" ? users.OrderBy(x => x.Email).ToList() : [];
+        foreach (var user in usersNeededForSubscriptions)
         {
             subscriptions.TryGetValue(user.Id, out var subscription);
             var usage = await usageService.Get(user.Id);
             subscriptionRows.Add(new RevenueSubscriptionRowVM(user.Id, user.Email, user.FullName, subscription, usage));
+        }
+        if (detail == "active-subscriptions") foreach (var subscription in activeSubscriptionModels.OrderBy(x => x.ExpiresAt))
+        {
+            usersById.TryGetValue(subscription.UserId, out var user);
+            var usage = await usageService.Get(subscription.UserId);
+            subscriptionRows.Add(new RevenueSubscriptionRowVM(subscription.UserId, user?.Email ?? "", user?.FullName ?? "Tài khoản không còn hồ sơ", subscription, usage));
         }
         if (!string.IsNullOrWhiteSpace(query))
             subscriptionRows = subscriptionRows.Where(x => x.UserId.Contains(query, StringComparison.OrdinalIgnoreCase) || x.Email.Contains(query, StringComparison.OrdinalIgnoreCase) || x.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -70,27 +81,57 @@ public sealed class RevenueAdminService(
         }).ToList();
 
         var paid = allOrders.Where(x => x.Status == "Paid" && x.PaidAt != null).ToList();
-        var now = clock.UtcNow;
-        var activeSubscriptions = subscriptions.Values.Count(x => x.StartsAt.ToDateTimeOffset() <= now && now < x.ExpiresAt.ToDateTimeOffset());
-        var nonPaid = allOrders.Count(x => x.Status is "Cancelled" or "Expired" || x.FulfillmentStatus == "HeldForReview");
+        var paid30Days = paid.Where(x => x.PaidAt!.Value.ToDateTimeOffset() >= now.AddDays(-30)).ToList();
+        var pending = allOrders.Where(x => x.Status == "Pending").ToList();
+        var needsReview = allOrders.Where(x => x.PaymentStatus == "NeedsReview" || x.FulfillmentStatus == "HeldForReview").ToList();
+        var nonPaidOrders = allOrders.Where(x => x.Status is "Cancelled" or "Expired" || x.FulfillmentStatus == "HeldForReview").ToList();
+        var unmatched = transactions.Where(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))).Select(x => (IReadOnlyDictionary<string, object?>)x).ToList();
+        var detailAccounts = new List<RevenueAccountDetailVM>();
+        var detailOrders = new List<RevenueOrderRowVM>();
+        var detailSubscriptions = new List<RevenueSubscriptionRowVM>();
+        var detailUnmatched = new List<IReadOnlyDictionary<string, object?>>();
+        var (detailTitle, detailDescription) = detail switch
+        {
+            "accounts" => ("Tất cả tài khoản", $"{users.Count:N0} tài khoản, mới nhất hiển thị trước."),
+            "active-subscriptions" => ("Gói đang hoạt động", "Các thuê bao đã bắt đầu và chưa đến ngày hết hạn."),
+            "paying-customers" => ("Người đã thanh toán", "Khách hàng có ít nhất một đơn thanh toán thành công."),
+            "revenue-30d" => ("Doanh thu 30 ngày", "Các đơn thanh toán thành công trong 30 ngày gần nhất."),
+            "pending-orders" => ("Đơn đang chờ", "Các đơn hiện vẫn chờ khách hàng thanh toán."),
+            "review-orders" => ("Đơn lỗi / cần xử lý", "Đơn bị giữ để kiểm tra và giao dịch chưa khớp đơn."),
+            "incomplete-orders" => ("Đơn không hoàn tất", "Đơn đã hủy, hết hạn hoặc bị giữ để kiểm tra."),
+            "abandonment" => ("Tỷ lệ không hoàn tất", $"{nonPaidOrders.Count:N0} trên tổng số {allOrders.Count:N0} đơn không hoàn tất."),
+            _ => ("", "")
+        };
+        if (detail == "accounts")
+            detailAccounts = users.OrderByDescending(x => x.CreatedAt).Select(x => AccountDetail(x, paid)).ToList();
+        else if (detail == "active-subscriptions") detailSubscriptions = subscriptionRows;
+        else if (detail == "paying-customers")
+            detailAccounts = paid.Select(x => x.UserId).Distinct(StringComparer.Ordinal)
+                .Select(id => usersById.GetValueOrDefault(id) ?? new UserModel { Id = id, Uid = id, FullName = "Tài khoản không còn hồ sơ", Email = "", Phone = "", AvatarUrl = "", Role = "" })
+                .Select(x => AccountDetail(x, paid)).OrderByDescending(x => x.PaidAmount).ToList();
+        else if (detail == "revenue-30d") detailOrders = RowsFor(paid30Days, usersById, receivedByOrder, reasonByOrder);
+        else if (detail == "pending-orders") detailOrders = RowsFor(pending, usersById, receivedByOrder, reasonByOrder);
+        else if (detail == "review-orders") { detailOrders = RowsFor(needsReview, usersById, receivedByOrder, reasonByOrder); detailUnmatched = unmatched; }
+        else if (detail is "incomplete-orders" or "abandonment") detailOrders = RowsFor(nonPaidOrders, usersById, receivedByOrder, reasonByOrder);
         var tierCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["Basic"] = users.Count - subscriptions.Count, ["Silver"] = 0, ["Gold"] = 0 };
         foreach (var subscription in subscriptions.Values) tierCounts[subscription.Tier] = tierCounts.GetValueOrDefault(subscription.Tier) + 1;
         return new RevenueDashboardVM
         {
-            Tab = tab, Query = query, Status = status,
+            Tab = tab, Query = query, Status = status, Detail = detail, DetailTitle = detailTitle, DetailDescription = detailDescription,
             RevenueToday = SumSince(paid, StartOfVietnamDay(now)), Revenue7Days = SumSince(paid, now.AddDays(-7)), Revenue30Days = SumSince(paid, now.AddDays(-30)),
             TotalAccounts = users.Count,
             NewAccounts30Days = users.Count(x => x.CreatedAt.ToUniversalTime() >= now.UtcDateTime.AddDays(-30)),
-            ActiveSubscriptions = activeSubscriptions,
+            ActiveSubscriptions = activeSubscriptionModels.Count,
             PayingCustomers = paid.Select(x => x.UserId).Distinct(StringComparer.Ordinal).Count(),
-            SuccessfulOrders = paid.Count, FailedOrders = nonPaid, PendingOrders = allOrders.Count(x => x.Status == "Pending"),
-            NeedsReviewOrders = allOrders.Count(x => x.PaymentStatus == "NeedsReview" || x.FulfillmentStatus == "HeldForReview"),
-            UnmatchedTransactions = transactions.Count(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))),
-            AbandonmentRate = allOrders.Count == 0 ? 0 : nonPaid * 100d / allOrders.Count,
+            SuccessfulOrders = paid.Count, FailedOrders = nonPaidOrders.Count, PendingOrders = pending.Count,
+            NeedsReviewOrders = needsReview.Count,
+            UnmatchedTransactions = unmatched.Count,
+            AbandonmentRate = allOrders.Count == 0 ? 0 : nonPaidOrders.Count * 100d / allOrders.Count,
             UsersByTier = tierCounts,
             BestSeller = paid.GroupBy(x => x.Sku).OrderByDescending(x => x.Count()).Select(x => $"{x.Key} · {x.Count()} đơn").FirstOrDefault() ?? "Chưa có dữ liệu",
             Orders = rows.Take(200).ToList(), Subscriptions = subscriptionRows.Take(200).ToList(), Plans = planRows,
-            UnmatchedPayments = transactions.Where(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))).Take(50).ToList(),
+            DetailAccounts = detailAccounts.Take(500).ToList(), DetailSubscriptions = detailSubscriptions.Take(500).ToList(), DetailOrders = detailOrders.Take(500).ToList(), DetailUnmatchedPayments = detailUnmatched.Take(100).ToList(),
+            UnmatchedPayments = unmatched.Take(50).ToList(),
             AuditLogs = auditTask.Result.Documents.Select(ToAudit).ToList(),
             PayOsConfigured = new[] { "ClientId", "ApiKey", "ChecksumKey" }.All(key => !string.IsNullOrWhiteSpace(configuration[$"Payments:PayOS:{key}"])),
             Analytics = analyticsTask.Result
@@ -253,6 +294,16 @@ public sealed class RevenueAdminService(
     private static void RequireReason(string? value) { if (string.IsNullOrWhiteSpace(value) || value.Trim().Length < 5) throw new SubscriptionDomainException("reason_required", "Vui lòng nhập lý do tối thiểu 5 ký tự."); }
     private static string EffectiveStatus(SubscriptionOrderModel x) => x.PaymentStatus == "NeedsReview" || x.FulfillmentStatus == "HeldForReview" ? "NeedsReview" : x.Status;
     private static long SumSince(IEnumerable<SubscriptionOrderModel> orders, DateTimeOffset since) => orders.Where(x => x.PaidAt?.ToDateTimeOffset() >= since).Sum(x => x.AmountVnd);
+    private static RevenueAccountDetailVM AccountDetail(UserModel user, IReadOnlyCollection<SubscriptionOrderModel> paid)
+    {
+        var orders = paid.Where(x => x.UserId == user.Id).ToList();
+        return new RevenueAccountDetailVM(user, orders.Count, orders.Sum(x => x.AmountVnd));
+    }
+    private static List<RevenueOrderRowVM> RowsFor(IEnumerable<SubscriptionOrderModel> orders, IReadOnlyDictionary<string, UserModel> users, IReadOnlyDictionary<string, long> received, IReadOnlyDictionary<string, string> reasons) => orders.Select(order =>
+    {
+        users.TryGetValue(order.UserId, out var user);
+        return new RevenueOrderRowVM(order, user?.Email ?? "", user?.FullName ?? "", received.GetValueOrDefault(order.Id), reasons.GetValueOrDefault(order.Id, ""));
+    }).ToList();
     private static DateTimeOffset StartOfVietnamDay(DateTimeOffset now) { var local = now.ToOffset(TimeSpan.FromHours(7)); return new DateTimeOffset(local.Year, local.Month, local.Day, 0, 0, 0, local.Offset); }
     private static Dictionary<string, object?> ToDictionary(DocumentSnapshot snapshot) => snapshot.ToDictionary().ToDictionary(x => x.Key, x => (object?)x.Value);
     private static string Text(IReadOnlyDictionary<string, object?>? x, string key) => x != null && x.TryGetValue(key, out var value) ? value?.ToString() ?? "" : "";
