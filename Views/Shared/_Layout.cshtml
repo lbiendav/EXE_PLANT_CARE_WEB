@@ -2,6 +2,10 @@
 @inject IConfiguration Configuration
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentRole = Context.Session.GetString("Role") ?? "";
+    var isPrivilegedAdmin = currentRole.Equals("admin", StringComparison.OrdinalIgnoreCase) || currentRole.Equals("super_admin", StringComparison.OrdinalIgnoreCase);
+    var isContentAdmin = currentRole.Equals("content_admin", StringComparison.OrdinalIgnoreCase);
+    var isRevenueAdmin = new[] { "finance", "support" }.Contains(currentRole, StringComparer.OrdinalIgnoreCase);
     var gaMeasurementId = Configuration["GoogleAnalytics:MeasurementId"]?.Trim() ?? "";
     var gaEnabled = System.Text.RegularExpressions.Regex.IsMatch(gaMeasurementId, "^G-[A-Z0-9]+$");
 }
@@ -128,6 +132,19 @@
                                     <span class="notification-count d-none" aria-label="0 thông báo chưa đọc">0</span>
                                 </a>
                             </li>
+
+                            @if (isPrivilegedAdmin)
+                            {
+                                <li class="nav-item"><a class="nav-link @(currentController is "Admin" or "Revenue" ? "active" : "")" asp-controller="Admin" asp-action="Dashboard">Quản trị</a></li>
+                            }
+                            else if (isContentAdmin)
+                            {
+                                <li class="nav-item"><a class="nav-link @(currentController == "Admin" ? "active" : "")" asp-controller="Admin" asp-action="SamplePlants">Quản trị</a></li>
+                            }
+                            else if (isRevenueAdmin)
+                            {
+                                <li class="nav-item"><a class="nav-link @(currentController == "Revenue" ? "active" : "")" asp-controller="Revenue" asp-action="Index">Quản trị</a></li>
+                            }
                         }
 
                     </ul>
@@ -165,19 +182,6 @@
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Hồ sơ cá nhân</a></li>
                                     <li><a class="dropdown-item @(currentController is "Subscription" or "Checkout" ? "active" : "")" asp-controller="Subscription" asp-action="Index">Gói của tôi</a></li>
-                                    @if (string.Equals(Context.Session.GetString("Role"), "admin", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <li><a class="dropdown-item admin-link" asp-controller="Admin" asp-action="Dashboard">Quản trị</a></li>
-                                        <li><a class="dropdown-item admin-link" asp-controller="Revenue" asp-action="Index">Doanh thu</a></li>
-                                    }
-                                    else if (new[] { "super_admin", "finance", "support" }.Contains(Context.Session.GetString("Role"), StringComparer.OrdinalIgnoreCase))
-                                    {
-                                        <li><a class="dropdown-item admin-link" asp-controller="Revenue" asp-action="Index">Doanh thu</a></li>
-                                    }
-                                    else if (string.Equals(Context.Session.GetString("Role"), "content_admin", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <li><a class="dropdown-item admin-link" asp-controller="Admin" asp-action="SamplePlants">Quản trị nội dung</a></li>
-                                    }
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form asp-controller="Account" asp-action="Logout" method="post">
