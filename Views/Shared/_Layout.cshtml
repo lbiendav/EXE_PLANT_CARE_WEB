@@ -1,6 +1,9 @@
 @using Microsoft.AspNetCore.Http
+@inject IConfiguration Configuration
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var gaMeasurementId = Configuration["GoogleAnalytics:MeasurementId"]?.Trim() ?? "";
+    var gaEnabled = System.Text.RegularExpressions.Regex.IsMatch(gaMeasurementId, "^G-[A-Z0-9]+$");
 }
 
 <!DOCTYPE html>
@@ -10,6 +13,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - HomePlant</title>
+    @if (gaEnabled)
+    {
+        <script async src="https://www.googletagmanager.com/gtag/js?id=@gaMeasurementId"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '@gaMeasurementId', { 'allow_google_signals': false, 'allow_ad_personalization_signals': false });
+        </script>
+    }
     <link rel="icon" type="image/png" sizes="64x64" href="~/images/brand/homeplant-favicon.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="~/images/brand/homeplant-icon-192.png" />
 

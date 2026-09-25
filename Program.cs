@@ -111,6 +111,7 @@ builder.Services.AddSingleton(provider =>
         Credential = credential
     }.Build();
 });
+builder.Services.AddSingleton(credential);
 
 builder.Services.AddScoped<FirestoreService>();
 builder.Services.AddSingleton<PlanCatalogService>();
@@ -123,6 +124,7 @@ builder.Services.AddScoped<SubscriptionOrderService>();
 builder.Services.AddScoped<DemoPaymentService>();
 builder.Services.AddScoped<LivePaymentService>();
 builder.Services.AddScoped<RevenueAdminService>();
+builder.Services.AddHttpClient<GoogleAnalyticsService>(client => client.Timeout = TimeSpan.FromSeconds(12));
 builder.Services.AddSingleton<PaymentModePolicy>();
 builder.Services.AddSingleton<IPaymentProvider, PayOsPaymentProvider>();
 builder.Services.AddSingleton<IBankQrService, VietQrService>();

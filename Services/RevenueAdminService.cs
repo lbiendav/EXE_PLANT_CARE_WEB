@@ -14,19 +14,23 @@ public sealed class RevenueAdminService(
     IPaymentProvider provider,
     LivePaymentService livePayments,
     EmailNotificationService emailService,
+    GoogleAnalyticsService analyticsService,
     IConfiguration configuration)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
     public async Task<RevenueDashboardVM> Dashboard(string tab, string query, string status)
     {
+        var analyticsTask = tab == "overview"
+            ? analyticsService.GetOverview()
+            : Task.FromResult(GoogleAnalyticsOverviewVM.NotConfigured);
         var usersTask = _db.Collection("users").GetSnapshotAsync();
         var ordersTask = _db.Collection("subscription_orders").GetSnapshotAsync();
         var subscriptionsTask = _db.Collection("subscriptions").GetSnapshotAsync();
         var transactionsTask = _db.Collection("payment_transactions").GetSnapshotAsync();
         var plansTask = _db.Collection("plan_settings").GetSnapshotAsync();
         var auditTask = _db.Collection("revenue_audit_logs").OrderByDescending("createdAt").Limit(100).GetSnapshotAsync();
-        await Task.WhenAll(usersTask, ordersTask, subscriptionsTask, transactionsTask, plansTask, auditTask);
+        await Task.WhenAll(usersTask, ordersTask, subscriptionsTask, transactionsTask, plansTask, auditTask, analyticsTask);
 
         var users = usersTask.Result.Documents.Select(x => x.ConvertTo<UserModel>()).ToList();
         var usersById = users.ToDictionary(x => x.Id, x => x);
@@ -67,6 +71,7 @@ public sealed class RevenueAdminService(
 
         var paid = allOrders.Where(x => x.Status == "Paid" && x.PaidAt != null).ToList();
         var now = clock.UtcNow;
+        var activeSubscriptions = subscriptions.Values.Count(x => x.StartsAt.ToDateTimeOffset() <= now && now < x.ExpiresAt.ToDateTimeOffset());
         var nonPaid = allOrders.Count(x => x.Status is "Cancelled" or "Expired" || x.FulfillmentStatus == "HeldForReview");
         var tierCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase) { ["Basic"] = users.Count - subscriptions.Count, ["Silver"] = 0, ["Gold"] = 0 };
         foreach (var subscription in subscriptions.Values) tierCounts[subscription.Tier] = tierCounts.GetValueOrDefault(subscription.Tier) + 1;
@@ -74,6 +79,10 @@ public sealed class RevenueAdminService(
         {
             Tab = tab, Query = query, Status = status,
             RevenueToday = SumSince(paid, StartOfVietnamDay(now)), Revenue7Days = SumSince(paid, now.AddDays(-7)), Revenue30Days = SumSince(paid, now.AddDays(-30)),
+            TotalAccounts = users.Count,
+            NewAccounts30Days = users.Count(x => x.CreatedAt.ToUniversalTime() >= now.UtcDateTime.AddDays(-30)),
+            ActiveSubscriptions = activeSubscriptions,
+            PayingCustomers = paid.Select(x => x.UserId).Distinct(StringComparer.Ordinal).Count(),
             SuccessfulOrders = paid.Count, FailedOrders = nonPaid, PendingOrders = allOrders.Count(x => x.Status == "Pending"),
             NeedsReviewOrders = allOrders.Count(x => x.PaymentStatus == "NeedsReview" || x.FulfillmentStatus == "HeldForReview"),
             UnmatchedTransactions = transactions.Count(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))),
@@ -83,7 +92,8 @@ public sealed class RevenueAdminService(
             Orders = rows.Take(200).ToList(), Subscriptions = subscriptionRows.Take(200).ToList(), Plans = planRows,
             UnmatchedPayments = transactions.Where(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))).Take(50).ToList(),
             AuditLogs = auditTask.Result.Documents.Select(ToAudit).ToList(),
-            PayOsConfigured = new[] { "ClientId", "ApiKey", "ChecksumKey" }.All(key => !string.IsNullOrWhiteSpace(configuration[$"Payments:PayOS:{key}"]))
+            PayOsConfigured = new[] { "ClientId", "ApiKey", "ChecksumKey" }.All(key => !string.IsNullOrWhiteSpace(configuration[$"Payments:PayOS:{key}"])),
+            Analytics = analyticsTask.Result
         };
     }
 

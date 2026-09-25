@@ -10,6 +10,10 @@ public sealed class RevenueDashboardVM
     public long RevenueToday { get; init; }
     public long Revenue7Days { get; init; }
     public long Revenue30Days { get; init; }
+    public int TotalAccounts { get; init; }
+    public int NewAccounts30Days { get; init; }
+    public int ActiveSubscriptions { get; init; }
+    public int PayingCustomers { get; init; }
     public int SuccessfulOrders { get; init; }
     public int FailedOrders { get; init; }
     public int PendingOrders { get; init; }
@@ -24,7 +28,23 @@ public sealed class RevenueDashboardVM
     public IReadOnlyList<RevenuePlanRowVM> Plans { get; init; } = [];
     public IReadOnlyList<RevenueAuditRowVM> AuditLogs { get; init; } = [];
     public bool PayOsConfigured { get; init; }
+    public GoogleAnalyticsOverviewVM Analytics { get; init; } = GoogleAnalyticsOverviewVM.NotConfigured;
 }
+
+public sealed class GoogleAnalyticsOverviewVM
+{
+    public static GoogleAnalyticsOverviewVM NotConfigured { get; } = new();
+    public bool Configured { get; init; }
+    public bool Available { get; init; }
+    public string Error { get; init; } = "";
+    public long ActiveUsers30Days { get; init; }
+    public long Sessions30Days { get; init; }
+    public long PageViews30Days { get; init; }
+    public IReadOnlyList<AnalyticsRowVM> TrafficSources { get; init; } = [];
+    public IReadOnlyList<AnalyticsRowVM> PopularPages { get; init; } = [];
+}
+
+public sealed record AnalyticsRowVM(string Label, long Value);
 
 public sealed record RevenueOrderRowVM(SubscriptionOrderModel Order, string Email, string DisplayName, long ReceivedAmount, string ReviewReason);
 public sealed record RevenueSubscriptionRowVM(string UserId, string Email, string DisplayName, SubscriptionModel? Subscription, SubscriptionUsage Usage);

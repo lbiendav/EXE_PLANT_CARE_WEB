@@ -1069,6 +1069,17 @@ hr {
     color: var(--mute);
 }
 
+.admin-stat-card small { display: block; margin-top: 12px; }
+.analytics-metric { border-left: 2px solid var(--green); padding: 8px 0 8px 18px; }
+.analytics-metric strong { display: block; color: var(--green); font: 340 2.15rem/1 var(--serif); }
+.analytics-metric span { display: block; margin-top: 7px; color: var(--mute); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+.analytics-row { display: flex; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--hair-soft); }
+.analytics-row span { min-width: 0; overflow-wrap: anywhere; }
+.revenue-orders.status-panel { padding: 0; overflow: hidden; }
+.revenue-orders td, .revenue-orders th { padding: 16px 14px; }
+.revenue-order-warning { --bs-table-bg: rgba(190, 116, 65, .08); }
+@media (max-width: 767.98px) { .revenue-orders { border: 0; } .revenue-orders.status-panel { padding: 0; } }
+
 .admin-user-groups {
     display: grid;
     gap: 14px;
