@@ -44,6 +44,12 @@ public HomeController(
         return View();
     }
 
+    public IActionResult Terms() => View();
+
+    public IActionResult PaymentPolicy() => View();
+
+    public IActionResult Support() => View();
+
     public IActionResult Error()
     {
         return View(

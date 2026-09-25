@@ -490,6 +490,34 @@ hr {
     border-top: 1px solid var(--hair);
 }
 
+.footer-main {
+    display: grid;
+    grid-template-columns: auto minmax(180px, 1fr) auto;
+    align-items: center;
+    gap: 24px 42px;
+}
+
+.footer-legal {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 24px;
+    padding-top: 22px;
+    border-top: 1px solid var(--hair-soft);
+}
+
+.footer-legal a {
+    color: var(--mute);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.footer-legal a:hover,
+.footer-legal a:focus-visible { color: var(--green); }
+
 .foot-mark {
     font-family: var(--serif);
     font-size: 13px;
@@ -516,6 +544,7 @@ hr {
 }
 
 .foot-mid {
+    justify-self: center;
     font-size: 12px;
     color: var(--mute);
 }
@@ -527,8 +556,26 @@ hr {
 }
 
 .foot-right {
+    justify-self: end;
     font-size: 12px;
     color: var(--mute);
+}
+
+.legal-page { max-width: 900px; margin-inline: auto; }
+.legal-page > header { margin-bottom: 44px; padding-bottom: 30px; border-bottom: 1px solid var(--hair); }
+.legal-page > header h1 { margin: 10px 0 14px; }
+.legal-page > header p, .legal-page section p, .legal-page li { color: var(--bone-dim); line-height: 1.75; }
+.legal-page section { margin-bottom: 34px; }
+.legal-page section h2 { margin-bottom: 12px; color: var(--green); font: 400 1.35rem/1.3 var(--serif); }
+.legal-page a { color: var(--green); }
+.support-contact-card { padding: clamp(24px, 5vw, 42px); border: 1px solid rgba(208, 234, 144, .35); background: rgba(208, 234, 144, .04); }
+.support-email { display: block; margin: 10px 0 18px; font: 400 clamp(1.4rem, 4vw, 2.2rem)/1.2 var(--serif); overflow-wrap: anywhere; }
+
+@media (max-width: 767.98px) {
+    .footer-main { grid-template-columns: 1fr; text-align: center; }
+    .foot-mid, .foot-right { justify-self: center; }
+    .footer-legal { grid-column: 1; flex-direction: column; }
+    .brand-lockup--footer { justify-self: center; }
 }
 
 /* ── buttons ──────────────────────────────────────────────── */

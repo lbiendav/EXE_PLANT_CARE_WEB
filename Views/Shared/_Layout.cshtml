@@ -224,7 +224,7 @@
 
     <footer class="footer-custom">
 
-        <div class="container d-flex flex-wrap justify-content-between align-items-baseline gap-3">
+        <div class="container footer-main">
 
             <a class="brand-lockup brand-lockup--footer" asp-controller="Home" asp-action="Index" aria-label="HomePlant — Vườn trong nhà">
                 <img class="brand-lockup__mark" src="~/images/brand/homeplant-mark.png" alt="" />
@@ -238,9 +238,14 @@
                 Chăm cây <em>trong nhà</em>, có nhịp có mùa.
             </span>
 
-            <span class="foot-right">
-                © 2026 HomePlant
-            </span>
+            <span class="foot-right">© 2026 HomePlant</span>
+
+            <nav class="footer-legal" aria-label="Thông tin pháp lý và hỗ trợ">
+                <a asp-controller="Home" asp-action="Terms">Điều khoản sử dụng</a>
+                <a asp-controller="Home" asp-action="Privacy">Chính sách bảo mật</a>
+                <a asp-controller="Home" asp-action="PaymentPolicy">Thanh toán &amp; hoàn tiền</a>
+                <a asp-controller="Home" asp-action="Support">Liên hệ hỗ trợ</a>
+            </nav>
 
         </div>
 
