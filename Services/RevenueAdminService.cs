@@ -35,7 +35,12 @@ public sealed class RevenueAdminService(
         var users = usersTask.Result.Documents.Select(x => x.ConvertTo<UserModel>()).ToList();
         var usersById = users.ToDictionary(x => x.Id, x => x);
         var subscriptions = subscriptionsTask.Result.Documents.Select(x => x.ConvertTo<SubscriptionModel>()).ToDictionary(x => x.UserId, x => x);
-        var transactions = transactionsTask.Result.Documents.Select(ToDictionary).ToList();
+        var transactions = transactionsTask.Result.Documents.Select(x =>
+        {
+            var data = ToDictionary(x);
+            data["transactionId"] = x.Id;
+            return data;
+        }).ToList();
         var receivedByOrder = transactions.Where(x => Text(x, "orderId").Length > 0)
             .GroupBy(x => Text(x, "orderId")).ToDictionary(x => x.Key, x => x.Sum(y => Number(y, "amountVnd")));
         var reasonByOrder = transactions.Where(x => Text(x, "orderId").Length > 0 && Text(x, "status") == "NeedsReview")
@@ -86,6 +91,10 @@ public sealed class RevenueAdminService(
         var needsReview = allOrders.Where(x => x.PaymentStatus == "NeedsReview" || x.FulfillmentStatus == "HeldForReview").ToList();
         var nonPaidOrders = allOrders.Where(x => x.Status is "Cancelled" or "Expired" || x.FulfillmentStatus == "HeldForReview").ToList();
         var unmatched = transactions.Where(x => Text(x, "status") == "NeedsReview" && string.IsNullOrWhiteSpace(Text(x, "orderId"))).Select(x => (IReadOnlyDictionary<string, object?>)x).ToList();
+        var visibleUnmatched = status.Length == 0 || status.Equals("NeedsReview", StringComparison.OrdinalIgnoreCase) ? unmatched : [];
+        if (!string.IsNullOrWhiteSpace(query))
+            visibleUnmatched = visibleUnmatched.Where(x => new[] { Text(x, "transactionId"), Text(x, "providerOrderCode"), Text(x, "reason") }
+                .Any(value => value.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase))).ToList();
         var detailAccounts = new List<RevenueAccountDetailVM>();
         var detailOrders = new List<RevenueOrderRowVM>();
         var detailSubscriptions = new List<RevenueSubscriptionRowVM>();
@@ -131,7 +140,7 @@ public sealed class RevenueAdminService(
             BestSeller = paid.GroupBy(x => x.Sku).OrderByDescending(x => x.Count()).Select(x => $"{x.Key} · {x.Count()} đơn").FirstOrDefault() ?? "Chưa có dữ liệu",
             Orders = rows.Take(200).ToList(), Subscriptions = subscriptionRows.Take(200).ToList(), Plans = planRows,
             DetailAccounts = detailAccounts.Take(500).ToList(), DetailSubscriptions = detailSubscriptions.Take(500).ToList(), DetailOrders = detailOrders.Take(500).ToList(), DetailUnmatchedPayments = detailUnmatched.Take(100).ToList(),
-            UnmatchedPayments = unmatched.Take(50).ToList(),
+            UnmatchedPayments = visibleUnmatched.Take(50).ToList(),
             AuditLogs = auditTask.Result.Documents.Select(ToAudit).ToList(),
             PayOsConfigured = new[] { "ClientId", "ApiKey", "ChecksumKey" }.All(key => !string.IsNullOrWhiteSpace(configuration[$"Payments:PayOS:{key}"])),
             Analytics = analyticsTask.Result
@@ -286,6 +295,26 @@ public sealed class RevenueAdminService(
             $"HomePlant xác nhận đơn {order.TransferReference} đã thanh toán {order.AmountVnd:N0}đ. Gói {order.Tier} trong {order.DurationMonths} tháng đã được ghi nhận.", cancellationToken);
         if (!sent) throw new SubscriptionDomainException("email_failed", "Chưa gửi được email. Vui lòng kiểm tra cấu hình email và thử lại.");
         await Audit(adminUid, adminEmail, "ResendPaymentReceipt", "order", orderId, reason, new { }, new { recipient = detail.Row.Email });
+    }
+
+    public async Task IgnoreUnmatchedTransaction(string transactionId, string adminUid, string adminEmail, string reason)
+    {
+        RequireReason(reason);
+        var reference = _db.Collection("payment_transactions").Document(transactionId);
+        var snapshot = await reference.GetSnapshotAsync();
+        if (!snapshot.Exists) throw new SubscriptionDomainException("not_found", "Không tìm thấy giao dịch.");
+        var before = ToDictionary(snapshot);
+        if (Text(before, "status") != "NeedsReview" || !string.IsNullOrWhiteSpace(Text(before, "orderId")))
+            throw new SubscriptionDomainException("invalid_transaction", "Chỉ có thể bỏ qua giao dịch chưa khớp đang cần kiểm tra.");
+        var after = new Dictionary<string, object>
+        {
+            ["status"] = "Ignored",
+            ["ignoredAt"] = Timestamp.FromDateTimeOffset(clock.UtcNow),
+            ["ignoredBy"] = adminUid,
+            ["ignoreReason"] = reason.Trim()
+        };
+        await reference.UpdateAsync(after);
+        await Audit(adminUid, adminEmail, "IgnoreUnmatchedTransaction", "payment_transaction", transactionId, reason, before, after);
     }
 
     private async Task Audit(string uid, string email, string action, string targetType, string targetId, string reason, object before, object after) =>

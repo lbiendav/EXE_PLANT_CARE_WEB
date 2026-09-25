@@ -108,14 +108,29 @@
 
 @if (Model.Tab == "orders")
 {
-    @if (Model.UnmatchedPayments.Count > 0)
-    {
-        <div class="alert alert-danger"><strong>Giao dịch chưa khớp đơn</strong><ul class="mb-0 mt-2">@foreach (var item in Model.UnmatchedPayments){<li>payOS @item.GetValueOrDefault("providerOrderCode") · @Convert.ToInt64(item.GetValueOrDefault("amountVnd") ?? 0).ToString("N0")đ · @item.GetValueOrDefault("reason")</li>}</ul></div>
-    }
     <div class="table-responsive status-panel revenue-orders">
         <table class="table align-middle mb-0">
             <thead><tr><th>Đơn / khách hàng</th><th>Gói</th><th>Số tiền</th><th>Trạng thái</th><th>Thời gian</th><th><span class="visually-hidden">Thao tác</span></th></tr></thead>
             <tbody>
+            @foreach (var item in Model.UnmatchedPayments)
+            {
+                var transactionId = item.GetValueOrDefault("transactionId")?.ToString() ?? "";
+                var isSystemTest = Convert.ToInt64(item.GetValueOrDefault("providerOrderCode") ?? 0) == 123 && Convert.ToInt64(item.GetValueOrDefault("amountVnd") ?? 0) == 3000 && item.GetValueOrDefault("reason")?.ToString() == "order_mapping_not_found";
+                var receivedAt = item.GetValueOrDefault("receivedAt") is Google.Cloud.Firestore.Timestamp receivedTimestamp ? receivedTimestamp.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7)) : DateTimeOffset.MinValue;
+                <tr class="revenue-order-warning">
+                    <td><strong>payOS @item.GetValueOrDefault("providerOrderCode")</strong><small class="d-block">Không xác định khách hàng</small><small class="d-block text-danger">@item.GetValueOrDefault("reason")</small></td>
+                    <td><strong>@(isSystemTest ? "TEST HỆ THỐNG" : "GIAO DỊCH CHƯA KHỚP")</strong><small class="d-block">Không cấp thuê bao</small></td>
+                    <td><strong>@Convert.ToInt64(item.GetValueOrDefault("amountVnd") ?? 0).ToString("N0")đ</strong><small class="d-block">Không tính doanh thu</small></td>
+                    <td><span class="badge bg-warning text-dark">Chưa khớp đơn</span></td>
+                    <td class="text-nowrap">@(receivedAt == DateTimeOffset.MinValue ? "—" : receivedAt.ToString("dd/MM/yyyy HH:mm"))</td>
+                    <td>
+                        <form asp-action="IgnoreTransaction" asp-route-id="@transactionId" method="post" class="d-flex flex-column gap-1" style="min-width: 190px">
+                            <input class="form-control form-control-sm" name="reason" required minlength="5" placeholder="Lý do xử lý" />
+                            <button class="btn btn-sm btn-outline-warning text-nowrap">Đánh dấu đã xử lý</button>
+                        </form>
+                    </td>
+                </tr>
+            }
             @foreach (var row in Model.Orders)
             {
                 var order = row.Order;

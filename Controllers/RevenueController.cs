@@ -29,6 +29,13 @@ public sealed class RevenueController(RevenueAdminService revenue, ILogger<Reven
     [HttpPost("Orders/{id}/ResendReceipt")]
     public Task<IActionResult> ResendReceipt(string id, string reason) => Execute(async () => { RequireRole("admin", "super_admin", "finance", "support"); await revenue.ResendReceipt(id, Uid, Email, reason, HttpContext.RequestAborted); }, "Đã gửi lại email xác nhận.", "orders");
 
+    [HttpPost("Transactions/{id}/Ignore")]
+    public Task<IActionResult> IgnoreTransaction(string id, string reason) => Execute(async () =>
+    {
+        RequireRole("admin", "super_admin", "finance");
+        await revenue.IgnoreUnmatchedTransaction(id, Uid, Email, reason);
+    }, "Đã đánh dấu giao dịch thử nghiệm là đã xử lý. Giao dịch không được tính doanh thu hoặc cấp gói.", "orders");
+
     [HttpPost("Subscriptions/Grant")]
     public Task<IActionResult> Grant(string userId, string sku, int months, string reason) => Execute(async () => { RequireRole("admin", "super_admin"); await revenue.Grant(userId, sku, months, Uid, Email, reason); }, "Đã cấp/gia hạn thuê bao.", "subscriptions");
 
