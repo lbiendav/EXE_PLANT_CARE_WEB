@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 using HomePlant.Models;
 using HomePlant.ViewModels;
 
@@ -24,12 +25,12 @@ public sealed class RevenueAdminService(
         var analyticsTask = tab == "overview"
             ? analyticsService.GetOverview()
             : Task.FromResult(GoogleAnalyticsOverviewVM.NotConfigured);
-        var usersTask = _db.Collection("users").GetSnapshotAsync();
-        var ordersTask = _db.Collection("subscription_orders").GetSnapshotAsync();
-        var subscriptionsTask = _db.Collection("subscriptions").GetSnapshotAsync();
-        var transactionsTask = _db.Collection("payment_transactions").GetSnapshotAsync();
-        var plansTask = _db.Collection("plan_settings").GetSnapshotAsync();
-        var auditTask = _db.Collection("revenue_audit_logs").OrderByDescending("createdAt").Limit(100).GetSnapshotAsync();
+        var usersTask = GetSnapshotWithRetry(_db.Collection("users"));
+        var ordersTask = GetSnapshotWithRetry(_db.Collection("subscription_orders"));
+        var subscriptionsTask = GetSnapshotWithRetry(_db.Collection("subscriptions"));
+        var transactionsTask = GetSnapshotWithRetry(_db.Collection("payment_transactions"));
+        var plansTask = GetSnapshotWithRetry(_db.Collection("plan_settings"));
+        var auditTask = GetSnapshotWithRetry(_db.Collection("revenue_audit_logs").OrderByDescending("createdAt").Limit(100));
         await Task.WhenAll(usersTask, ordersTask, subscriptionsTask, transactionsTask, plansTask, auditTask, analyticsTask);
 
         var users = usersTask.Result.Documents.Select(x => x.ConvertTo<UserModel>()).ToList();
@@ -334,6 +335,17 @@ public sealed class RevenueAdminService(
         return new RevenueOrderRowVM(order, user?.Email ?? "", user?.FullName ?? "", received.GetValueOrDefault(order.Id), reasons.GetValueOrDefault(order.Id, ""));
     }).ToList();
     private static DateTimeOffset StartOfVietnamDay(DateTimeOffset now) { var local = now.ToOffset(TimeSpan.FromHours(7)); return new DateTimeOffset(local.Year, local.Month, local.Day, 0, 0, 0, local.Offset); }
+    private static async Task<QuerySnapshot> GetSnapshotWithRetry(Query query)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try { return await query.GetSnapshotAsync(); }
+            catch (RpcException ex) when (ex.StatusCode == StatusCode.Unavailable && attempt < 4)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(250 * attempt));
+            }
+        }
+    }
     private static Dictionary<string, object?> ToDictionary(DocumentSnapshot snapshot) => snapshot.ToDictionary().ToDictionary(x => x.Key, x => (object?)x.Value);
     private static string Text(IReadOnlyDictionary<string, object?>? x, string key) => x != null && x.TryGetValue(key, out var value) ? value?.ToString() ?? "" : "";
     private static long Number(IReadOnlyDictionary<string, object?> x, string key) => x.TryGetValue(key, out var value) ? Convert.ToInt64(value) : 0;
