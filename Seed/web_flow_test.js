@@ -66,7 +66,7 @@ for(const account of [userAccount,adminAccount]) {
     const validStaging = account && account.uid===`homeplant-qa-${account.role}-20260911` &&
         account.email===`homeplant.qa.${account.role}.20260911@example.invalid`;
     const validProduction = account && account.uid.startsWith(`homeplant-prod-qa-${account.role}-`) &&
-        account.email===`${account.uid}@example.invalid`;
+        account.email===`${account.uid}@example.com`;
     if(productionRun ? !validProduction : !validStaging) throw Error("Only designated QA accounts may be used");
 }
 const user=new Session(),admin=new Session(),anonymous=new Session();

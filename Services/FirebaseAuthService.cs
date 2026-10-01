@@ -3,6 +3,7 @@ using Google.Cloud.Firestore;
 using HomePlant.Models;
 using HomePlant.ViewModels;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace HomePlant.Services;
 
@@ -11,6 +12,7 @@ public class FirebaseAuthService
     private readonly FirestoreDb _db;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<FirebaseAuthService> _logger;
     private readonly string _apiKey;
     private readonly string? _publicBaseUrl;
 
@@ -18,11 +20,13 @@ public class FirebaseAuthService
         FirestoreDb db,
         IHttpClientFactory httpClientFactory,
         IHttpContextAccessor httpContextAccessor,
+        ILogger<FirebaseAuthService> logger,
         IConfiguration configuration)
     {
         _db = db;
         _httpClientFactory = httpClientFactory;
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
         _apiKey = configuration["Firebase:ApiKey"]
             ?? throw new InvalidOperationException("Configure Firebase__ApiKey before using authentication.");
         var configuredUrl = configuration["App:PublicBaseUrl"];
@@ -171,7 +175,14 @@ public class FirebaseAuthService
             });
 
         if (!response.IsSuccessStatusCode)
+        {
+            var errorCode = await ReadFirebaseErrorCode(response);
+            _logger.LogWarning(
+                "Firebase password sign-in failed with HTTP {StatusCode} and code {ErrorCode}.",
+                (int)response.StatusCode,
+                errorCode);
             return new SignInResult { Success = false };
+        }
 
         var result = await response.Content
             .ReadFromJsonAsync<SignInWithPasswordResponse>();
@@ -195,6 +206,32 @@ public class FirebaseAuthService
             return new SignInResult { Success = false, IsLocked = true, User = user };
 
         return new SignInResult { Success = true, User = user };
+    }
+
+    private static async Task<string> ReadFirebaseErrorCode(HttpResponseMessage response)
+    {
+        try
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(stream);
+            var message = document.RootElement
+                .GetProperty("error")
+                .GetProperty("message")
+                .GetString();
+            if (string.IsNullOrWhiteSpace(message))
+                return "unknown";
+
+            var separator = message.IndexOfAny([' ', ':']);
+            return separator > 0 ? message[..separator] : message;
+        }
+        catch (JsonException)
+        {
+            return "unparseable";
+        }
+        catch (InvalidOperationException)
+        {
+            return "unparseable";
+        }
     }
 
     public async Task<bool> SendPasswordResetEmail(

@@ -22,7 +22,10 @@ const marker = `[TEST] PROD QA ${stamp}`;
 const password = `${randomBytes(18).toString("base64url")}aA1!`;
 const accounts = ["user", "admin"].map(role => {
     const uid = `homeplant-prod-qa-${role}-${stamp}`;
-    return { role, uid, email: `${uid}@example.invalid`, password };
+    // ASP.NET's EmailAddressAttribute rejects the reserved .invalid TLD in the
+    // production runtime before the request reaches Firebase. example.com is
+    // reserved for documentation and these addresses are never emailed.
+    return { role, uid, email: `${uid}@example.com`, password };
 });
 const app = initializeApp({ credential: cert(key), projectId: key.project_id }, `production-e2e-${stamp}`);
 const auth = getAuth(app);
