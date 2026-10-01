@@ -1,5 +1,5 @@
-# Production blueprint. Live checkout is enabled for the production Firebase
-# project; payOS credentials remain managed as Render secrets.
+# Production blueprint. Checkout remains closed until Render is verified against
+# the dedicated homeplant-production Firebase project and service account.
 services:
   - type: web
     name: homeplant-production
@@ -32,11 +32,11 @@ services:
       - key: Payments__DemoEnabled
         value: "false"
       - key: Payments__NewCheckoutsEnabled
-        value: "true"
+        value: "false"
       - key: Payments__PilotOnly
         value: "false"
       - key: Payments__AllowedLiveProjectIds__0
-        value: home-plant-app-dav
+        value: homeplant-production
       - key: Payments__OrderExpiryMinutes
         value: "15"
       - key: Payments__PayOS__ChannelId
