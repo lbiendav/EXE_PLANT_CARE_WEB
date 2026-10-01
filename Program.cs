@@ -158,7 +158,8 @@ if (FirebaseApp.DefaultInstance == null)
 {
     FirebaseApp.Create(new AppOptions
     {
-        Credential = credential
+        Credential = credential,
+        ProjectId = firebaseProjectId
     });
 }
 
