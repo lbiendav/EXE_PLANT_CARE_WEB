@@ -4,6 +4,7 @@ using Google.Cloud.Firestore;
 using HomePlant.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -38,6 +39,16 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.SameAsRequest
         : CookieSecurePolicy.Always;
+});
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    // Render is the only public ingress and its proxy addresses are dynamic.
+    // Limit processing to the right-most hop so client-supplied values cannot
+    // override the values appended by Render's edge.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 
 var persistentSessionConfigured = !builder.Environment.IsDevelopment() ||
@@ -200,6 +211,8 @@ builder.Services.AddHostedService<CareReminderBackgroundService>();
 builder.Services.AddHostedService<PaymentOperationsBackgroundService>();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
