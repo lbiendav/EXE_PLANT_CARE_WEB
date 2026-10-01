@@ -18,8 +18,6 @@ public sealed class PaymentOperationsBackgroundService(
             try
             {
                 using var scope = scopeFactory.CreateScope();
-                var reconciler = scope.ServiceProvider.GetRequiredService<PaymentReconciliationService>();
-                await reconciler.ReconcilePending(stoppingToken);
                 await DeliverReceipts(scope.ServiceProvider, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -28,7 +26,25 @@ public sealed class PaymentOperationsBackgroundService(
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Payment operations cycle failed.");
+                // Receipt delivery is deliberately isolated from provider
+                // reconciliation. A missing index or temporary payOS failure must
+                // never prevent an already verified customer from receiving email.
+                logger.LogError(exception, "Payment receipt delivery cycle failed.");
+            }
+
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var reconciler = scope.ServiceProvider.GetRequiredService<PaymentReconciliationService>();
+                await reconciler.ReconcilePending(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Payment reconciliation cycle failed.");
             }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
