@@ -48,6 +48,9 @@ public class AiDiagnosisService
 
     public async Task<AiDiagnosisModel?> GetById(string id)
     {
+        if (!FirestoreDocumentId.IsValid(id))
+            return null;
+
         var document = await _db.Collection("ai_diagnoses").Document(id).GetSnapshotAsync();
         return document.Exists ? document.ConvertTo<AiDiagnosisModel>() : null;
     }

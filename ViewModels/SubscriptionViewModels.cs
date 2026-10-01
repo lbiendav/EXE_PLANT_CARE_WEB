@@ -10,7 +10,8 @@ public sealed class PlansVM
     public DateTimeOffset? CurrentExpiresAt { get; init; }
     public string? SelectedSku { get; init; }
     public bool IsSignedIn { get; init; }
-    public bool SubscriptionsEnabled { get; init; }
+    public bool CheckoutAvailable { get; init; }
+    public string CheckoutUnavailableMessage { get; init; } = "";
     public IReadOnlyDictionary<string, PlanDisplaySetting> PlanSettings { get; init; } = new Dictionary<string, PlanDisplaySetting>();
 }
 

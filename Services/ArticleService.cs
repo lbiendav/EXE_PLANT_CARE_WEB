@@ -28,6 +28,9 @@ public class ArticleService
 
     public async Task<ArticleModel?> GetById(string id)
     {
+        if (!FirestoreDocumentId.IsValid(id))
+            return null;
+
         var doc = await _db
             .Collection("articles")
             .Document(id)
@@ -41,6 +44,9 @@ public class ArticleService
 
     public async Task<ArticleModel?> GetByIdAndIncrementViews(string id)
     {
+        if (!FirestoreDocumentId.IsValid(id))
+            return null;
+
         var reference = _db.Collection("articles").Document(id);
         var doc = await reference.GetSnapshotAsync();
         if (!doc.Exists) return null;

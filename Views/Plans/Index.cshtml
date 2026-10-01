@@ -10,7 +10,7 @@
         <span class="kicker">Gói đăng ký</span>
         <h1>Bắt đầu miễn phí, <em>nâng cấp khi cần</em>.</h1>
         <p class="text-muted">Thanh toán một lần · gia hạn thủ công · hạn mức AI làm mới mỗi tháng dương lịch Việt Nam.</p>
-        @if (!Model.SubscriptionsEnabled) { <div class="alert alert-warning">Tính năng tạo đơn chưa được bật trên môi trường này.</div> }
+        @if (!Model.CheckoutAvailable) { <div class="alert alert-warning">@Model.CheckoutUnavailableMessage</div> }
     </div>
 
     <div class="duration-switch" role="group" aria-label="Chọn kỳ hạn">
@@ -54,7 +54,11 @@
                     {
                         var setting = Model.PlanSettings.GetValueOrDefault(plan.Sku);
                         <div class="plan-action @(plan.DurationMonths == selectedDuration ? "active" : "")" data-plan-duration="@plan.DurationMonths">
-                            @if (!Model.IsSignedIn)
+                            @if (!Model.CheckoutAvailable)
+                            {
+                                <button class="btn btn-secondary w-100" disabled>Tạm ngừng đăng ký</button>
+                            }
+                            else if (!Model.IsSignedIn)
                             {
                                 <a class="btn btn-success w-100" asp-controller="Account" asp-action="Login" asp-route-returnUrl="/Plans?sku=@plan.Sku">Chọn gói</a>
                             }
@@ -67,7 +71,7 @@
                                 <form asp-controller="Checkout" asp-action="Create" method="post">
                                     <input type="hidden" name="sku" value="@plan.Sku" />
                                     <input type="hidden" name="requestKey" value="@Guid.NewGuid().ToString("N")" />
-                                    <button class="btn btn-success w-100" type="submit" disabled="@(!Model.SubscriptionsEnabled || setting?.Enabled == false)">@(setting?.Enabled == false ? "Tạm ngừng đăng ký" : Model.CurrentTier == tier ? "Gia hạn" : "Chọn gói")</button>
+                                    <button class="btn btn-success w-100" type="submit" disabled="@(setting?.Enabled == false)">@(setting?.Enabled == false ? "Tạm ngừng đăng ký" : Model.CurrentTier == tier ? "Gia hạn" : "Chọn gói")</button>
                                 </form>
                             }
                         </div>

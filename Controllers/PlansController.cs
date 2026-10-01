@@ -8,13 +8,16 @@ public sealed class PlansController(
     PlanCatalogService catalog,
     PlanSettingsService planSettings,
     EntitlementService entitlements,
-    IConfiguration configuration) : Controller
+    PaymentModePolicy paymentPolicy) : Controller
 {
     [HttpGet("/Plans")]
     public async Task<IActionResult> Index(string? sku = null)
     {
         var uid = HttpContext.Session.GetString("Uid");
         var current = uid == null ? null : await entitlements.Get(uid);
+        var checkout = uid == null
+            ? paymentPolicy.CanOfferCheckout()
+            : paymentPolicy.CanCreateCheckout(uid);
         return View(new PlansVM
         {
             Plans = catalog.GetAll(),
@@ -22,7 +25,8 @@ public sealed class PlansController(
             CurrentExpiresAt = current?.IsPaidActive == true ? current.Subscription?.ExpiresAt.ToDateTimeOffset() : null,
             SelectedSku = catalog.Find(sku)?.Sku,
             IsSignedIn = uid != null,
-            SubscriptionsEnabled = configuration.GetValue<bool?>("Subscriptions:Enabled") ?? false,
+            CheckoutAvailable = checkout.Allowed,
+            CheckoutUnavailableMessage = checkout.Message,
             PlanSettings = await planSettings.GetAll()
         });
     }

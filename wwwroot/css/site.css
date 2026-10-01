@@ -196,7 +196,6 @@ code {
 @media (max-width: 575.98px) {
     .home-guide-scroll {
         gap: 1rem;
-        margin-right: -1rem;
         padding-right: 1rem;
     }
 

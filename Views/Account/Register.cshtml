@@ -9,6 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Đăng ký — HomePlant</title>
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="icon" type="image/png" href="~/images/brand/homeplant-favicon.png" />
     <partial name="_AuthStyles" />
 </head>
@@ -34,7 +35,7 @@
 
             <ul class="auth-perks">
                 <li>Hoàn toàn miễn phí</li>
-                <li>Quản lý cây không giới hạn</li>
+                <li>Quản lý tối đa 3 cây miễn phí</li>
                 <li>Đồng bộ mọi thiết bị</li>
             </ul>
         </aside>
@@ -110,7 +111,7 @@
         }
         function pwdStrength(v) {
             let s = 0;
-            if (v.length >= 6) s++;
+            if (v.length >= 8) s++;
             if (v.length >= 10) s++;
             if (/[A-Z]/.test(v) && /[a-z]/.test(v)) s++;
             if (/\d/.test(v)) s++;

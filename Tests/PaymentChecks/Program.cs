@@ -16,9 +16,11 @@ try
 
     var disabled = Live(); disabled["Payments:NewCheckoutsEnabled"] = "false";
     Check(Policy(disabled).CanCreateCheckout("pilot").Code == "new_checkouts_disabled", "live kill switch enforced");
+    Check(Policy(disabled).CanOfferCheckout().Code == "new_checkouts_disabled", "plans page reflects live kill switch");
     var incomplete = Live(); incomplete.Remove("Payments:PayOS:ChecksumKey");
     Check(Policy(incomplete).CanCreateCheckout("pilot").Code == "live_configuration_incomplete", "live credentials required");
     Check(Policy(Live()).CanCreateCheckout("other").Code == "pilot_user_not_allowed", "pilot allowlist enforced");
+    Check(Policy(Live()).CanOfferCheckout().Allowed, "public plans page can advertise a configured pilot");
     Check(Policy(Live()).CanCreateCheckout("pilot").Allowed, "complete pilot configuration accepted by policy");
 
     var demoPolicy = Policy(Demo(stage: "Staging"));

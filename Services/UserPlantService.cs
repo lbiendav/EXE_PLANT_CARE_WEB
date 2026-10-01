@@ -34,6 +34,9 @@ public class UserPlantService
 
     public async Task<UserPlantModel?> GetById(string uid, string id)
     {
+        if (!FirestoreDocumentId.IsValid(uid) || !FirestoreDocumentId.IsValid(id))
+            return null;
+
         var doc = await Collection(uid).Document(id).GetSnapshotAsync();
 
         if (!doc.Exists)

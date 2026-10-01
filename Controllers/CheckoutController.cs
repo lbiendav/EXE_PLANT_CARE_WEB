@@ -30,6 +30,7 @@ public sealed class CheckoutController(
     [HttpGet("/Checkout/{orderId}")]
     public async Task<IActionResult> Index(string orderId)
     {
+        if (!FirestoreDocumentId.IsValid(orderId)) return NotFound();
         var uid = HttpContext.Session.GetString("Uid");
         if (uid == null) return RedirectToAction("Login", "Account", new { returnUrl = $"/Checkout/{Uri.EscapeDataString(orderId)}" });
         var order = await orders.GetOwned(uid, orderId);
@@ -53,6 +54,7 @@ public sealed class CheckoutController(
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public async Task<IActionResult> Status(string orderId)
     {
+        if (!FirestoreDocumentId.IsValid(orderId)) return NotFound(new { code = "not_found" });
         var uid = HttpContext.Session.GetString("Uid");
         if (uid == null) return Unauthorized(new { code = "not_authenticated" });
         var order = await orders.GetOwned(uid, orderId);
@@ -72,6 +74,7 @@ public sealed class CheckoutController(
     [HttpGet("/Checkout/{orderId}/Return")]
     public IActionResult Return(string orderId)
     {
+        if (!FirestoreDocumentId.IsValid(orderId)) return NotFound();
         // Query parameters from the browser are not financial evidence. The webhook updates payment state.
         return RedirectToAction(nameof(Index), new { orderId });
     }

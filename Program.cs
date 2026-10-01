@@ -265,10 +265,20 @@ app.UseDefaultFiles(new DefaultFilesOptions
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = landingPageProvider,
-    RequestPath = ""
+    RequestPath = "",
+    OnPrepareResponse = context =>
+    {
+        if (context.Context.Request.Path.StartsWithSegments("/assets") ||
+            context.Context.Request.Path.StartsWithSegments("/render_output"))
+            context.Context.Response.Headers.CacheControl = "public,max-age=3600";
+    }
 });
 
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = context =>
+        context.Context.Response.Headers.CacheControl = "public,max-age=604800"
+});
 
 app.UseRouting();
 

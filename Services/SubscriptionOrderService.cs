@@ -187,6 +187,9 @@ public sealed class SubscriptionOrderService(
 
     public async Task<SubscriptionOrderModel?> GetOwned(string uid, string orderId, CancellationToken cancellationToken = default)
     {
+        if (!FirestoreDocumentId.IsValid(uid) || !FirestoreDocumentId.IsValid(orderId))
+            return null;
+
         var orderRef = _db.Collection("subscription_orders").Document(orderId);
         var snapshot = await orderRef.GetSnapshotAsync(cancellationToken);
         if (!snapshot.Exists) return null;

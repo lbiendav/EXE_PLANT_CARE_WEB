@@ -149,9 +149,10 @@ public class FirebaseAuthService
         string email,
         string password)
     {
+        UserRecord authUser;
         try
         {
-            await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
+            authUser = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
         }
         catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.UserNotFound)
         {
@@ -175,8 +176,15 @@ public class FirebaseAuthService
         var result = await response.Content
             .ReadFromJsonAsync<SignInWithPasswordResponse>();
 
-        if (result?.LocalId == null)
+        if (result?.LocalId == null || !string.Equals(result.LocalId, authUser.Uid, StringComparison.Ordinal))
             return new SignInResult { Success = false };
+
+        // Check only after the password succeeds so the response does not
+        // disclose whether a registered address is awaiting verification.
+        // A Firestore profile must not let an Auth account whose email later
+        // became unverified bypass the verification gate.
+        if (!authUser.EmailVerified)
+            return new SignInResult { Success = false, EmailNotVerified = true };
 
         var user = await GetUser(result.LocalId);
 

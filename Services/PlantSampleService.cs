@@ -63,6 +63,9 @@ public class PlantSampleService
 
     public async Task<PlantSampleModel?> GetById(string id)
     {
+        if (!FirestoreDocumentId.IsValid(id))
+            return null;
+
         var doc = await _db
             .Collection("sample_plants")
             .Document(id)

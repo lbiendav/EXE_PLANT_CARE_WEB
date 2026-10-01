@@ -1,22 +1,36 @@
 "use strict";
-// Runs only against staging (or loopback with staging credentials). No real email.
-if (process.argv.length !== 3 || process.argv[2] !== "--run") {
-    console.log("This test changes staging data. Run explicitly: node Seed/web_flow_test.js --run");
+// Runs against staging by default. Production execution is available only to
+// the guarded harness, which creates disposable verified QA identities and
+// removes their marked data afterwards. No real email or payment is sent.
+const productionRun = process.argv[2] === "--run-production";
+if (process.argv.length !== 3 || (!productionRun && process.argv[2] !== "--run")) {
+    console.log("Run explicitly via staging --run or the guarded production harness.");
     process.exit(process.argv.length > 2 ? 1 : 0);
 }
 const assert = require("node:assert/strict");
 const { initializeApp, cert, deleteApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-const credentials = require("../.env.test-accounts.json");
-const key = require("../Firebase/firebase-staging-key.json");
+const credentials = productionRun
+    ? JSON.parse(process.env.QA_ACCOUNTS_JSON || "null")
+    : require("../.env.test-accounts.json");
+const key = productionRun
+    ? require("../Firebase/firebase-key.json")
+    : require("../Firebase/firebase-staging-key.json");
 const base = process.env.QA_BASE_URL || "https://homeplant-staging.onrender.com";
-if (credentials.project !== "homeplant-staging-dav" || key.project_id !== credentials.project ||
-    !["https://homeplant-staging.onrender.com", "http://localhost:18082"].includes(base)) throw Error("Unsafe QA target");
+const safeTarget = productionRun
+    ? credentials?.project === "home-plant-app-dav" &&
+      key.project_id === credentials.project &&
+      base === "https://homeplant-production.onrender.com" &&
+      process.env.QA_PRODUCTION_CONFIRM === "home-plant-app-dav"
+    : credentials?.project === "homeplant-staging-dav" &&
+      key.project_id === credentials.project &&
+      ["https://homeplant-staging.onrender.com", "http://localhost:18082"].includes(base);
+if (!safeTarget) throw Error("Unsafe QA target");
 const app = initializeApp({ credential: cert(key), projectId: key.project_id });
 const db = getFirestore(app);
 const failures = [];
 let passed = 0;
-const marker = "[TEST] QA " + Date.now();
+const marker = process.env.QA_MARKER || "[TEST] QA " + Date.now();
 
 class Session {
     cookies = new Map();
@@ -49,8 +63,11 @@ async function login(session, account) { const r=await session.post("/Account/Lo
 const userAccount=credentials.accounts.find(a=>a.role==="user");
 const adminAccount=credentials.accounts.find(a=>a.role==="admin");
 for(const account of [userAccount,adminAccount]) {
-    if(!account || account.uid!==`homeplant-qa-${account.role}-20260911` ||
-        account.email!==`homeplant.qa.${account.role}.20260911@example.invalid`) throw Error("Only designated QA accounts may be used");
+    const validStaging = account && account.uid===`homeplant-qa-${account.role}-20260911` &&
+        account.email===`homeplant.qa.${account.role}.20260911@example.invalid`;
+    const validProduction = account && account.uid.startsWith(`homeplant-prod-qa-${account.role}-`) &&
+        account.email===`${account.uid}@example.invalid`;
+    if(productionRun ? !validProduction : !validStaging) throw Error("Only designated QA accounts may be used");
 }
 const user=new Session(),admin=new Session(),anonymous=new Session();
 
@@ -279,12 +296,12 @@ async function run() {
         assert.ok(typeof avatar==="string"&&/^(https:\/\/|\/Image\/)/.test(avatar),"Upload did not persist image URL");
         if(avatar.startsWith("/"))status(await user.request(avatar),200);
     });
-    const changedPassword=userAccount.password+"-QA";let changed=false;
+    const changedPassword=userAccount.password+"-QA";let changed=false,changedSession;
     try{
-        await check("change password",async()=>{status(await user.post("/Profile/ChangePassword",{CurrentPassword:userAccount.password,NewPassword:changedPassword,ConfirmPassword:changedPassword}),302);changed=true;await login(new Session(),{...userAccount,password:changedPassword});});
+        await check("change password",async()=>{status(await user.post("/Profile/ChangePassword",{CurrentPassword:userAccount.password,NewPassword:changedPassword,ConfirmPassword:changedPassword}),302);changed=true;changedSession=new Session();await login(changedSession,{...userAccount,password:changedPassword});});
         if(changed)await check("old password rejected",async()=>status(await new Session().post("/Account/Login",{Email:userAccount.email,Password:userAccount.password}),200));
     }finally{
-        if(changed){const r=await user.post("/Profile/ChangePassword",{CurrentPassword:changedPassword,NewPassword:userAccount.password,ConfirmPassword:userAccount.password});status(r,302);}
+        if(changed){const r=await changedSession.post("/Profile/ChangePassword",{CurrentPassword:changedPassword,NewPassword:userAccount.password,ConfirmPassword:userAccount.password});status(r,302);}
     }
     try {
         await check("GET cannot ban user",async()=>status(await admin.request("/Admin/Ban/"+userAccount.uid),405));

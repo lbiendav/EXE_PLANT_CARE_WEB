@@ -21,10 +21,9 @@ public class ArticleController : Controller
         var articles =
             await _service.GetAll();
 
-        ViewBag.IsAdmin = string.Equals(
-            HttpContext.Session.GetString("Role"),
-            "admin",
-            StringComparison.OrdinalIgnoreCase);
+        ViewBag.IsAdmin = new[] { "admin", "super_admin", "content_admin" }.Contains(
+            HttpContext.Session.GetString("Role") ?? "",
+            StringComparer.OrdinalIgnoreCase);
 
         return View(articles);
     }

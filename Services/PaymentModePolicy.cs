@@ -30,6 +30,22 @@ public sealed class PaymentModePolicy(IConfiguration configuration)
         };
     }
 
+    // Used by the public plans page before a visitor has authenticated. It
+    // validates every platform-level live requirement while deliberately
+    // deferring only the per-user pilot allowlist check until checkout.
+    public PaymentPolicyDecision CanOfferCheckout()
+    {
+        if (!(configuration.GetValue<bool?>("Subscriptions:Enabled") ?? false))
+            return Deny("subscriptions_disabled", "Tính năng đăng ký hiện đang tạm đóng.");
+
+        return Mode switch
+        {
+            PaymentRuntimeMode.Demo => CanUseDemo(),
+            PaymentRuntimeMode.Live => CanUseLive(null),
+            _ => Deny("payments_disabled", "Thanh toán hiện đang tạm đóng.")
+        };
+    }
+
     public PaymentPolicyDecision CanSimulate(SubscriptionOrderModel order)
     {
         if (!order.IsDemo || !order.PaymentMode.Equals("Demo", StringComparison.OrdinalIgnoreCase))
@@ -53,7 +69,7 @@ public sealed class PaymentModePolicy(IConfiguration configuration)
             : Deny("demo_project_not_allowed", "Firebase project này không được phép chạy simulator.");
     }
 
-    private PaymentPolicyDecision CanUseLive(string uid)
+    private PaymentPolicyDecision CanUseLive(string? uid)
     {
         if (!Stage.Equals("Production", StringComparison.OrdinalIgnoreCase))
             return Deny("live_stage_not_allowed", "Thanh toán thật chỉ được phép trên deployment Production.");
@@ -62,7 +78,7 @@ public sealed class PaymentModePolicy(IConfiguration configuration)
         var allowedProjects = configuration.GetSection("Payments:AllowedLiveProjectIds").Get<string[]>() ?? [];
         if (!allowedProjects.Contains(ProjectId, StringComparer.Ordinal))
             return Deny("live_project_not_allowed", "Firebase project này không được phép nhận thanh toán thật.");
-        if (configuration.GetValue<bool?>("Payments:PilotOnly") ?? true)
+        if (uid != null && (configuration.GetValue<bool?>("Payments:PilotOnly") ?? true))
         {
             var pilotUsers = configuration.GetSection("Payments:PilotUserIds").Get<string[]>() ?? [];
             if (!pilotUsers.Contains(uid, StringComparer.Ordinal))
