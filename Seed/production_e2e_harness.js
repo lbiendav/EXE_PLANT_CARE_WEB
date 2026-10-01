@@ -5,14 +5,19 @@
 // payment endpoint or sends verification/reset email.
 const { randomBytes } = require("node:crypto");
 const { spawn } = require("node:child_process");
+const fs = require("node:fs");
+const path = require("node:path");
 const { initializeApp, cert, deleteApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
-const key = require("../Firebase/firebase-key.json");
+const keyPath = process.env.PRODUCTION_FIREBASE_KEY_PATH;
+const key = keyPath
+    ? JSON.parse(fs.readFileSync(path.resolve(keyPath), "utf8"))
+    : null;
 
 if (process.argv.length !== 3 || process.argv[2] !== "--run-production" ||
-    process.env.QA_PRODUCTION_CONFIRM !== "home-plant-app-dav" ||
-    key.project_id !== "home-plant-app-dav") {
+    process.env.QA_PRODUCTION_CONFIRM !== "homeplant-production" ||
+    key?.project_id !== "homeplant-production") {
     console.error("Refusing to run without the exact production confirmation and project.");
     process.exit(1);
 }
@@ -80,7 +85,8 @@ async function runChild() {
         env: {
             ...process.env,
             QA_BASE_URL: "https://homeplant-production.onrender.com",
-            QA_PRODUCTION_CONFIRM: "home-plant-app-dav",
+            QA_PRODUCTION_CONFIRM: "homeplant-production",
+            PRODUCTION_FIREBASE_KEY_PATH: path.resolve(keyPath),
             QA_MARKER: marker,
             QA_ACCOUNTS_JSON: JSON.stringify({ project: key.project_id, accounts })
         }

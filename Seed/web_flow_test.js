@@ -8,20 +8,22 @@ if (process.argv.length !== 3 || (!productionRun && process.argv[2] !== "--run")
     process.exit(process.argv.length > 2 ? 1 : 0);
 }
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const { initializeApp, cert, deleteApp } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 const credentials = productionRun
     ? JSON.parse(process.env.QA_ACCOUNTS_JSON || "null")
     : require("../.env.test-accounts.json");
 const key = productionRun
-    ? require("../Firebase/firebase-key.json")
+    ? JSON.parse(fs.readFileSync(path.resolve(process.env.PRODUCTION_FIREBASE_KEY_PATH || ""), "utf8"))
     : require("../Firebase/firebase-staging-key.json");
 const base = process.env.QA_BASE_URL || "https://homeplant-staging.onrender.com";
 const safeTarget = productionRun
-    ? credentials?.project === "home-plant-app-dav" &&
+    ? credentials?.project === "homeplant-production" &&
       key.project_id === credentials.project &&
       base === "https://homeplant-production.onrender.com" &&
-      process.env.QA_PRODUCTION_CONFIRM === "home-plant-app-dav"
+      process.env.QA_PRODUCTION_CONFIRM === "homeplant-production"
     : credentials?.project === "homeplant-staging-dav" &&
       key.project_id === credentials.project &&
       ["https://homeplant-staging.onrender.com", "http://localhost:18082"].includes(base);

@@ -1,5 +1,10 @@
 # HomePlant — nhật ký và hướng dẫn triển khai Render Free
 
+> Trạng thái hiện tại (01/10/2026): production chỉ dùng Firebase project
+> `homeplant-production`. Hai project cũ `home-plant-app-dav` và
+> `homeplant-staging-dav` đã được yêu cầu xóa; các phần staging/di trú bên dưới
+> chỉ là nhật ký lịch sử và không còn là hướng dẫn vận hành.
+
 Cập nhật: 11/09/2026. Mục tiêu: bản thử nghiệm online trong quá trình phát triển,
 giữ ASP.NET Core MVC + Firestore + Firebase Authentication.
 
