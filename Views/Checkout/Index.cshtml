@@ -42,10 +42,10 @@
         </div></div>
     </div>
     @if (pending) { <div class="d-flex flex-wrap gap-2 mt-4">
-        @if (!Model.Order.IsDemo) { <form asp-controller="Checkout" asp-action="SimulateSuccess" asp-route-orderId="@Model.Order.Id" method="post"><button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button></form> }
+        @if (Model.Order.IsDemo) { <form asp-controller="Checkout" asp-action="SimulateSuccess" asp-route-orderId="@Model.Order.Id" method="post"><button class="btn btn-success" type="submit" disabled="@(!Model.CanSimulate)" onclick="this.disabled=true;this.form.submit()">Mô phỏng thanh toán thành công</button></form> }
         <form asp-controller="Checkout" asp-action="Cancel" asp-route-orderId="@Model.Order.Id" method="post"><button class="btn btn-outline-danger" type="submit">Hủy đơn</button></form>
     </div> }
-    @if (!Model.CanSimulate && pending) { <p class="small text-warning mt-3">Simulator đang bị khóa bởi cấu hình môi trường.</p> }
+    @if (Model.Order.IsDemo && !Model.CanSimulate && pending) { <p class="small text-warning mt-3">Simulator đang bị khóa bởi cấu hình môi trường.</p> }
 </section>
 @section Scripts { <script>
 const expiry = new Date(document.getElementById('order-expiry')?.dateTime || 0); const out = document.getElementById('countdown');
