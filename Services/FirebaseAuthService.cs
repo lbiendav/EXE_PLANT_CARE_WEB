@@ -160,6 +160,7 @@ public class FirebaseAuthService
         }
         catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.UserNotFound)
         {
+            _logger.LogWarning("Firebase password sign-in denied: auth_account_not_found.");
             return new SignInResult { Success = false, AccountNotFound = true };
         }
 
