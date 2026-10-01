@@ -187,7 +187,11 @@ app.UseRateLimiter();
 app.UseSession();
 
 // Liveness only: no Firestore reads and no external dependency on every probe.
-app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
+app.MapGet("/healthz", () => Results.Ok(new
+{
+    status = "ok",
+    revision = Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT") ?? "local"
+}));
 
 app.MapControllerRoute(
 name: "default",
