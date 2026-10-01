@@ -53,6 +53,22 @@ public sealed class EmailNotificationService
                 : "Mở HomePlant, vào mục Nhắc việc để xem lịch chăm sóc.") +
             "\n\nBạn có thể tắt email bất cứ lúc nào tại mục Nhắc việc trong HomePlant.";
 
+        return await Send(recipient, subject, body, "care reminder", cancellationToken);
+    }
+
+    public Task<bool> SendTransactional(string recipient, string subject, string message, CancellationToken cancellationToken) =>
+        Send(recipient, subject, message, "transactional", cancellationToken);
+
+    private async Task<bool> Send(
+        string recipient,
+        string subject,
+        string body,
+        string messageType,
+        CancellationToken cancellationToken)
+    {
+        if (!IsConfigured || !MailAddress.TryCreate(recipient, out _))
+            return false;
+
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
         try
@@ -73,7 +89,7 @@ public sealed class EmailNotificationService
                     return true;
 
                 // Do not log provider response bodies: they may contain recipient data.
-                _logger.LogWarning("Brevo rejected care email with HTTP {StatusCode}.", (int)response.StatusCode);
+                _logger.LogWarning("Brevo rejected {MessageType} email with HTTP {StatusCode}.", messageType, (int)response.StatusCode);
                 return false;
             }
 
@@ -99,16 +115,13 @@ public sealed class EmailNotificationService
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            _logger.LogWarning("Care reminder email delivery timed out.");
+            _logger.LogWarning("{MessageType} email delivery timed out.", messageType);
             return false;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogWarning("Could not send a care reminder email ({ExceptionType}).", exception.GetType().Name);
+            _logger.LogWarning("Could not send a {MessageType} email ({ExceptionType}).", messageType, exception.GetType().Name);
             return false;
         }
     }
-
-    public Task<bool> SendTransactional(string recipient, string subject, string message, CancellationToken cancellationToken) =>
-        SendCareReminder(recipient, subject, message, cancellationToken);
 }

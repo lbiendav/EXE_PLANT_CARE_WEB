@@ -81,6 +81,12 @@ using (var payload = System.Text.Json.JsonDocument.Parse(handler.Body!))
     Check(root.GetProperty("subject").GetString() == "Đến lịch tưới", "Vietnamese subject");
     Check(root.GetProperty("textContent").GetString()!.Contains("https://homeplant.example.test/Notifications"), "Render URL fallback");
 }
+Check(await brevo.SendTransactional("owner@example.test", "Biên nhận", "Nội dung biên nhận", default), "Transactional email accepted");
+using (var payload = System.Text.Json.JsonDocument.Parse(handler.Body!))
+{
+    var body = payload.RootElement.GetProperty("textContent").GetString();
+    Check(body == "Nội dung biên nhận", "Transactional email body must not include care-reminder instructions");
+}
 foreach (var status in new[] { HttpStatusCode.BadRequest, HttpStatusCode.Unauthorized, HttpStatusCode.TooManyRequests, HttpStatusCode.InternalServerError, HttpStatusCode.Redirect })
 {
     handler.Status = status;

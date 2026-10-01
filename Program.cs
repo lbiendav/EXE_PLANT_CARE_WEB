@@ -122,6 +122,7 @@ builder.Services.AddScoped<UsageService>();
 builder.Services.AddScoped<AiQuotaService>();
 builder.Services.AddScoped<SubscriptionOrderService>();
 builder.Services.AddScoped<DemoPaymentService>();
+builder.Services.AddScoped<PaymentReceiptService>();
 builder.Services.AddScoped<LivePaymentService>();
 builder.Services.AddScoped<RevenueAdminService>();
 builder.Services.AddHttpClient<GoogleAnalyticsService>(client => client.Timeout = TimeSpan.FromSeconds(12));

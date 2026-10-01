@@ -10,7 +10,9 @@ public sealed record PaymentIngestionResult(string Status, string? OrderId, bool
 public sealed class LivePaymentService(
     FirestoreService firestore,
     ISubscriptionClock clock,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    PaymentReceiptService receipts,
+    ILogger<LivePaymentService> logger)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
@@ -29,7 +31,7 @@ public sealed class LivePaymentService(
         var transactionRef = _db.Collection("payment_transactions").Document(financialKey);
         var mappingRef = _db.Collection("payment_provider_orders").Document(MappingId(channelId, payment.OrderCode));
 
-        return await _db.RunTransactionAsync(async transaction =>
+        var result = await _db.RunTransactionAsync(async transaction =>
         {
             var receiptSnapshot = await transaction.GetSnapshotAsync(receiptRef);
             if (receiptSnapshot.Exists)
@@ -134,6 +136,17 @@ public sealed class LivePaymentService(
                 transaction.Update(billingRef, new Dictionary<string, object> { ["pendingOrderId"] = "", ["updatedAt"] = paidAt });
             return new PaymentIngestionResult("Granted", orderId, true);
         });
+
+        if (result.Granted && !string.IsNullOrWhiteSpace(result.OrderId))
+        {
+            try { await receipts.SendOnce(result.OrderId); }
+            catch (Exception exception)
+            {
+                // Receipt delivery must never roll back or reject an already verified payment.
+                logger.LogWarning(exception, "Could not schedule a payment receipt for order {OrderId}.", result.OrderId);
+            }
+        }
+        return result;
     }
 
     public async Task<PaymentIngestionResult> Reprocess(VerifiedPayment payment)
