@@ -1,5 +1,5 @@
-# Production blueprint. Keep live checkout disabled until the payment launch
-# checklist and a controlled real transaction have passed.
+# Production blueprint. Live checkout is enabled for the production Firebase
+# project; payOS credentials remain managed as Render secrets.
 services:
   - type: web
     name: homeplant-production
@@ -26,11 +26,27 @@ services:
       - key: Subscriptions__EnforceLimits
         value: "true"
       - key: Payments__Mode
-        value: Disabled
+        value: Live
+      - key: Payments__Provider
+        value: PayOS
       - key: Payments__DemoEnabled
         value: "false"
       - key: Payments__NewCheckoutsEnabled
+        value: "true"
+      - key: Payments__PilotOnly
         value: "false"
+      - key: Payments__AllowedLiveProjectIds__0
+        value: home-plant-app-dav
+      - key: Payments__OrderExpiryMinutes
+        value: "15"
+      - key: Payments__PayOS__ChannelId
+        sync: false
+      - key: Payments__PayOS__ClientId
+        sync: false
+      - key: Payments__PayOS__ApiKey
+        sync: false
+      - key: Payments__PayOS__ChecksumKey
+        sync: false
       # Only enable behind Render's edge proxy, not on a directly exposed server.
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"
