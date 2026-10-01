@@ -19,7 +19,7 @@ public class ArticleModel
 
     [FirestoreProperty("coverImage")]
     [StringLength(2048)]
-    public string CoverImage { get; set; } = "";
+    public string? CoverImage { get; set; }
 
     [FirestoreProperty("tags")]
     public List<string> Tags { get; set; } = new();

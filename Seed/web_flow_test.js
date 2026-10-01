@@ -59,6 +59,7 @@ class Session {
 }
 async function check(name, action) { try { await action(); passed++;console.log("PASS " + name); } catch(e) { failures.push(name);console.log("FAIL " + name + ": " + e.message); } }
 function status(r, code) { assert.equal(r.status, code, `HTTP ${r.status} expected ${code}`); }
+function decodeHtml(text) { return text.replace(/&#x([0-9a-f]+);/gi,(_,x)=>String.fromCodePoint(parseInt(x,16))).replace(/&#(\d+);/g,(_,x)=>String.fromCodePoint(Number(x))); }
 async function login(session, account) { const r=await session.post("/Account/Login",{Email:account.email,Password:account.password});status(r,302);assert.ok(["/Home","/Home/Index"].includes(r.location)); }
 const userAccount=credentials.accounts.find(a=>a.role==="user");
 const adminAccount=credentials.accounts.find(a=>a.role==="admin");
@@ -124,7 +125,7 @@ async function run() {
     });
     await check("duplicate garden plant name is rejected",async()=>{
         const r=await user.post("/Plant/Create",{Nickname:"  "+marker.toUpperCase()+"  ",PlantSampleId:createSpecies.id,CurrentStatus:"Khỏe mạnh"});
-        status(r,200);assert.ok(r.body.includes("Tên cây này đã có trong vườn"));
+        status(r,200);assert.ok(decodeHtml(r.body).includes("Tên cây này đã có trong vườn"));
         const plants=await db.collection("users").doc(userAccount.uid).collection("user_plants").get();
         assert.equal(plants.docs.filter(x=>(x.data().customName||"").toLowerCase()===marker.toLowerCase()).length,1);
     });

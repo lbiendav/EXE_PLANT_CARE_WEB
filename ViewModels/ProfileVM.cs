@@ -4,7 +4,7 @@ namespace HomePlant.ViewModels;
 
 public class ProfileVM
 {
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     [Required]
     [StringLength(100, MinimumLength = 2)]
@@ -12,10 +12,10 @@ public class ProfileVM
 
     [EmailAddress]
     [StringLength(254)]
-    public string Email { get; set; } = "";
+    public string? Email { get; set; }
 
     [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "Số điện thoại phải gồm đúng 8 chữ số.")]
-    public string Phone { get; set; } = "";
+    public string? Phone { get; set; }
 
-    public string AvatarUrl { get; set; } = "";
+    public string? AvatarUrl { get; set; }
 }
