@@ -6,10 +6,12 @@ public class LoginVM
 {
     [Required]
     [EmailAddress]
-    public string Email { get; set; }
+    [StringLength(254)]
+    public string Email { get; set; } = "";
 
     [Required]
-    public string Password { get; set; }
+    [StringLength(128, MinimumLength = 1)]
+    public string Password { get; set; } = "";
 
     public string? ReturnUrl { get; set; }
 }

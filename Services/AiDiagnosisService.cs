@@ -24,6 +24,8 @@ public class AiDiagnosisService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("ai_diagnoses").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task<List<AiDiagnosisModel>> GetByUser(string userId)
     {
         var snapshot = await _db.Collection("ai_diagnoses")

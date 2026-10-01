@@ -1,14 +1,21 @@
-﻿namespace HomePlant.ViewModels;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HomePlant.ViewModels;
 
 public class ProfileVM
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
-    public string FullName { get; set; }
+    [Required]
+    [StringLength(100, MinimumLength = 2)]
+    public string FullName { get; set; } = "";
 
-    public string Email { get; set; }
+    [EmailAddress]
+    [StringLength(254)]
+    public string Email { get; set; } = "";
 
-    public string Phone { get; set; }
+    [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "Số điện thoại phải gồm đúng 8 chữ số.")]
+    public string Phone { get; set; } = "";
 
-    public string AvatarUrl { get; set; }
+    public string AvatarUrl { get; set; } = "";
 }

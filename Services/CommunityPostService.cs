@@ -24,6 +24,8 @@ public class CommunityPostService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("community_posts").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task Delete(string id)
     {
         await _db

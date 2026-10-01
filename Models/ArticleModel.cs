@@ -1,4 +1,5 @@
 using Google.Cloud.Firestore;
+using System.ComponentModel.DataAnnotations;
 
 namespace HomePlant.Models;
 
@@ -6,16 +7,19 @@ namespace HomePlant.Models;
 public class ArticleModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("title")]
-    public string Title { get; set; }
+    [Required, StringLength(200, MinimumLength = 3)]
+    public string Title { get; set; } = "";
 
     [FirestoreProperty("content")]
-    public string Content { get; set; }
+    [Required, StringLength(50_000, MinimumLength = 10)]
+    public string Content { get; set; } = "";
 
     [FirestoreProperty("coverImage")]
-    public string CoverImage { get; set; }
+    [StringLength(2048)]
+    public string CoverImage { get; set; } = "";
 
     [FirestoreProperty("tags")]
     public List<string> Tags { get; set; } = new();

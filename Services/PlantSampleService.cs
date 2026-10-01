@@ -24,6 +24,8 @@ public class PlantSampleService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("sample_plants").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task Add(PlantSampleModel plant)
     {
         await _db

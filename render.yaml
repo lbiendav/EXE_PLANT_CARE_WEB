@@ -1,12 +1,12 @@
-# Deploy the staging branch. Add firebase-key.json as a Render Secret File
-# before the first successful start; see docs/DEPLOY_RENDER.md.
+# Production blueprint. Keep live checkout disabled until the payment launch
+# checklist and a controlled real transaction have passed.
 services:
   - type: web
-    name: homeplant-staging
+    name: homeplant-production
     runtime: docker
     plan: free
     region: singapore
-    branch: staging
+    branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /healthz
@@ -18,17 +18,19 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: App__DeploymentStage
-        value: Staging
+        value: Production
+      - key: App__PublicBaseUrl
+        value: https://homeplant-production.onrender.com
       - key: Subscriptions__Enabled
         value: "true"
       - key: Subscriptions__EnforceLimits
-        value: "false"
-      - key: Payments__Mode
-        value: Demo
-      - key: Payments__DemoEnabled
         value: "true"
-      - key: Payments__AllowedDemoProjectIds__0
-        value: homeplant-staging-dav
+      - key: Payments__Mode
+        value: Disabled
+      - key: Payments__DemoEnabled
+        value: "false"
+      - key: Payments__NewCheckoutsEnabled
+        value: "false"
       # Only enable behind Render's edge proxy, not on a directly exposed server.
       - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
         value: "true"

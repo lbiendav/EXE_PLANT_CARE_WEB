@@ -244,6 +244,25 @@ public class FirebaseAuthService
         return doc.ConvertTo<UserModel>();
     }
 
+    public async Task<UserSessionState> GetUserSessionState(string uid)
+    {
+        UserRecord authUser;
+        try
+        {
+            authUser = await FirebaseAuth.DefaultInstance.GetUserAsync(uid);
+        }
+        catch (FirebaseAuthException ex) when (ex.AuthErrorCode == AuthErrorCode.UserNotFound)
+        {
+            return new UserSessionState(await GetUser(uid), true, false, null);
+        }
+
+        return new UserSessionState(
+            await GetUser(uid),
+            false,
+            authUser.Disabled,
+            authUser.TokensValidAfterTimestamp);
+    }
+
     private class SignInWithPasswordResponse
     {
         public string? LocalId { get; set; }
@@ -251,6 +270,12 @@ public class FirebaseAuthService
         public string? IdToken { get; set; }
     }
 }
+
+public sealed record UserSessionState(
+    UserModel? User,
+    bool AuthUserMissing,
+    bool AuthDisabled,
+    DateTime? TokensValidAfter);
 
 public class SignInResult
 {

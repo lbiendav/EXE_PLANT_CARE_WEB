@@ -2,10 +2,15 @@ using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Firestore;
 using HomePlant.Services;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 // Render supplies PORT; local launch profiles continue to work without it.
 var port = builder.Configuration["PORT"];
@@ -22,13 +27,44 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<HomePlant.Filters.ActiveUserFilter>();
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
 });
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = builder.Environment.IsDevelopment()
+        ? "HomePlant.Antiforgery"
+        : "__Host-HomePlant.Antiforgery";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.Path = "/";
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+});
 
-builder.Services.AddDistributedMemoryCache();
+var persistentSessionConfigured = !builder.Environment.IsDevelopment() ||
+    builder.Configuration.GetValue<bool>("Session:UseFirestoreInDevelopment");
+if (persistentSessionConfigured)
+{
+    builder.Services.AddSingleton<IDistributedCache, FirestoreDistributedCache>();
+    builder.Services.AddSingleton<FirestoreXmlRepository>();
+    builder.Services.AddSingleton<IConfigureOptions<KeyManagementOptions>, ConfigureFirestoreDataProtection>();
+    builder.Services.AddHostedService<FirestoreCacheCleanupBackgroundService>();
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
+builder.Services.AddDataProtection().SetApplicationName("HomePlant");
 
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromHours(12);
+    options.Cookie.Name = builder.Environment.IsDevelopment()
+        ? "HomePlant.Session"
+        : "__Host-HomePlant.Session";
     options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.Path = "/";
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.SameAsRequest
         : CookieSecurePolicy.Always;
@@ -39,6 +75,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddRateLimiter(options =>
 {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy("auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -56,6 +93,17 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 4,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+    options.AddPolicy("upload", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Session.GetString("Uid") ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 8,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
@@ -124,6 +172,7 @@ builder.Services.AddScoped<SubscriptionOrderService>();
 builder.Services.AddScoped<DemoPaymentService>();
 builder.Services.AddScoped<PaymentReceiptService>();
 builder.Services.AddScoped<LivePaymentService>();
+builder.Services.AddScoped<PaymentReconciliationService>();
 builder.Services.AddScoped<RevenueAdminService>();
 builder.Services.AddHttpClient<GoogleAnalyticsService>(client => client.Timeout = TimeSpan.FromSeconds(12));
 builder.Services.AddSingleton<PaymentModePolicy>();
@@ -148,6 +197,7 @@ builder.Services.AddHttpClient<EmailNotificationService>()
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<CareReminderService>();
 builder.Services.AddHostedService<CareReminderBackgroundService>();
+builder.Services.AddHostedService<PaymentOperationsBackgroundService>();
 
 var app = builder.Build();
 
@@ -156,6 +206,33 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        var headers = context.Response.Headers;
+        headers["X-Content-Type-Options"] = "nosniff";
+        headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+        headers["X-Frame-Options"] = "DENY";
+        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+        headers["Content-Security-Policy"] = string.Join(" ",
+            "default-src 'self';",
+            "base-uri 'self';",
+            "object-src 'none';",
+            "frame-ancestors 'none';",
+            "form-action 'self';",
+            "img-src 'self' data: https:;",
+            "font-src 'self' data:;",
+            "style-src 'self' 'unsafe-inline';",
+            "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com;",
+            "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com;");
+        if (context.Request.IsHttps)
+            headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 // The platform probes this endpoint over HTTP; it must not redirect to HTTPS.
 app.UseWhen(context => !context.Request.Path.Equals("/healthz"), branch =>
@@ -182,9 +259,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseRateLimiter();
-
 app.UseSession();
+
+app.UseRateLimiter();
 
 // Liveness only: no Firestore reads and no external dependency on every probe.
 app.MapGet("/healthz", () => Results.Ok(new
@@ -192,6 +269,23 @@ app.MapGet("/healthz", () => Results.Ok(new
     status = "ok",
     revision = Environment.GetEnvironmentVariable("RENDER_GIT_COMMIT") ?? "local"
 }));
+
+// Dependency readiness is intentionally separate from liveness so a transient
+// Firestore outage does not cause the platform to restart a healthy process.
+app.MapGet("/readyz", async (FirestoreDb firestore, CancellationToken cancellationToken) =>
+{
+    try
+    {
+        await firestore.Collection("users").Limit(1).GetSnapshotAsync(cancellationToken);
+        if (persistentSessionConfigured)
+            await firestore.Collection("system_cache").Limit(1).GetSnapshotAsync(cancellationToken);
+        return Results.Ok(new { status = "ready" });
+    }
+    catch
+    {
+        return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+});
 
 app.MapControllerRoute(
 name: "default",

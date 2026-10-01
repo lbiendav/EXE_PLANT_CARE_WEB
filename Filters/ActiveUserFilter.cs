@@ -1,6 +1,8 @@
 using HomePlant.Services;
+using FirebaseAdmin.Auth;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Globalization;
 
 namespace HomePlant.Filters;
 
@@ -16,8 +18,24 @@ public sealed class ActiveUserFilter(FirebaseAuthService authService) : IAsyncAc
         var uid = session.GetString("Uid");
         if (uid != null)
         {
-            var user = await authService.GetUser(uid);
-            if (user == null || user.IsLocked)
+            UserSessionState state;
+            try
+            {
+                state = await authService.GetUserSessionState(uid);
+            }
+            catch (FirebaseAuthException)
+            {
+                context.Result = new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);
+                return;
+            }
+
+            var sessionCreatedAt = session.GetString("AuthSessionCreatedAt");
+            var sessionStarted = DateTimeOffset.TryParse(sessionCreatedAt, CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsedSessionStarted)
+                ? parsedSessionStarted
+                : DateTimeOffset.MinValue;
+            var revoked = state.TokensValidAfter is { } validAfter && validAfter > sessionStarted;
+            if (state.User == null || state.AuthUserMissing || state.AuthDisabled || state.User.IsLocked || revoked)
             {
                 session.Clear();
                 var wantsJson = context.HttpContext.Request.Path.StartsWithSegments("/Checkout") &&
@@ -28,7 +46,7 @@ public sealed class ActiveUserFilter(FirebaseAuthService authService) : IAsyncAc
                     : new RedirectToActionResult("Login", "Account", null);
                 return;
             }
-            session.SetString("Role", user.Role ?? "user");
+            session.SetString("Role", state.User.Role ?? "user");
         }
         await next();
     }

@@ -8,6 +8,13 @@
     var isRevenueAdmin = new[] { "finance", "support" }.Contains(currentRole, StringComparer.OrdinalIgnoreCase);
     var gaMeasurementId = Configuration["GoogleAnalytics:MeasurementId"]?.Trim() ?? "";
     var gaEnabled = System.Text.RegularExpressions.Regex.IsMatch(gaMeasurementId, "^G-[A-Z0-9]+$");
+    var pageTitle = ViewData["Title"]?.ToString() ?? "HomePlant";
+    var description = ViewData["Description"]?.ToString() ?? "HomePlant giúp bạn khám phá cây cảnh trong nhà, theo dõi lịch chăm sóc và lưu nhật ký khu vườn.";
+    var configuredBaseUrl = Configuration["App:PublicBaseUrl"] ?? Configuration["RENDER_EXTERNAL_URL"];
+    var canonicalOrigin = Uri.TryCreate(configuredBaseUrl, UriKind.Absolute, out var publicUri)
+        ? publicUri.GetLeftPart(UriPartial.Authority).TrimEnd('/')
+        : $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var canonical = $"{canonicalOrigin}{Context.Request.Path}";
 }
 
 <!DOCTYPE html>
@@ -16,7 +23,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HomePlant</title>
+    <title>@pageTitle - HomePlant</title>
+    <meta name="description" content="@description" />
+    <link rel="canonical" href="@canonical" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HomePlant" />
+    <meta property="og:title" content="@pageTitle - HomePlant" />
+    <meta property="og:description" content="@description" />
+    <meta property="og:url" content="@canonical" />
     @if (gaEnabled)
     {
         <script async src="https://www.googletagmanager.com/gtag/js?id=@gaMeasurementId"></script>

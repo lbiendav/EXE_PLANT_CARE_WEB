@@ -65,7 +65,7 @@
                     </div>
 
                     <div class="auth-field">
-                        <label asp-for="Password">Mật khẩu</label>
+                        <label for="pwd">Mật khẩu</label>
                         <div class="auth-input">
                             <input asp-for="Password" type="password" id="pwd" placeholder="••••••••" autocomplete="new-password" oninput="pwdStrength(this.value)" />
                             <button type="button" class="auth-toggle" onclick="togglePwd('pwd', this)" aria-label="Hiện mật khẩu">Hiện</button>

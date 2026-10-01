@@ -6,22 +6,22 @@ namespace HomePlant.Models;
 public class CommunityPostModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("postId")]
-    public string PostId { get; set; }
+    public string PostId { get; set; } = "";
 
     [FirestoreProperty("authorId")]
-    public string AuthorId { get; set; }
+    public string AuthorId { get; set; } = "";
 
     [FirestoreProperty("authorName")]
-    public string AuthorName { get; set; }
+    public string AuthorName { get; set; } = "";
 
     [FirestoreProperty("authorAvatar")]
-    public string AuthorAvatar { get; set; }
+    public string AuthorAvatar { get; set; } = "";
 
     [FirestoreProperty("content")]
-    public string Content { get; set; }
+    public string Content { get; set; } = "";
 
     [FirestoreProperty("images")]
     public List<string> Images { get; set; } = new();
@@ -33,7 +33,7 @@ public class CommunityPostModel
     public int CommentCount { get; set; }
 
     [FirestoreProperty("status")]
-    public string Status { get; set; }
+    public string Status { get; set; } = "pending";
 
     [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }

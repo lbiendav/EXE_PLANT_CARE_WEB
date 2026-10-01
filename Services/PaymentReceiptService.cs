@@ -17,6 +17,8 @@ public sealed class PaymentReceiptService(
         var deliveryRef = _db.Collection("payment_receipt_deliveries").Document(orderId);
         var userId = "";
         var recipient = "";
+        var attemptCount = 0;
+        var movedToDeadLetter = false;
         SubscriptionOrderModel? order = null;
         var now = DateTimeOffset.UtcNow;
 
@@ -33,7 +35,19 @@ public sealed class PaymentReceiptService(
             if (deliverySnapshot.Exists)
             {
                 var status = deliverySnapshot.TryGetValue<string>("status", out var currentStatus) ? currentStatus : "";
-                if (status == "Sent") return false;
+                if (status is "Sent" or "DeadLetter") return false;
+                attemptCount = deliverySnapshot.TryGetValue<long>("attemptCount", out var oldAttempts)
+                    ? checked((int)oldAttempts)
+                    : 0;
+                if (attemptCount >= 5)
+                {
+                    transaction.Update(deliveryRef, "status", "DeadLetter");
+                    movedToDeadLetter = true;
+                    return false;
+                }
+                if (status == "Failed" &&
+                    deliverySnapshot.TryGetValue<Timestamp>("nextAttemptAt", out var nextAttemptAt) &&
+                    nextAttemptAt.ToDateTimeOffset() > now) return false;
                 if (status == "Sending" &&
                     deliverySnapshot.TryGetValue<Timestamp>("attemptedAt", out var attemptedAt) &&
                     attemptedAt.ToDateTimeOffset() > now.AddMinutes(-5)) return false;
@@ -45,12 +59,18 @@ public sealed class PaymentReceiptService(
                 ["userId"] = userId,
                 ["status"] = "Sending",
                 ["attemptedAt"] = Timestamp.FromDateTimeOffset(now),
+                ["attemptCount"] = ++attemptCount,
                 ["schemaVersion"] = 1
             }, SetOptions.MergeAll);
             return true;
         });
 
-        if (!claimed || order is null) return;
+        if (!claimed || order is null)
+        {
+            if (movedToDeadLetter)
+                logger.LogError("Payment receipt exhausted retries for order {OrderId}.", orderId);
+            return;
+        }
 
         try
         {
@@ -60,7 +80,7 @@ public sealed class PaymentReceiptService(
 
             if (string.IsNullOrWhiteSpace(recipient))
             {
-                await Mark(deliveryRef, "Failed", "email_missing", now, cancellationToken);
+                await Mark(deliveryRef, "DeadLetter", "email_missing", now, null, cancellationToken);
                 logger.LogWarning("Payment receipt was not sent because order {OrderId} has no recipient email.", orderId);
                 return;
             }
@@ -71,12 +91,14 @@ public sealed class PaymentReceiptService(
                 BuildReceipt(order),
                 cancellationToken);
 
-            await Mark(deliveryRef, sent ? "Sent" : "Failed", sent ? "" : "provider_rejected", now, cancellationToken);
+            await Mark(deliveryRef, sent ? "Sent" : "Failed", sent ? "" : "provider_rejected", now,
+                sent ? null : now.AddMinutes(Math.Pow(2, attemptCount)), cancellationToken);
             if (!sent) logger.LogWarning("Payment receipt delivery failed for order {OrderId}.", orderId);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            await Mark(deliveryRef, "Failed", "delivery_exception", now, CancellationToken.None);
+            await Mark(deliveryRef, "Failed", "delivery_exception", now,
+                now.AddMinutes(Math.Pow(2, attemptCount)), CancellationToken.None);
             logger.LogWarning(exception, "Payment receipt delivery failed for order {OrderId}.", orderId);
         }
     }
@@ -112,12 +134,19 @@ Không cung cấp mật khẩu, mã PIN hoặc OTP cho bất kỳ ai.
 """;
     }
 
-    private static Task Mark(DocumentReference reference, string status, string errorCode, DateTimeOffset attemptedAt, CancellationToken cancellationToken) =>
-        reference.SetAsync(new Dictionary<string, object>
+    private static Task Mark(DocumentReference reference, string status, string errorCode,
+        DateTimeOffset attemptedAt, DateTimeOffset? nextAttemptAt, CancellationToken cancellationToken)
+    {
+        var updates = new Dictionary<string, object>
         {
             ["status"] = status,
             ["errorCode"] = errorCode,
             ["attemptedAt"] = Timestamp.FromDateTimeOffset(attemptedAt),
             [status == "Sent" ? "sentAt" : "failedAt"] = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow)
-        }, SetOptions.MergeAll, cancellationToken);
+        };
+        updates["nextAttemptAt"] = nextAttemptAt.HasValue
+            ? Timestamp.FromDateTimeOffset(nextAttemptAt.Value)
+            : FieldValue.Delete;
+        return reference.SetAsync(updates, SetOptions.MergeAll, cancellationToken);
+    }
 }

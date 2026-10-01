@@ -4,6 +4,7 @@ using HomePlant.Models;
 using HomePlant.Services;
 using HomePlant.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomePlant.Controllers;
 
@@ -45,25 +46,27 @@ public class AdminController : Controller
     [PrivilegedAdminOnly]
     public async Task<IActionResult> Dashboard()
     {
-        var users = await _userService.GetAll();
-        var articles = await _articleService.GetAll();
-        var templates = await _templateService.GetAll();
-        var samplePlants = await _samplePlantService.GetAll();
-        var communityPosts = await _communityPostService.GetAll();
-        var qaThreads = await _qaThreadService.GetAll();
-        var aiDiagnoses = await _aiDiagnosisService.GetAll();
-        var gardenPlantCount = await _userPlantService.CountAll();
+        var userCount = _userService.Count();
+        var articleCount = _articleService.Count();
+        var templateCount = _templateService.Count();
+        var sampleCount = _samplePlantService.Count();
+        var communityCount = _communityPostService.Count();
+        var qaCount = _qaThreadService.Count();
+        var diagnosisCount = _aiDiagnosisService.Count();
+        var gardenCount = _userPlantService.CountAll();
+        await Task.WhenAll(userCount, articleCount, templateCount, sampleCount,
+            communityCount, qaCount, diagnosisCount, gardenCount);
 
         var vm = new AdminDashboardVM
         {
-            UserCount = users.Count,
-            ArticleCount = articles.Count,
-            PlantTemplateCount = templates.Count,
-            SamplePlantCount = samplePlants.Count,
-            GardenPlantCount = gardenPlantCount,
-            CommunityPostCount = communityPosts.Count,
-            QaThreadCount = qaThreads.Count,
-            AiDiagnosisCount = aiDiagnoses.Count
+            UserCount = userCount.Result,
+            ArticleCount = articleCount.Result,
+            PlantTemplateCount = templateCount.Result,
+            SamplePlantCount = sampleCount.Result,
+            GardenPlantCount = gardenCount.Result,
+            CommunityPostCount = communityCount.Result,
+            QaThreadCount = qaCount.Result,
+            AiDiagnosisCount = diagnosisCount.Result
         };
 
         return View(vm);
@@ -162,10 +165,12 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
     public async Task<IActionResult> CreateSamplePlant(
         PlantSampleFormVM vm)
     {
-        if (string.IsNullOrWhiteSpace(vm.Name))
+        if (!ModelState.IsValid)
         {
             ModelState.AddModelError(nameof(vm.Name), "Vui lòng nhập tên cây");
             return View(vm);
@@ -174,18 +179,18 @@ public class AdminController : Controller
         var plant = new PlantSampleModel
         {
             Name = vm.Name,
-            ScientificName = vm.ScientificName,
-            Description = vm.Description,
+            ScientificName = vm.ScientificName ?? "",
+            Description = vm.Description ?? "",
             Image = vm.Photo != null
                 ? await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted) ?? ""
-                : vm.ExistingImageUrl,
+                : vm.ExistingImageUrl ?? "",
             CreatedAt = Timestamp.GetCurrentTimestamp(),
             Care = new CareModel
             {
-                Light = vm.Light,
-                Water = vm.Water,
-                Soil = vm.Soil,
-                Fertilizer = vm.Fertilizer
+                Light = vm.Light ?? "",
+                Water = vm.Water ?? "",
+                Soil = vm.Soil ?? "",
+                Fertilizer = vm.Fertilizer ?? ""
             },
             Diseases = CleanDiseases(vm.Diseases)
         };
@@ -232,11 +237,13 @@ public class AdminController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
     public async Task<IActionResult> EditSamplePlant(
         string id,
         PlantSampleFormVM vm)
     {
-        if (string.IsNullOrWhiteSpace(vm.Name))
+        if (!ModelState.IsValid)
         {
             ModelState.AddModelError(nameof(vm.Name), "Vui lòng nhập tên cây");
             return View(vm);
@@ -255,16 +262,16 @@ public class AdminController : Controller
         {
             Id = id,
             Name = vm.Name,
-            ScientificName = vm.ScientificName,
-            Description = vm.Description,
+            ScientificName = vm.ScientificName ?? "",
+            Description = vm.Description ?? "",
             Image = uploadedImage ?? existing.Image,
             CreatedAt = existing.CreatedAt,
             Care = new CareModel
             {
-                Light = vm.Light,
-                Water = vm.Water,
-                Soil = vm.Soil,
-                Fertilizer = vm.Fertilizer
+                Light = vm.Light ?? "",
+                Water = vm.Water ?? "",
+                Soil = vm.Soil ?? "",
+                Fertilizer = vm.Fertilizer ?? ""
             },
             Diseases = CleanDiseases(vm.Diseases)
         };
@@ -293,6 +300,13 @@ public class AdminController : Controller
     {
         return diseases
             .Where(d => !string.IsNullOrWhiteSpace(d.Issue))
+            .Take(20)
+            .Select(d => new DiseaseModel
+            {
+                Issue = d.Issue.Trim()[..Math.Min(d.Issue.Trim().Length, 200)],
+                Cause = (d.Cause ?? "").Trim()[..Math.Min((d.Cause ?? "").Trim().Length, 1_000)],
+                Treatment = (d.Treatment ?? "").Trim()[..Math.Min((d.Treatment ?? "").Trim().Length, 2_000)]
+            })
             .ToList();
     }
 

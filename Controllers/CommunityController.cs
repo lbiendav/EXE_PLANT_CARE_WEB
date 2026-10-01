@@ -24,6 +24,6 @@ public sealed class CommunityController(
         else
             logger.LogError("Community Facebook group URL is invalid; hiding the Facebook CTA.");
 
-        return View((await posts.GetAll()).Where(post => post.Status == "active").ToList());
+        return View((await posts.GetAll()).Where(post => post.Status == "approved").ToList());
     }
 }

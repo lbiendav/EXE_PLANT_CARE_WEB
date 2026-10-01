@@ -4,6 +4,7 @@ using HomePlant.Services;
 using HomePlant.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomePlant.Controllers;
 
@@ -81,6 +82,8 @@ public class PlantController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
     public async Task<IActionResult> Create(
         PlantCreateVM vm)
     {
@@ -235,6 +238,8 @@ public class PlantController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
     public async Task<IActionResult> Edit(string id, PlantEditVM vm)
     {
         var uid = HttpContext.Session.GetString("Uid");

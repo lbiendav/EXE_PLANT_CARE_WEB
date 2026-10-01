@@ -77,6 +77,13 @@
       jobs.push(this.request(this.count - 1, priority));
       return Promise.all(jobs);
     }
+    requestAround(p) {
+      const ideal = Math.round(clamp01(p) * (this.count - 1));
+      for (let distance = 0; distance <= 4; distance++) {
+        if (ideal - distance >= 0) this.request(ideal - distance, true);
+        if (ideal + distance < this.count) this.request(ideal + distance, true);
+      }
+    }
     // nearest decoded frame to ideal index — scrub never goes blank
     frameAt(p) {
       const ideal = Math.round(clamp01(p) * (this.count - 1));
@@ -268,6 +275,7 @@
         scrub: true,
         onUpdate(self) {
           stage.target = self.progress;
+          stage.seq.requestAround(self.progress);
           if (stage.onProgress) stage.onProgress(self.progress, stage);
         },
         onToggle(self) { stage.active = self.isActive; },
@@ -355,16 +363,24 @@
       if (reduceMotion) tl.progress(1);
     };
 
-    // load choreography: hero coarse first (awaited), everything else after
+    const hydrateNearViewport = (stage, coarseStep) => {
+      let started = false;
+      const observer = new IntersectionObserver((entries) => {
+        if (started || !entries.some((entry) => entry.isIntersecting)) return;
+        started = true;
+        observer.disconnect();
+        stage.seq.pass(coarseStep);
+      }, { rootMargin: '125% 0px' });
+      observer.observe(stage.section);
+    };
+
+    // Load only the visible hero at boot. Remaining 3D sequences start when
+    // their section approaches the viewport, avoiding a 40+ MB eager download.
     seqs.orbit.pass(6, true).then(() => {
       heroIntro();
-      seqs.macro.pass(8);
-      seqs.explode.pass(8);
-      seqs.atmos.pass(6);
-      seqs.orbit.pass(2).then(() => seqs.orbit.pass(1));
-      seqs.macro.pass(2).then(() => seqs.macro.pass(1));
-      seqs.explode.pass(2).then(() => seqs.explode.pass(1));
-      seqs.atmos.pass(1);
+      hydrateNearViewport(stages[1], 8);
+      hydrateNearViewport(stages[2], 8);
+      hydrateNearViewport(stages[3], 6);
     });
 
     ScrollTrigger.refresh();

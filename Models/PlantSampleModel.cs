@@ -6,26 +6,26 @@ namespace HomePlant.Models;
 public class PlantSampleModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = "";
 
     [FirestoreProperty("scientificName")]
-    public string ScientificName { get; set; }
+    public string ScientificName { get; set; } = "";
 
     [FirestoreProperty("description")]
-    public string Description { get; set; }
+    public string Description { get; set; } = "";
 
     [FirestoreProperty("imageUrl")]
-    public string Image { get; set; }
+    public string Image { get; set; } = "";
 
     [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }
 
     [FirestoreProperty("care")]
-    public CareModel Care { get; set; }
+    public CareModel Care { get; set; } = new();
 
     [FirestoreProperty("diseases")]
-    public List<DiseaseModel> Diseases { get; set; }
+    public List<DiseaseModel> Diseases { get; set; } = new();
 }

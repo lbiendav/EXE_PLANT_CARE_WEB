@@ -6,25 +6,25 @@ namespace HomePlant.Models;
 public class PlantTemplateModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("templateId")]
-    public string TemplateId { get; set; }
+    public string TemplateId { get; set; } = "";
 
     [FirestoreProperty("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = "";
 
     [FirestoreProperty("scientificName")]
-    public string ScientificName { get; set; }
+    public string ScientificName { get; set; } = "";
 
     [FirestoreProperty("description")]
-    public string Description { get; set; }
+    public string Description { get; set; } = "";
 
     [FirestoreProperty("imageUrl")]
-    public string ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = "";
 
     [FirestoreProperty("careInstructions")]
-    public CareModel CareInstructions { get; set; }
+    public CareModel CareInstructions { get; set; } = new();
 
     [FirestoreProperty("isFeatured")]
     public bool IsFeatured { get; set; }

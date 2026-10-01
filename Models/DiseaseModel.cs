@@ -6,11 +6,11 @@ namespace HomePlant.Models;
 public class DiseaseModel
 {
     [FirestoreProperty("issue")]
-    public string Issue { get; set; }
+    public string Issue { get; set; } = "";
 
     [FirestoreProperty("cause")]
-    public string Cause { get; set; }
+    public string Cause { get; set; } = "";
 
     [FirestoreProperty("treatment")]
-    public string Treatment { get; set; }
+    public string Treatment { get; set; } = "";
 }

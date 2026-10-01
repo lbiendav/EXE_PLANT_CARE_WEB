@@ -49,6 +49,8 @@ public class UserService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("users").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task BanUser(string id)
     {
         await _db
@@ -85,6 +87,13 @@ public class UserService
         string phone,
         string? avatarUrl)
     {
+        fullName = fullName.Trim();
+        phone = phone?.Trim() ?? "";
+        if (fullName.Length is < 2 or > 100)
+            throw new ArgumentException("Full name must contain 2 to 100 characters.", nameof(fullName));
+        if (phone.Length > 0 && (phone.Length != 8 || !phone.All(char.IsDigit)))
+            throw new ArgumentException("Phone must contain exactly 8 digits.", nameof(phone));
+
         var updates = new Dictionary<string, object>
         {
             { "displayName", fullName },

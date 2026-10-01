@@ -6,25 +6,25 @@ namespace HomePlant.Models;
 public class UserModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("uid")]
-    public string Uid { get; set; }
+    public string Uid { get; set; } = "";
 
     [FirestoreProperty("displayName")]
-    public string FullName { get; set; }
+    public string FullName { get; set; } = "";
 
     [FirestoreProperty("email")]
-    public string Email { get; set; }
+    public string Email { get; set; } = "";
 
     [FirestoreProperty("phone")]
-    public string Phone { get; set; }
+    public string Phone { get; set; } = "";
 
     [FirestoreProperty("avatarUrl")]
-    public string AvatarUrl { get; set; }
+    public string AvatarUrl { get; set; } = "";
 
     [FirestoreProperty("role")]
-    public string Role { get; set; }
+    public string Role { get; set; } = "user";
 
     [FirestoreProperty("isLocked")]
     public bool IsLocked { get; set; }

@@ -6,5 +6,5 @@ public class ForgotPasswordVM
 {
     [Required(ErrorMessage = "Vui lòng nhập email")]
     [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-    public string Email { get; set; }
+    public string Email { get; set; } = "";
 }

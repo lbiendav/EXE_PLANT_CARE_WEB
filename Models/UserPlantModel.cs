@@ -6,22 +6,22 @@ namespace HomePlant.Models;
 public class UserPlantModel
 {
     [FirestoreDocumentId]
-    public string Id { get; set; }
+    public string Id { get; set; } = "";
 
     [FirestoreProperty("plantId")]
-    public string PlantId { get; set; }
+    public string PlantId { get; set; } = "";
 
     [FirestoreProperty("templateId")]
-    public string TemplateId { get; set; }
+    public string TemplateId { get; set; } = "";
 
     [FirestoreProperty("customName")]
-    public string CustomName { get; set; }
+    public string CustomName { get; set; } = "";
 
     [FirestoreProperty("imageUrl")]
-    public string ImageUrl { get; set; }
+    public string ImageUrl { get; set; } = "";
 
     [FirestoreProperty("status")]
-    public string Status { get; set; }
+    public string Status { get; set; } = "healthy";
 
     [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }

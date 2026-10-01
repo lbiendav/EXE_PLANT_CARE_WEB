@@ -1,6 +1,7 @@
 using HomePlant.Services;
 using HomePlant.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HomePlant.Controllers;
 
@@ -78,6 +79,8 @@ public class ProfileController : Controller
     }
 
     [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
     public async Task<IActionResult> Edit(
         ProfileVM vm,
         IFormFile? avatar)
@@ -87,11 +90,8 @@ public class ProfileController : Controller
         if (uid == null)
             return RedirectToAction("Login", "Account");
 
-        if (string.IsNullOrWhiteSpace(vm.FullName))
-        {
-            ModelState.AddModelError(nameof(vm.FullName), "Vui lòng nhập họ tên");
+        if (!ModelState.IsValid)
             return View(vm);
-        }
 
         var existingUser = await _authService.GetUser(uid);
         if (existingUser == null)
@@ -106,8 +106,8 @@ public class ProfileController : Controller
         {
             await _userService.UpdateProfile(
                 uid,
-                vm.FullName,
-                vm.Phone,
+                vm.FullName.Trim(),
+                vm.Phone?.Trim() ?? "",
                 avatarUrl);
         }
         catch
@@ -119,8 +119,8 @@ public class ProfileController : Controller
         if (uploadedAvatarUrl != null)
             await _imageStorage.Delete(existingUser.AvatarUrl, CancellationToken.None);
 
-        HttpContext.Session.SetString("FullName", vm.FullName ?? "");
-        HttpContext.Session.SetString("Phone", vm.Phone ?? "");
+        HttpContext.Session.SetString("FullName", vm.FullName.Trim());
+        HttpContext.Session.SetString("Phone", vm.Phone?.Trim() ?? "");
         HttpContext.Session.SetString("AvatarUrl", avatarUrl ?? "");
 
         TempData["Success"] = "Cập nhật hồ sơ thành công.";
@@ -168,8 +168,8 @@ public class ProfileController : Controller
             return View(vm);
         }
 
-        TempData["Success"] = "Đổi mật khẩu thành công.";
-
-        return RedirectToAction(nameof(Index));
+        HttpContext.Session.Clear();
+        TempData["Success"] = "Đổi mật khẩu thành công. Vui lòng đăng nhập lại.";
+        return RedirectToAction("Login", "Account");
     }
 }

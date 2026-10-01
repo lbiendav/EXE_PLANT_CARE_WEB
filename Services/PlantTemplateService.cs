@@ -21,6 +21,8 @@ public class PlantTemplateService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("plant_templates").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task<PlantTemplateModel?> GetById(string id)
     {
         var doc = await _db.Collection("plant_templates").Document(id).GetSnapshotAsync();

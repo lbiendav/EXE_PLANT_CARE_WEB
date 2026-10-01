@@ -18,7 +18,6 @@ obj/
 
 # Node (Seed script)
 Seed/node_modules/
-Seed/package-lock.json
 
 # Local uploads
 wwwroot/uploads/

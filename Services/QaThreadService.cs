@@ -24,6 +24,8 @@ public class QaThreadService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("qa_threads").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task Delete(string id)
     {
         await _db

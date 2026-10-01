@@ -176,6 +176,10 @@ public class AccountController : Controller
 
     private void SetSession(UserModel user)
     {
+        HttpContext.Session.Clear();
+        HttpContext.Session.SetString(
+            "AuthSessionCreatedAt",
+            DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
         HttpContext.Session.SetString(
             "Uid",
             user.Id);

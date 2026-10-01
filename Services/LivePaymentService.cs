@@ -10,9 +10,7 @@ public sealed record PaymentIngestionResult(string Status, string? OrderId, bool
 public sealed class LivePaymentService(
     FirestoreService firestore,
     ISubscriptionClock clock,
-    IConfiguration configuration,
-    PaymentReceiptService receipts,
-    ILogger<LivePaymentService> logger)
+    IConfiguration configuration)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
@@ -77,6 +75,7 @@ public sealed class LivePaymentService(
             var userRef = _db.Collection("users").Document(order.UserId);
             var subscriptionRef = _db.Collection("subscriptions").Document(order.UserId);
             var billingRef = userRef.Collection("billing_state").Document("live");
+            var deliveryRef = _db.Collection("payment_receipt_deliveries").Document(orderId);
             var userSnapshot = await transaction.GetSnapshotAsync(userRef);
             var subscriptionSnapshot = await transaction.GetSnapshotAsync(subscriptionRef);
             var billingSnapshot = await transaction.GetSnapshotAsync(billingRef);
@@ -126,6 +125,15 @@ public sealed class LivePaymentService(
                 startsAt = paidAt, expiresAt = subscription.ExpiresAt, status = "Granted", grantedAt = paidAt, schemaVersion = 1
             });
             transaction.Set(subscriptionRef, subscription);
+            transaction.Set(deliveryRef, new
+            {
+                orderId,
+                userId = order.UserId,
+                status = "Pending",
+                createdAt = paidAt,
+                attemptCount = 0,
+                schemaVersion = 1
+            });
             transaction.Update(orderRef, new Dictionary<string, object>
             {
                 ["status"] = "Paid", ["checkoutStatus"] = "Closed", ["paymentStatus"] = "ReceivedExact",
@@ -137,15 +145,6 @@ public sealed class LivePaymentService(
             return new PaymentIngestionResult("Granted", orderId, true);
         });
 
-        if (result.Granted && !string.IsNullOrWhiteSpace(result.OrderId))
-        {
-            try { await receipts.SendOnce(result.OrderId); }
-            catch (Exception exception)
-            {
-                // Receipt delivery must never roll back or reject an already verified payment.
-                logger.LogWarning(exception, "Could not schedule a payment receipt for order {OrderId}.", result.OrderId);
-            }
-        }
         return result;
     }
 

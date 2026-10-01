@@ -195,11 +195,8 @@ public class UserPlantService
 
     public async Task<int> CountAll()
     {
-        var snapshot = await _db
-            .CollectionGroup("user_plants")
-            .GetSnapshotAsync();
-
-        return snapshot.Count;
+        var snapshot = await _db.CollectionGroup("user_plants").Count().GetSnapshotAsync();
+        return checked((int)(snapshot.Count ?? 0));
     }
 
     public async Task<List<OwnedUserPlant>> GetAllForAdmin()

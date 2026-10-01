@@ -56,11 +56,21 @@ public sealed class CareReminderService
 
     public async Task SyncAll(CancellationToken cancellationToken = default)
     {
-        var plants = await _db.CollectionGroup("user_plants")
-            .GetSnapshotAsync(cancellationToken);
+        var now = Timestamp.GetCurrentTimestamp();
+        var dueQueries = new[] { "nextWateringAt", "nextFertilizingAt", "nextRepottingAt" }
+            .Select(field => _db.CollectionGroup("user_plants")
+                .WhereLessThanOrEqualTo(field, now)
+                .Limit(500)
+                .GetSnapshotAsync(cancellationToken))
+            .ToArray();
+        await Task.WhenAll(dueQueries);
+        var plants = dueQueries
+            .SelectMany(task => task.Result.Documents)
+            .DistinctBy(document => document.Reference.Path)
+            .ToArray();
         var userCache = new Dictionary<string, (string? Email, bool EmailEnabled)>();
 
-        foreach (var document in plants.Documents)
+        foreach (var document in plants)
         {
             var owner = document.Reference.Parent.Parent;
             if (owner == null || owner.Parent.Id != "users")

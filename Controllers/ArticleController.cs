@@ -60,7 +60,9 @@ public class ArticleController : Controller
     public async Task<IActionResult> Create(
         ArticleModel article)
     {
-        if (string.IsNullOrWhiteSpace(article.Title) || string.IsNullOrWhiteSpace(article.Content))
+        article.Title = article.Title.Trim();
+        article.Content = article.Content.Trim();
+        if (!ModelState.IsValid)
         {
             ModelState.AddModelError("", "Vui lòng nhập tiêu đề và nội dung bài viết.");
             return View(article);
@@ -94,7 +96,9 @@ public class ArticleController : Controller
     {
         var existing = await _service.GetById(id);
         if (existing == null) return NotFound();
-        if (string.IsNullOrWhiteSpace(article.Title) || string.IsNullOrWhiteSpace(article.Content))
+        article.Title = article.Title.Trim();
+        article.Content = article.Content.Trim();
+        if (!ModelState.IsValid)
         {
             ModelState.AddModelError("", "Vui lòng nhập tiêu đề và nội dung bài viết.");
             return View(article);

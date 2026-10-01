@@ -8,7 +8,7 @@ public sealed class ImageStorageService
     // Firestore's 1 MiB document limit after field metadata is included.
     private const int ChunkSize = 512 * 1024;
     private const int MaxChunkCount = 64;
-    public const long MaxImageBytes = 32 * 1024 * 1024;
+    public const long MaxImageBytes = 10 * 1024 * 1024;
 
     private readonly FirestoreDb _db;
     private readonly ILogger<ImageStorageService> _logger;
@@ -36,10 +36,24 @@ public sealed class ImageStorageService
         {
             await using var source = photo.OpenReadStream();
             var buffer = new byte[ChunkSize];
+            var prefix = new byte[16];
+            var prefixLength = 0;
+            while (prefixLength < prefix.Length)
+            {
+                var read = await source.ReadAsync(prefix.AsMemory(prefixLength), cancellationToken);
+                if (read == 0) break;
+                prefixLength += read;
+            }
+            var verifiedContentType = DetectContentType(prefix.AsSpan(0, prefixLength));
+            if (verifiedContentType == null)
+                return null;
+            prefix.AsSpan(0, prefixLength).CopyTo(buffer);
+            var bufferedPrefix = prefixLength;
 
             while (true)
             {
-                var bytesRead = 0;
+                var bytesRead = bufferedPrefix;
+                bufferedPrefix = 0;
                 while (bytesRead < buffer.Length)
                 {
                     var read = await source.ReadAsync(
@@ -70,13 +84,10 @@ public sealed class ImageStorageService
             if (chunkCount == 0)
                 return null;
 
-            var contentType = photo.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)
-                ? photo.ContentType
-                : "application/octet-stream";
             await imageDocument.SetAsync(new Dictionary<string, object>
             {
                 ["chunkCount"] = chunkCount,
-                ["contentType"] = contentType,
+                ["contentType"] = verifiedContentType,
                 ["fileName"] = Path.GetFileName(photo.FileName),
                 ["length"] = photo.Length,
                 ["createdAt"] = Timestamp.GetCurrentTimestamp()
@@ -95,6 +106,19 @@ public sealed class ImageStorageService
             await DeleteDocuments(imageDocument, chunkCount, CancellationToken.None);
             return null;
         }
+    }
+
+    public static string? DetectContentType(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length >= 8 && bytes[..8].SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
+            return "image/png";
+        if (bytes.Length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff)
+            return "image/jpeg";
+        if (bytes.Length >= 6 && (bytes[..6].SequenceEqual("GIF87a"u8) || bytes[..6].SequenceEqual("GIF89a"u8)))
+            return "image/gif";
+        if (bytes.Length >= 12 && bytes[..4].SequenceEqual("RIFF"u8) && bytes.Slice(8, 4).SequenceEqual("WEBP"u8))
+            return "image/webp";
+        return null;
     }
 
     public async Task Delete(

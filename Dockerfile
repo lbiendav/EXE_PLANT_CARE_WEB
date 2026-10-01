@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY HomePlant.csproj ./
 RUN dotnet restore HomePlant.csproj
@@ -7,7 +7,7 @@ RUN dotnet publish HomePlant.csproj --configuration Release --no-restore \
     --output /app/publish /p:UseAppHost=false \
     && chmod -R a+rX /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080

@@ -1,0 +1,47 @@
+name: production-ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore and build without warnings
+        run: |
+          dotnet restore HomePlant.sln
+          dotnet build HomePlant.sln --configuration Release --no-restore --warnaserror
+      - name: Run .NET checks
+        run: |
+          for project in CareScheduleChecks EmailNotificationChecks PaymentChecks RegistrationChecks SubscriptionChecks ImageUploadChecks; do
+            dotnet run --project "Tests/$project/$project.csproj" --configuration Release
+          done
+      - name: Run seed safety checks
+        run: |
+          npm ci --prefix Seed --ignore-scripts
+          npm test --prefix Seed
+          npm audit --prefix Seed --omit=dev
+      - name: Scan NuGet packages
+        run: dotnet list HomePlant.csproj package --vulnerable --include-transitive
+      - name: Publish and reject secret-bearing output
+        run: |
+          dotnet publish HomePlant.csproj --configuration Release --no-restore --output publish /p:UseAppHost=false
+          test ! -e publish/appsettings.json
+          test ! -e publish/firebase.json
+          test ! -e publish/firestore.rules
+          test ! -e publish/Firebase/firebase-key.json
+      - name: Build production container
+        run: docker build --tag homeplant:${{ github.sha }} .

@@ -24,6 +24,8 @@ public class ArticleService
             .ToList();
     }
 
+    public async Task<int> Count() => checked((int)((await _db.Collection("articles").Count().GetSnapshotAsync()).Count ?? 0));
+
     public async Task<ArticleModel?> GetById(string id)
     {
         var doc = await _db
