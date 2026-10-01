@@ -188,19 +188,28 @@ public class FirebaseAuthService
             .ReadFromJsonAsync<SignInWithPasswordResponse>();
 
         if (result?.LocalId == null || !string.Equals(result.LocalId, authUser.Uid, StringComparison.Ordinal))
+        {
+            _logger.LogWarning("Firebase password sign-in failed after a successful response: identity_mismatch.");
             return new SignInResult { Success = false };
+        }
 
         // Check only after the password succeeds so the response does not
         // disclose whether a registered address is awaiting verification.
         // A Firestore profile must not let an Auth account whose email later
         // became unverified bypass the verification gate.
         if (!authUser.EmailVerified)
+        {
+            _logger.LogWarning("Firebase password sign-in denied: email_not_verified.");
             return new SignInResult { Success = false, EmailNotVerified = true };
+        }
 
         var user = await GetUser(result.LocalId);
 
         if (user == null)
+        {
+            _logger.LogWarning("Firebase password sign-in denied: firestore_profile_missing.");
             return new SignInResult { Success = false, EmailNotVerified = true };
+        }
 
         if (user.IsLocked)
             return new SignInResult { Success = false, IsLocked = true, User = user };
