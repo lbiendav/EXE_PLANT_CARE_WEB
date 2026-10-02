@@ -14,7 +14,7 @@ public sealed class RevenueAdminService(
     SubscriptionOrderService orderService,
     IPaymentProvider provider,
     LivePaymentService livePayments,
-    EmailNotificationService emailService,
+    PaymentReceiptService paymentReceipts,
     GoogleAnalyticsService analyticsService,
     IConfiguration configuration)
 {
@@ -291,9 +291,7 @@ public sealed class RevenueAdminService(
         var detail = await OrderDetail(orderId) ?? throw new SubscriptionDomainException("not_found", "Không tìm thấy đơn.");
         if (detail.Row.Order.Status != "Paid") throw new SubscriptionDomainException("not_paid", "Chỉ gửi xác nhận cho đơn đã thanh toán.");
         if (string.IsNullOrWhiteSpace(detail.Row.Email)) throw new SubscriptionDomainException("email_missing", "Khách hàng chưa có email hợp lệ.");
-        var order = detail.Row.Order;
-        var sent = await emailService.SendTransactional(detail.Row.Email, $"HomePlant · Xác nhận thanh toán {order.TransferReference}",
-            $"HomePlant xác nhận đơn {order.TransferReference} đã thanh toán {order.AmountVnd:N0}đ. Gói {order.Tier} trong {order.DurationMonths} tháng đã được ghi nhận.", cancellationToken);
+        var sent = await paymentReceipts.Resend(orderId, cancellationToken);
         if (!sent) throw new SubscriptionDomainException("email_failed", "Chưa gửi được email. Vui lòng kiểm tra cấu hình email và thử lại.");
         await Audit(adminUid, adminEmail, "ResendPaymentReceipt", "order", orderId, reason, new { }, new { recipient = detail.Row.Email });
     }

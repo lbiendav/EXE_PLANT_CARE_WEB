@@ -65,17 +65,33 @@ public sealed class LivePaymentService(
             }
 
             var grantRef = _db.Collection("subscription_grants").Document(orderId);
+            var deliveryRef = _db.Collection("payment_receipt_deliveries").Document(orderId);
             var grantSnapshot = await transaction.GetSnapshotAsync(grantRef);
+            var deliverySnapshot = await transaction.GetSnapshotAsync(deliveryRef);
             if (grantSnapshot.Exists)
             {
                 WriteEvidence(transaction, receiptRef, transactionRef, payment, now, orderId, "Granted", "duplicate_verified_webhook");
+                // A database migration may contain the grant and order but omit the
+                // delivery outbox document. Repair that partial migration when the
+                // verified payment is reconciled again; normal webhook retries stay
+                // idempotent because an existing delivery is never replaced.
+                if (!deliverySnapshot.Exists)
+                    transaction.Set(deliveryRef, new
+                    {
+                        orderId,
+                        userId = order.UserId,
+                        status = "Pending",
+                        createdAt = Timestamp.FromDateTimeOffset(now),
+                        attemptCount = 0,
+                        recoveryReason = "missing_after_verified_grant",
+                        schemaVersion = 1
+                    });
                 return new PaymentIngestionResult("Granted", orderId, true);
             }
 
             var userRef = _db.Collection("users").Document(order.UserId);
             var subscriptionRef = _db.Collection("subscriptions").Document(order.UserId);
             var billingRef = userRef.Collection("billing_state").Document("live");
-            var deliveryRef = _db.Collection("payment_receipt_deliveries").Document(orderId);
             var userSnapshot = await transaction.GetSnapshotAsync(userRef);
             var subscriptionSnapshot = await transaction.GetSnapshotAsync(subscriptionRef);
             var billingSnapshot = await transaction.GetSnapshotAsync(billingRef);

@@ -11,6 +11,53 @@ public sealed class PaymentReceiptService(
 {
     private readonly FirestoreDb _db = firestore.Db;
 
+    public async Task<bool> Resend(string orderId, CancellationToken cancellationToken = default)
+    {
+        var orderRef = _db.Collection("subscription_orders").Document(orderId);
+        var deliveryRef = _db.Collection("payment_receipt_deliveries").Document(orderId);
+        var now = DateTimeOffset.UtcNow;
+
+        await _db.RunTransactionAsync(async transaction =>
+        {
+            var orderSnapshot = await transaction.GetSnapshotAsync(orderRef);
+            if (!orderSnapshot.Exists)
+                throw new SubscriptionDomainException("not_found", "Không tìm thấy đơn.");
+
+            var order = orderSnapshot.ConvertTo<SubscriptionOrderModel>();
+            if (order.Status != "Paid" || order.FulfillmentStatus != "Granted")
+                throw new SubscriptionDomainException("not_paid", "Chỉ gửi xác nhận cho đơn đã thanh toán và kích hoạt.");
+
+            var deliverySnapshot = await transaction.GetSnapshotAsync(deliveryRef);
+            var resendCount = deliverySnapshot.Exists &&
+                deliverySnapshot.TryGetValue<long>("manualResendCount", out var oldResendCount)
+                    ? oldResendCount + 1
+                    : 1;
+            transaction.Set(deliveryRef, new Dictionary<string, object>
+            {
+                ["orderId"] = orderId,
+                ["userId"] = order.UserId,
+                ["status"] = "Pending",
+                ["createdAt"] = deliverySnapshot.Exists &&
+                    deliverySnapshot.TryGetValue<Timestamp>("createdAt", out var createdAt)
+                        ? createdAt
+                        : Timestamp.FromDateTimeOffset(now),
+                ["manualResendRequestedAt"] = Timestamp.FromDateTimeOffset(now),
+                ["manualResendCount"] = resendCount,
+                ["attemptCount"] = 0,
+                ["errorCode"] = FieldValue.Delete,
+                ["nextAttemptAt"] = FieldValue.Delete,
+                ["schemaVersion"] = 1
+            }, SetOptions.MergeAll);
+        }, cancellationToken: cancellationToken);
+
+        await SendOnce(orderId, cancellationToken);
+        var result = await deliveryRef.GetSnapshotAsync(cancellationToken);
+        var status = result.Exists && result.TryGetValue<string>("status", out var currentStatus)
+            ? currentStatus
+            : "";
+        return status is "Sent" or "Sending";
+    }
+
     public async Task SendOnce(string orderId, CancellationToken cancellationToken = default)
     {
         var orderRef = _db.Collection("subscription_orders").Document(orderId);
