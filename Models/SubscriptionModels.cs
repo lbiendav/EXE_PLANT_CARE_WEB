@@ -18,6 +18,12 @@ public sealed record PlanDefinition(
     int MonthlyAiLimit,
     long MonthlyListPriceVnd);
 
+public static class SubscriptionOrderKinds
+{
+    public const string Purchase = "Purchase";
+    public const string Upgrade = "Upgrade";
+}
+
 public sealed record EntitlementSnapshot(
     string Tier,
     int PlantLimit,
@@ -90,6 +96,12 @@ public sealed class SubscriptionOrderModel
     [FirestoreProperty("bankAccountName")] public string BankAccountName { get; set; } = "";
     [FirestoreProperty("activationStartsAt")] public Timestamp? ActivationStartsAt { get; set; }
     [FirestoreProperty("activationExpiresAt")] public Timestamp? ActivationExpiresAt { get; set; }
+    [FirestoreProperty("orderKind")] public string OrderKind { get; set; } = SubscriptionOrderKinds.Purchase;
+    [FirestoreProperty("upgradeFromTier")] public string UpgradeFromTier { get; set; } = "";
+    [FirestoreProperty("upgradeSourceOrderId")] public string UpgradeSourceOrderId { get; set; } = "";
+    [FirestoreProperty("upgradeSourceExpiresAt")] public Timestamp? UpgradeSourceExpiresAt { get; set; }
+
+    public bool IsUpgrade => OrderKind == SubscriptionOrderKinds.Upgrade;
 
     public bool IsCheckoutExpired(DateTimeOffset now) =>
         CheckoutStatus == "Open" && now >= ExpiresAt.ToDateTimeOffset();

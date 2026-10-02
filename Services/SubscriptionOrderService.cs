@@ -40,6 +40,7 @@ public sealed class SubscriptionOrderService(
             var requestSnapshot = await transaction.GetSnapshotAsync(requestRef);
             var billingSnapshot = await transaction.GetSnapshotAsync(billingRef);
             var subscriptionSnapshot = await transaction.GetSnapshotAsync(subscriptionRef);
+            SubscriptionUpgradeQuote? upgrade = null;
 
             if (requestSnapshot.Exists)
             {
@@ -57,7 +58,7 @@ public sealed class SubscriptionOrderService(
                 var sameMode = policy.Mode == PaymentRuntimeMode.Live ? !current.IsDemo : current.IsDemo;
                 var isActive = sameMode && current.StartsAt.ToDateTimeOffset() <= now && now < current.ExpiresAt.ToDateTimeOffset();
                 if (isActive && !current.Tier.Equals(plan.Tier, StringComparison.OrdinalIgnoreCase))
-                    throw new SubscriptionDomainException("tier_change_not_supported", "Bạn chỉ có thể mua hạng khác sau khi gói hiện tại hết hạn.");
+                    upgrade = SubscriptionUpgradePolicy.Quote(current, plan, catalog, now);
             }
 
             if (billingSnapshot.Exists && billingSnapshot.TryGetValue<string>("pendingOrderId", out var pendingId) && !string.IsNullOrWhiteSpace(pendingId))
@@ -96,7 +97,7 @@ public sealed class SubscriptionOrderService(
                 Sku = plan.Sku,
                 Tier = plan.Tier,
                 DurationMonths = plan.DurationMonths,
-                AmountVnd = plan.AmountVnd,
+                AmountVnd = upgrade?.AmountVnd ?? plan.AmountVnd,
                 CatalogVersion = snapshot.CatalogVersion,
                 PlantLimit = snapshot.PlantLimit,
                 MonthlyAiLimit = snapshot.MonthlyAiLimit,
@@ -113,11 +114,15 @@ public sealed class SubscriptionOrderService(
                 PaymentStatus = "Unpaid",
                 FulfillmentStatus = "NotGranted",
                 RefundStatus = "None",
-                SchemaVersion = 2,
+                SchemaVersion = 3,
                 TransferReference = $"HP{orderRef.Id[..Math.Min(10, orderRef.Id.Length)].ToUpperInvariant()}",
                 BankBin = !isLive && validBank ? bankBin : "",
                 BankAccountNumber = !isLive && validBank ? bankAccount : "",
-                BankAccountName = !isLive && validBank ? bankName : ""
+                BankAccountName = !isLive && validBank ? bankName : "",
+                OrderKind = upgrade == null ? SubscriptionOrderKinds.Purchase : SubscriptionOrderKinds.Upgrade,
+                UpgradeFromTier = upgrade?.FromTier ?? "",
+                UpgradeSourceOrderId = upgrade?.SourceOrderId ?? "",
+                UpgradeSourceExpiresAt = upgrade == null ? null : Timestamp.FromDateTimeOffset(upgrade.ExpiresAt)
             };
             if (isLive)
             {

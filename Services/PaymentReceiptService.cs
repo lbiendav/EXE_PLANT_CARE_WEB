@@ -155,6 +155,9 @@ public sealed class PaymentReceiptService(
         var paidAt = (order.PaidAt?.ToDateTimeOffset() ?? DateTimeOffset.UtcNow).ToOffset(TimeSpan.FromHours(7));
         var expiresAt = order.ActivationExpiresAt?.ToDateTimeOffset().ToOffset(TimeSpan.FromHours(7));
         var planName = order.Tier.Equals(SubscriptionTiers.Gold, StringComparison.OrdinalIgnoreCase) ? "Gold" : "Silver";
+        var purchaseDescription = order.IsUpgrade
+            ? $"Nâng cấp {order.UpgradeFromTier} → {planName} (giữ ngày hết hạn)"
+            : $"{planName} · {order.DurationMonths} tháng";
         var baseUrl = (configuration["App:PublicBaseUrl"] ?? configuration["RENDER_EXTERNAL_URL"] ?? "").TrimEnd('/');
         var subscriptionUrl = Uri.TryCreate(baseUrl, UriKind.Absolute, out _) ? $"{baseUrl}/Subscription" : "mục Gói của tôi trên HomePlant";
 
@@ -165,7 +168,7 @@ Thanh toán của bạn đã được xác nhận và gói đã được kích h
 
 Mã đơn: {order.Id}
 Nội dung chuyển khoản: {order.TransferReference}
-Gói: {planName} · {order.DurationMonths} tháng
+Gói: {purchaseDescription}
 Số tiền: {order.AmountVnd:N0} VND
 Thời gian thanh toán: {paidAt:dd/MM/yyyy HH:mm} (GMT+7)
 Hiệu lực đến: {(expiresAt.HasValue ? expiresAt.Value.ToString("dd/MM/yyyy HH:mm") + " (GMT+7)" : "Xem trong tài khoản")}

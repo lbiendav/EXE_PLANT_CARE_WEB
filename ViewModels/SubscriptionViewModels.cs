@@ -8,11 +8,13 @@ public sealed class PlansVM
     public IReadOnlyCollection<PlanDefinition> Plans { get; init; } = [];
     public string? CurrentTier { get; init; }
     public DateTimeOffset? CurrentExpiresAt { get; init; }
+    public int? CurrentDurationMonths { get; init; }
     public string? SelectedSku { get; init; }
     public bool IsSignedIn { get; init; }
     public bool CheckoutAvailable { get; init; }
     public string CheckoutUnavailableMessage { get; init; } = "";
     public IReadOnlyDictionary<string, PlanDisplaySetting> PlanSettings { get; init; } = new Dictionary<string, PlanDisplaySetting>();
+    public IReadOnlyDictionary<string, long> UpgradeQuotes { get; init; } = new Dictionary<string, long>();
 }
 
 public sealed class SubscriptionVM

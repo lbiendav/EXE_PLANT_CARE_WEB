@@ -103,20 +103,35 @@ public sealed class LivePaymentService(
             }
 
             var baseTime = now;
+            SubscriptionModel? currentSubscription = null;
             if (subscriptionSnapshot.Exists)
             {
-                var current = subscriptionSnapshot.ConvertTo<SubscriptionModel>();
-                var activeLive = !current.IsDemo && current.StartsAt.ToDateTimeOffset() <= now && now < current.ExpiresAt.ToDateTimeOffset();
-                if (activeLive && !current.Tier.Equals(order.Tier, StringComparison.OrdinalIgnoreCase))
+                currentSubscription = subscriptionSnapshot.ConvertTo<SubscriptionModel>();
+                var activeLive = !currentSubscription.IsDemo && currentSubscription.StartsAt.ToDateTimeOffset() <= now && now < currentSubscription.ExpiresAt.ToDateTimeOffset();
+                if (order.IsUpgrade && (!activeLive || !SubscriptionUpgradePolicy.SourceStillMatches(currentSubscription, order, now)))
+                {
+                    WriteEvidence(transaction, receiptRef, transactionRef, payment, now, orderId, "NeedsReview", "upgrade_source_changed");
+                    transaction.Update(orderRef, new Dictionary<string, object> { ["paymentStatus"] = "ReceivedExact", ["fulfillmentStatus"] = "HeldForReview" });
+                    return new PaymentIngestionResult("NeedsReview", orderId, false);
+                }
+                if (!order.IsUpgrade && activeLive && !currentSubscription.Tier.Equals(order.Tier, StringComparison.OrdinalIgnoreCase))
                 {
                     WriteEvidence(transaction, receiptRef, transactionRef, payment, now, orderId, "NeedsReview", "tier_conflict");
                     transaction.Update(orderRef, new Dictionary<string, object> { ["paymentStatus"] = "ReceivedExact", ["fulfillmentStatus"] = "HeldForReview" });
                     return new PaymentIngestionResult("NeedsReview", orderId, false);
                 }
-                if (activeLive) baseTime = current.ExpiresAt.ToDateTimeOffset();
+                if (!order.IsUpgrade && activeLive) baseTime = currentSubscription.ExpiresAt.ToDateTimeOffset();
+            }
+            else if (order.IsUpgrade)
+            {
+                WriteEvidence(transaction, receiptRef, transactionRef, payment, now, orderId, "NeedsReview", "upgrade_source_changed");
+                transaction.Update(orderRef, new Dictionary<string, object> { ["paymentStatus"] = "ReceivedExact", ["fulfillmentStatus"] = "HeldForReview" });
+                return new PaymentIngestionResult("NeedsReview", orderId, false);
             }
 
-            var expiresAt = SubscriptionTime.AddCalendarMonths(baseTime, order.DurationMonths);
+            var expiresAt = order.IsUpgrade
+                ? currentSubscription!.ExpiresAt.ToDateTimeOffset()
+                : SubscriptionTime.AddCalendarMonths(baseTime, order.DurationMonths);
             var paidAt = Timestamp.FromDateTimeOffset(now);
             var subscription = new SubscriptionModel
             {
@@ -137,7 +152,7 @@ public sealed class LivePaymentService(
             WriteEvidence(transaction, receiptRef, transactionRef, payment, now, orderId, "Granted", "verified_exact_payment");
             transaction.Set(grantRef, new
             {
-                orderId, userId = order.UserId, transactionId = financialKey, tier = order.Tier,
+                orderId, userId = order.UserId, transactionId = financialKey, tier = order.Tier, orderKind = order.OrderKind,
                 startsAt = paidAt, expiresAt = subscription.ExpiresAt, status = "Granted", grantedAt = paidAt, schemaVersion = 1
             });
             transaction.Set(subscriptionRef, subscription);

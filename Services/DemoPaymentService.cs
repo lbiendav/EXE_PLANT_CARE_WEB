@@ -49,17 +49,23 @@ public sealed class DemoPaymentService(
             }
 
             var baseTime = now;
+            SubscriptionModel? currentSubscription = null;
             if (subscriptionSnapshot.Exists)
             {
-                var current = subscriptionSnapshot.ConvertTo<SubscriptionModel>();
-                var active = current.StartsAt.ToDateTimeOffset() <= now && now < current.ExpiresAt.ToDateTimeOffset();
-                if (active && !current.Tier.Equals(order.Tier, StringComparison.OrdinalIgnoreCase))
+                currentSubscription = subscriptionSnapshot.ConvertTo<SubscriptionModel>();
+                var active = currentSubscription.StartsAt.ToDateTimeOffset() <= now && now < currentSubscription.ExpiresAt.ToDateTimeOffset();
+                if (order.IsUpgrade && !SubscriptionUpgradePolicy.SourceStillMatches(currentSubscription, order, now))
+                    return (Order: order, Error: "upgrade_source_changed");
+                if (!order.IsUpgrade && active && !currentSubscription.Tier.Equals(order.Tier, StringComparison.OrdinalIgnoreCase))
                     return (Order: order, Error: "tier_change_not_supported");
-                if (active) baseTime = current.ExpiresAt.ToDateTimeOffset();
+                if (!order.IsUpgrade && active) baseTime = currentSubscription.ExpiresAt.ToDateTimeOffset();
             }
+            else if (order.IsUpgrade) return (Order: order, Error: "upgrade_source_changed");
 
             var startsAt = now;
-            var expiresAt = SubscriptionTime.AddCalendarMonths(baseTime, order.DurationMonths);
+            var expiresAt = order.IsUpgrade
+                ? currentSubscription!.ExpiresAt.ToDateTimeOffset()
+                : SubscriptionTime.AddCalendarMonths(baseTime, order.DurationMonths);
             var paidAt = Timestamp.FromDateTimeOffset(now);
             order.Status = "Paid";
             order.CheckoutStatus = "Closed";
@@ -83,7 +89,7 @@ public sealed class DemoPaymentService(
                 IsDemo = true,
                 UpdatedAt = paidAt
             };
-            transaction.Set(eventRef, new { orderId, userId = uid, mode = "Demo", amountVnd = order.AmountVnd, processedAt = paidAt, isDemo = true });
+            transaction.Set(eventRef, new { orderId, userId = uid, mode = "Demo", orderKind = order.OrderKind, amountVnd = order.AmountVnd, processedAt = paidAt, isDemo = true });
             transaction.Set(subscriptionRef, subscription);
             transaction.Update(orderRef, new Dictionary<string, object>
             {
@@ -104,6 +110,7 @@ public sealed class DemoPaymentService(
                 "account_inactive" => new SubscriptionDomainException(result.Error, "Tài khoản không còn hoạt động."),
                 "order_expired" => new SubscriptionDomainException(result.Error, "Đơn đã hết hạn. Vui lòng tạo đơn mới."),
                 "tier_change_not_supported" => new SubscriptionDomainException(result.Error, "Chưa hỗ trợ đổi hạng khi gói hiện tại còn hạn."),
+                "upgrade_source_changed" => new SubscriptionDomainException(result.Error, "Gói hiện tại đã thay đổi hoặc hết hạn. Đơn nâng cấp này cần được tạo lại."),
                 "live_order_not_simulatable" => new SubscriptionDomainException(result.Error, "Đơn thanh toán thật không thể được xác nhận bằng simulator."),
                 "demo_disabled" or "demo_project_not_allowed" => new SubscriptionDomainException(result.Error, "Mô phỏng thanh toán không được phép trong môi trường này."),
                 _ => new SubscriptionDomainException(result.Error, "Đơn không còn có thể xác nhận.")

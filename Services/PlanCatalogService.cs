@@ -21,6 +21,8 @@ public sealed class PlanCatalogService
     public static EntitlementSnapshot Free => new(SubscriptionTiers.Free, 3, 3, Version);
     public IReadOnlyCollection<PlanDefinition> GetAll() => Plans.Values.ToArray();
     public PlanDefinition? Find(string? sku) => sku != null && Plans.TryGetValue(sku, out var plan) ? plan : null;
+    public PlanDefinition? Find(string tier, int durationMonths) => Plans.Values.FirstOrDefault(plan =>
+        plan.Tier.Equals(tier, StringComparison.OrdinalIgnoreCase) && plan.DurationMonths == durationMonths);
     public PlanDefinition Get(string sku) => Find(sku) ?? throw new SubscriptionDomainException("invalid_sku", "Gói đã chọn không hợp lệ.");
     public EntitlementSnapshot Snapshot(PlanDefinition plan) => new(plan.Tier, plan.PlantLimit, plan.MonthlyAiLimit, Version);
     public EntitlementSnapshot CurrentTier(string tier) => tier.Equals(SubscriptionTiers.Free, StringComparison.OrdinalIgnoreCase)

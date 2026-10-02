@@ -1,3 +1,5 @@
+using Google.Cloud.Firestore;
+using HomePlant.Models;
 using HomePlant.Services;
 
 var catalog = new PlanCatalogService();
@@ -25,10 +27,45 @@ Check(SubscriptionTime.UsageMonth(beforeMidnightUtc) == "2026-09", "quota month 
 Check(SubscriptionTime.UsageMonth(afterMidnightUtc) == "2026-10", "quota month after Vietnam midnight");
 Check(SubscriptionTime.NextUsageReset(beforeMidnightUtc) == afterMidnightUtc, "quota reset instant");
 
+var upgradeNow = new DateTimeOffset(2026, 10, 2, 1, 0, 0, TimeSpan.Zero);
+var silverStart = upgradeNow;
+var silverExpiry = SubscriptionTime.AddCalendarMonths(silverStart, 1);
+var silver = new SubscriptionModel
+{
+    Tier = SubscriptionTiers.Silver,
+    StartsAt = Timestamp.FromDateTimeOffset(silverStart),
+    ExpiresAt = Timestamp.FromDateTimeOffset(silverExpiry),
+    DurationMonths = 1,
+    LastOrderId = "silver-order"
+};
+var fullUpgrade = SubscriptionUpgradePolicy.Quote(silver, catalog.Get("gold_1m"), catalog, upgradeNow);
+Check(fullUpgrade.AmountVnd == 40_000, "fresh Silver monthly upgrade charges exact 40k difference");
+var halfUpgrade = SubscriptionUpgradePolicy.Quote(silver, catalog.Get("gold_1m"), catalog, upgradeNow + (silverExpiry - silverStart) / 2);
+Check(halfUpgrade.AmountVnd == 20_000, "half-used Silver monthly upgrade prorates to 20k");
+Check(fullUpgrade.ExpiresAt == silverExpiry, "upgrade preserves current expiry");
+CheckThrows(() => SubscriptionUpgradePolicy.Quote(silver, catalog.Get("gold_6m"), catalog, upgradeNow), "upgrade requires matching duration");
+var upgradeOrder = new SubscriptionOrderModel
+{
+    OrderKind = SubscriptionOrderKinds.Upgrade,
+    UpgradeFromTier = SubscriptionTiers.Silver,
+    UpgradeSourceOrderId = "silver-order",
+    UpgradeSourceExpiresAt = silver.ExpiresAt
+};
+Check(SubscriptionUpgradePolicy.SourceStillMatches(silver, upgradeOrder, upgradeNow), "upgrade source snapshot matches unchanged subscription");
+silver.LastOrderId = "renewed-order";
+Check(!SubscriptionUpgradePolicy.SourceStillMatches(silver, upgradeOrder, upgradeNow), "upgrade source snapshot rejects concurrent subscription change");
+
 Console.WriteLine("Subscription checks passed.");
 
 static void Check(bool condition, string name)
 {
     if (!condition) throw new Exception($"FAIL {name}");
     Console.WriteLine($"PASS {name}");
+}
+
+static void CheckThrows(Action action, string name)
+{
+    try { action(); }
+    catch (SubscriptionDomainException) { Console.WriteLine($"PASS {name}"); return; }
+    throw new Exception($"FAIL {name}");
 }
