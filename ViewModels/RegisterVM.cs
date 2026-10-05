@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace HomePlant.ViewModels;
 
@@ -17,6 +17,6 @@ public class RegisterVM
     [StringLength(128, MinimumLength = 8)]
     public string Password { get; set; } = "";
 
-    [RegularExpression(@"^[0-9]{8}$", ErrorMessage = "Số điện thoại phải gồm đúng 8 chữ số.")]
+    [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Số điện thoại phải gồm đúng 10 chữ số.")]
     public string? Phone { get; set; }
 }

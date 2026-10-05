@@ -79,12 +79,12 @@
                         <label asp-for="Phone">Số điện thoại <small>(tuỳ chọn)</small></label>
                         <div class="auth-input">
                             <input asp-for="Phone"
-                                   placeholder="Nhập 8 chữ số"
+                                   placeholder="Nhập 10 chữ số"
                                    autocomplete="tel"
                                    inputmode="numeric"
-                                   pattern="[0-9]{8}"
-                                   maxlength="8"
-                                   title="Số điện thoại phải gồm đúng 8 chữ số" />
+                                   pattern="[0-9]{10}"
+                                   maxlength="10"
+                                   title="Số điện thoại phải gồm đúng 10 chữ số" />
                         </div>
                         <span asp-validation-for="Phone" class="auth-err"></span>
                     </div>
