@@ -120,9 +120,16 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(vm);
 
-        var result =
-            await _authService
-            .SignInWithPassword(vm.Email, vm.Password);
+        HomePlant.Services.SignInResult result;
+        try
+        {
+            result = await _authService.SignInWithPassword(vm.Email, vm.Password);
+        }
+        catch
+        {
+            ModelState.AddModelError("", "Dịch vụ đăng nhập tạm thời gián đoạn. Vui lòng thử lại sau ít phút.");
+            return View(vm);
+        }
 
         if (result.AccountNotFound)
         {
