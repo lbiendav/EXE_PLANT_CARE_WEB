@@ -64,6 +64,7 @@ else
 {
     builder.Services.AddDistributedMemoryCache();
 }
+builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection().SetApplicationName("HomePlant");
 
 builder.Services.AddSession(options =>
@@ -296,18 +297,39 @@ app.MapGet("/healthz", () => Results.Ok(new
 
 // Dependency readiness is intentionally separate from liveness so a transient
 // Firestore outage does not cause the platform to restart a healthy process.
+// Caches readiness result for 60 seconds to prevent external uptime probes from burning quota.
+DateTimeOffset lastReadyzCheck = DateTimeOffset.MinValue;
+bool lastReadyzStatus = false;
+var readyzLock = new SemaphoreSlim(1, 1);
+
 app.MapGet("/readyz", async (FirestoreDb firestore, CancellationToken cancellationToken) =>
 {
+    if (DateTimeOffset.UtcNow - lastReadyzCheck < TimeSpan.FromSeconds(60))
+        return lastReadyzStatus ? Results.Ok(new { status = "ready" }) : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
+    await readyzLock.WaitAsync(cancellationToken);
     try
     {
+        if (DateTimeOffset.UtcNow - lastReadyzCheck < TimeSpan.FromSeconds(60))
+            return lastReadyzStatus ? Results.Ok(new { status = "ready" }) : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+
         await firestore.Collection("users").Limit(1).GetSnapshotAsync(cancellationToken);
         if (persistentSessionConfigured)
             await firestore.Collection("system_cache").Limit(1).GetSnapshotAsync(cancellationToken);
+
+        lastReadyzCheck = DateTimeOffset.UtcNow;
+        lastReadyzStatus = true;
         return Results.Ok(new { status = "ready" });
     }
     catch
     {
+        lastReadyzCheck = DateTimeOffset.UtcNow;
+        lastReadyzStatus = false;
         return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+    }
+    finally
+    {
+        readyzLock.Release();
     }
 });
 

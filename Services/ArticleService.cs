@@ -1,27 +1,37 @@
-﻿using Google.Cloud.Firestore;
+using Google.Cloud.Firestore;
 using HomePlant.Models;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace HomePlant.Services;
 
 public class ArticleService
 {
     private readonly FirestoreDb _db;
+    private readonly IMemoryCache? _cache;
+    private const string CacheKey = "HomePlant:Articles:All";
 
-    public ArticleService(FirestoreService firestore)
+    public ArticleService(FirestoreService firestore, IMemoryCache? cache = null)
     {
         _db = firestore.Db;
+        _cache = cache;
     }
 
     public async Task<List<ArticleModel>> GetAll()
     {
+        if (_cache != null && _cache.TryGetValue<List<ArticleModel>>(CacheKey, out var cached) && cached != null)
+            return cached;
+
         var snapshot = await _db
             .Collection("articles")
             .OrderByDescending("createdAt")
             .GetSnapshotAsync();
 
-        return snapshot.Documents
+        var list = snapshot.Documents
             .Select(x => x.ConvertTo<ArticleModel>())
             .ToList();
+
+        _cache?.Set(CacheKey, list, TimeSpan.FromMinutes(10));
+        return list;
     }
 
     public async Task<int> Count() => checked((int)((await _db.Collection("articles").Count().GetSnapshotAsync()).Count ?? 0));
@@ -58,6 +68,7 @@ public class ArticleService
 
     public async Task Add(ArticleModel article)
     {
+        _cache?.Remove(CacheKey);
         await _db.Collection("articles")
             .AddAsync(article);
     }
@@ -66,6 +77,7 @@ public class ArticleService
         string id,
         ArticleModel article)
     {
+        _cache?.Remove(CacheKey);
         await _db
             .Collection("articles")
             .Document(id)
@@ -74,6 +86,7 @@ public class ArticleService
 
     public async Task Delete(string id)
     {
+        _cache?.Remove(CacheKey);
         await _db
             .Collection("articles")
             .Document(id)
@@ -82,13 +95,7 @@ public class ArticleService
 
     public async Task<List<ArticleModel>> GetLatest(int count = 3)
     {
-        var snapshot = await _db
-        .Collection("articles")
-        .OrderByDescending("createdAt")
-        .Limit(count)
-        .GetSnapshotAsync();
-        return snapshot.Documents
-            .Select(x => x.ConvertTo<ArticleModel>())
-            .ToList();
+        var all = await GetAll();
+        return all.Take(count).ToList();
     }
 }

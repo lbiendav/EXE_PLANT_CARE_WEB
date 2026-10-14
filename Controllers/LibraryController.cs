@@ -15,8 +15,15 @@ public class LibraryController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var plants =
-            await _service.GetAll();
+        List<HomePlant.Models.PlantSampleModel> plants;
+        try
+        {
+            plants = await _service.GetAll();
+        }
+        catch
+        {
+            plants = new List<HomePlant.Models.PlantSampleModel>();
+        }
 
         return View(plants);
     }

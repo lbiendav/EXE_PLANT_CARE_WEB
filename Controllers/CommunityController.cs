@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 using HomePlant.Services;
 
@@ -24,6 +24,15 @@ public sealed class CommunityController(
         else
             logger.LogError("Community Facebook group URL is invalid; hiding the Facebook CTA.");
 
-        return View((await posts.GetAll()).Where(post => post.Status == "approved").ToList());
+        List<HomePlant.Models.CommunityPostModel> approved;
+        try
+        {
+            approved = (await posts.GetAll()).Where(post => post.Status == "approved").ToList();
+        }
+        catch
+        {
+            approved = new List<HomePlant.Models.CommunityPostModel>();
+        }
+        return View(approved);
     }
 }

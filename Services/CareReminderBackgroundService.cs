@@ -22,7 +22,9 @@ public sealed class CareReminderBackgroundService : BackgroundService
             _configuration["Notifications:ScanIntervalMinutes"],
             out var configuredMinutes)
             ? Math.Clamp(configuredMinutes, 1, 1440)
-            : 5;
+            : 30;
+
+        await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
 
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(minutes));
         do

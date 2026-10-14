@@ -18,8 +18,15 @@ public class ArticleController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var articles =
-            await _service.GetAll();
+        List<ArticleModel> articles;
+        try
+        {
+            articles = await _service.GetAll();
+        }
+        catch
+        {
+            articles = new List<ArticleModel>();
+        }
 
         ViewBag.IsAdmin = new[] { "admin", "super_admin", "content_admin" }.Contains(
             HttpContext.Session.GetString("Role") ?? "",

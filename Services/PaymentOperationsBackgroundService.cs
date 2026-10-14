@@ -12,7 +12,9 @@ public sealed class PaymentOperationsBackgroundService(
         if (!PaymentModePolicy.ParseMode(configuration["Payments:Mode"]).Equals(PaymentRuntimeMode.Live))
             return;
 
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(2));
+        await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+
+        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(10));
         do
         {
             try

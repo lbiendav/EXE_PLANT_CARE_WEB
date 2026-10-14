@@ -10,10 +10,11 @@ public class HomeController : Controller
     private readonly PlantSampleService _plantSampleService;
     private readonly ArticleService _articleService;
     private readonly IConfiguration _configuration;
-public HomeController(
-    PlantSampleService plantSampleService,
-    ArticleService articleService,
-    IConfiguration configuration)
+
+    public HomeController(
+        PlantSampleService plantSampleService,
+        ArticleService articleService,
+        IConfiguration configuration)
     {
         _plantSampleService = plantSampleService;
         _articleService = articleService;
@@ -22,13 +23,14 @@ public HomeController(
 
     public async Task<IActionResult> Index()
     {
-        var plants =
-            await _plantSampleService.GetTopPlants();
-
-        ViewBag.FeaturedPlants = plants;
-
-        ViewBag.Articles =
-            await _articleService.GetAll();
+        try
+        {
+            ViewBag.Articles = await _articleService.GetAll();
+        }
+        catch
+        {
+            ViewBag.Articles = new List<ArticleModel>();
+        }
 
         return View();
     }

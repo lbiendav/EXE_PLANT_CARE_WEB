@@ -30,6 +30,17 @@ public sealed class PlansController(
                 catch (SubscriptionDomainException) { }
             }
         }
+
+        IReadOnlyDictionary<string, PlanDisplaySetting> settings;
+        try
+        {
+            settings = await planSettings.GetAll();
+        }
+        catch
+        {
+            settings = new Dictionary<string, PlanDisplaySetting>(StringComparer.OrdinalIgnoreCase);
+        }
+
         return View(new PlansVM
         {
             Plans = catalog.GetAll(),
@@ -40,7 +51,7 @@ public sealed class PlansController(
             IsSignedIn = uid != null,
             CheckoutAvailable = checkout.Allowed,
             CheckoutUnavailableMessage = checkout.Message,
-            PlanSettings = await planSettings.GetAll(),
+            PlanSettings = settings,
             UpgradeQuotes = upgradeQuotes
         });
     }
