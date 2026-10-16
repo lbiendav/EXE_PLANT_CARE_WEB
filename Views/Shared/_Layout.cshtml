@@ -7,6 +7,10 @@
     var isPrivilegedAdmin = currentRole.Equals("admin", StringComparison.OrdinalIgnoreCase) || currentRole.Equals("super_admin", StringComparison.OrdinalIgnoreCase);
     var isContentAdmin = currentRole.Equals("content_admin", StringComparison.OrdinalIgnoreCase);
     var isRevenueAdmin = new[] { "finance", "support" }.Contains(currentRole, StringComparer.OrdinalIgnoreCase);
+    var isAdminPage = string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(currentController, "Revenue", StringComparison.OrdinalIgnoreCase) ||
+                      Context.Request.Path.StartsWithSegments("/Admin") ||
+                      Context.Request.Path.StartsWithSegments("/Revenue");
     var gaMeasurementId = Configuration["GoogleAnalytics:MeasurementId"]?.Trim() ?? "";
     var gaEnabled = System.Text.RegularExpressions.Regex.IsMatch(gaMeasurementId, "^G-[A-Z0-9]+$");
     var pageTitle = ViewData["Title"]?.ToString() ?? "HomePlant";
@@ -32,7 +36,7 @@
     <meta property="og:title" content="@pageTitle - HomePlant" />
     <meta property="og:description" content="@description" />
     <meta property="og:url" content="@canonical" />
-    @if (gaEnabled)
+    @if (gaEnabled && !isAdminPage)
     {
         <script async src="https://www.googletagmanager.com/gtag/js?id=@gaMeasurementId"></script>
         <script>

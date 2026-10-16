@@ -50,12 +50,19 @@ public sealed class ActiveUserFilter(
             }
             session.SetString("Role", state.User.Role ?? "user");
 
-            // Automatic activity and session tracking
+            // Automatic activity and session tracking (chỉ theo dõi các trang user dùng, bỏ qua hoàn toàn các trang admin quản trị)
             var controller = context.RouteData.Values["controller"]?.ToString() ?? "";
             var action = context.RouteData.Values["action"]?.ToString() ?? "";
             var method = context.HttpContext.Request.Method;
+            var path = context.HttpContext.Request.Path.Value ?? "/";
 
-            if (!string.Equals(action, "UnreadCount", StringComparison.OrdinalIgnoreCase) &&
+            var isAdminPage = string.Equals(controller, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(controller, "Revenue", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAdminPage &&
+                !string.Equals(action, "UnreadCount", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(action, "UserActivities", StringComparison.OrdinalIgnoreCase))
             {
                 var isNewSession = false;
@@ -70,7 +77,6 @@ public sealed class ActiveUserFilter(
                 if (lastNavKey != currentNavKey || isNewSession)
                 {
                     session.SetString("LastNavKey", currentNavKey);
-                    var path = context.HttpContext.Request.Path.Value ?? "/";
                     var (title, actionName) = ResolveActivity(controller, action, method);
                     _ = activityService.LogActivityAsync(uid, path, title, actionName, isNewSession);
                 }
@@ -109,9 +115,7 @@ public sealed class ActiveUserFilter(
             "plans/index" => ("Bảng giá gói thành viên", "Xem gói dịch vụ"),
             "checkout/index" => ("Thanh toán gói dịch vụ", "Mở trang thanh toán"),
             "notifications/index" => ("Trung tâm thông báo", "Xem thông báo"),
-            "admin/dashboard" => ("Trang tổng quan quản trị", "Quản trị"),
-            "admin/users" => ("Quản lý người dùng", "Quản trị"),
-            "revenue/index" => ("Quản trị doanh thu & chỉ số", "Quản trị"),
+            "account/login" => ("Đăng nhập", "Đăng nhập"),
             _ => ($"{controller} - {action}", isPost ? "Thực hiện thao tác" : "Xem trang")
         };
     }

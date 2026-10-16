@@ -55,7 +55,7 @@ public sealed class GoogleAnalyticsService(
                     new { name = "userEngagementDuration" }
                 },
                 orderBys = new[] { new { metric = new { metricName = "screenPageViews" }, desc = true } },
-                limit = 25
+                limit = 60
             }, cancellationToken);
 
             var dailyTask = RunReportSafe(token, new
@@ -213,6 +213,15 @@ public sealed class GoogleAnalyticsService(
             var dimensions = row.GetProperty("dimensionValues");
             var path = dimensions[0].GetProperty("value").GetString() ?? "/";
             var title = dimensions[1].GetProperty("value").GetString() ?? "";
+
+            // Bỏ các trang của admin quản trị đi, chỉ giữ lại các trang user dùng
+            if (path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             var metricValues = row.GetProperty("metricValues");
             var views = Metric(metricValues, 0);
             var users = Metric(metricValues, 1);

@@ -66,6 +66,8 @@ public class UserActivityService
 
             return snapshot.Documents
                 .Select(doc => doc.ConvertTo<UserActivityModel>())
+                .Where(a => !a.Path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) &&
+                            !a.Path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
         catch (Exception ex)
