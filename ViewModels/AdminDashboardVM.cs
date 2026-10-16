@@ -17,4 +17,6 @@ public class AdminDashboardVM
     public int QaThreadCount { get; set; }
 
     public int AiDiagnosisCount { get; set; }
+
+    public GoogleAnalyticsOverviewVM Analytics { get; set; } = GoogleAnalyticsOverviewVM.NotConfigured;
 }

@@ -76,3 +76,230 @@
     </div>
 
 </div>
+
+<section class="mt-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+        <div>
+            <span class="kicker">Google Analytics 4</span>
+            <h2 class="h3 mb-0">Thống kê lưu lượng & hành vi người dùng</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success">
+                Mở GA4 Console &rarr;
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Analytics.Configured)
+    {
+        <div class="status-panel">
+            <p class="text-muted mb-2">
+                Chưa bật hoặc chưa cấu hình đầy đủ Google Analytics.
+            </p>
+            <p class="small text-muted mb-0">
+                Để kích hoạt: cấu hình <code>GoogleAnalytics:MeasurementId</code> (mã dạng <code>G-XXXXXXXXXX</code> để thu thập truy cập và User-ID) và <code>GoogleAnalytics:PropertyId</code> (mã số Property để hiển thị báo cáo tự động tại đây).
+            </p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.Analytics.Error))
+    {
+        <div class="alert alert-warning">@Model.Analytics.Error</div>
+    }
+    else
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-lg-3 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.Analytics.ActiveUsers30Days.ToString("N0")</strong>
+                    <span>Người truy cập (30 ngày)</span>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.Analytics.Sessions30Days.ToString("N0")</strong>
+                    <span>Phiên hoạt động</span>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.Analytics.PageViews30Days.ToString("N0")</strong>
+                    <span>Lượt xem trang</span>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.Analytics.FormattedAverageEngagement</strong>
+                    <span>Thời gian tương tác TB</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-xl-6">
+                <div class="status-panel h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (14 ngày qua)</h3>
+                        <small class="text-muted">User · Phiên · Lượt xem</small>
+                    </div>
+
+                    @if (Model.Analytics.DailyTrends.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Chưa có đủ dữ liệu theo ngày trong khoảng thời gian này.</p>
+                    }
+                    else
+                    {
+                        var maxDailyUsers = Math.Max(1, Model.Analytics.DailyTrends.Max(d => d.ActiveUsers));
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 70px;">Ngày</th>
+                                        <th>Mật độ User</th>
+                                        <th class="text-end" style="width: 70px;">User</th>
+                                        <th class="text-end" style="width: 70px;">Phiên</th>
+                                        <th class="text-end" style="width: 70px;">Xem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var day in Model.Analytics.DailyTrends)
+                                    {
+                                        var pct = Math.Round((double)day.ActiveUsers / maxDailyUsers * 100);
+                                        <tr>
+                                            <td class="text-nowrap"><strong>@day.DisplayDate</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 6px; background-color: var(--hair-soft);">
+                                                    <div class="progress-bar" role="progressbar" style="width: @(pct)%; background-color: var(--green);" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end font-monospace">@day.ActiveUsers</td>
+                                            <td class="text-end font-monospace text-muted">@day.Sessions</td>
+                                            <td class="text-end font-monospace text-muted">@day.PageViews</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    @if (Model.Analytics.NewUsers30Days > 0 || Model.Analytics.ReturningUsers30Days > 0)
+                    {
+                        <div class="mt-3 pt-3 border-top border-secondary-subtle d-flex justify-content-around small">
+                            <span>Người dùng mới: <strong class="text-success">@Model.Analytics.NewUsers30Days.ToString("N0")</strong></span>
+                            <span>Khách quay lại: <strong class="text-info">@Model.Analytics.ReturningUsers30Days.ToString("N0")</strong></span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-xl-6">
+                <div class="status-panel h-100 d-flex flex-column justify-content-between">
+                    <div>
+                        <h3 class="h6 text-uppercase mb-3">Nguồn truy cập (Traffic Sources)</h3>
+                        @if (Model.Analytics.TrafficSources.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">Chưa ghi nhận nguồn traffic.</p>
+                        }
+                        else
+                        {
+                            @foreach (var source in Model.Analytics.TrafficSources)
+                            {
+                                <div class="analytics-row">
+                                    <span>@source.Label</span>
+                                    <strong>@source.Value.ToString("N0") phiên</strong>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="p-3 mt-3 rounded" style="background: rgba(46, 125, 50, 0.08); border: 1px dashed var(--green);">
+                        <h4 class="h6 mb-1 text-success">Theo dõi hành vi của TỪNG USER cụ thể</h4>
+                        <p class="small text-muted mb-2">
+                            Website đã tự động đồng bộ <code>User-ID</code> của từng tài khoản đăng nhập lên GA4.
+                        </p>
+                        <p class="small text-muted mb-0">
+                            Để xem số lần truy cập, số ngày quay lại, và các trang xem chi tiết của một tài khoản: Mở <strong>Google Analytics &gt; Khám phá (Explore) &gt; Khám phá người dùng (User Explorer)</strong> và tra cứu theo UID của tài khoản.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="status-panel h-100">
+                    <h3 class="h6 text-uppercase mb-3">Trang được truy cập nhiều nhất & Thời gian trên trang</h3>
+                    @if (Model.Analytics.PopularPages.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Chưa có dữ liệu trang.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Trang / Đường dẫn</th>
+                                        <th class="text-end">Lượt xem</th>
+                                        <th class="text-end">Số User</th>
+                                        <th class="text-end">Thời gian TB</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Analytics.PopularPages)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="d-block text-truncate" style="max-width: 320px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</strong>
+                                                <code class="small text-muted">@item.Path</code>
+                                            </td>
+                                            <td class="text-end font-monospace">@item.Views.ToString("N0")</td>
+                                            <td class="text-end font-monospace text-muted">@item.Users.ToString("N0")</td>
+                                            <td class="text-end text-nowrap"><span class="badge bg-success-subtle text-success border border-success-subtle">@item.FormattedDuration</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="status-panel h-100">
+                    <h3 class="h6 text-uppercase mb-3">Trang ít lượt xem nhất (Cần tối ưu nội dung)</h3>
+                    @if (Model.Analytics.LeastVisitedPages.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Chưa có dữ liệu thống kê trang ít xem.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Trang</th>
+                                        <th class="text-end">Lượt xem</th>
+                                        <th class="text-end">Thời gian TB</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.Analytics.LeastVisitedPages)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="d-block text-truncate" style="max-width: 220px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</span>
+                                                <code class="small text-muted">@item.Path</code>
+                                            </td>
+                                            <td class="text-end font-monospace text-warning">@item.Views.ToString("N0")</td>
+                                            <td class="text-end text-nowrap"><span class="badge bg-secondary-subtle text-muted">@item.FormattedDuration</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</section>

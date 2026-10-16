@@ -20,6 +20,7 @@ public class AdminController : Controller
     private readonly QaThreadService _qaThreadService;
     private readonly AiDiagnosisService _aiDiagnosisService;
     private readonly ImageStorageService _imageStorage;
+    private readonly GoogleAnalyticsService _analyticsService;
 
     public AdminController(
         UserService userService,
@@ -30,7 +31,8 @@ public class AdminController : Controller
         CommunityPostService communityPostService,
         QaThreadService qaThreadService,
         AiDiagnosisService aiDiagnosisService,
-        ImageStorageService imageStorage)
+        ImageStorageService imageStorage,
+        GoogleAnalyticsService analyticsService)
     {
         _userService = userService;
         _articleService = articleService;
@@ -41,10 +43,11 @@ public class AdminController : Controller
         _qaThreadService = qaThreadService;
         _aiDiagnosisService = aiDiagnosisService;
         _imageStorage = imageStorage;
+        _analyticsService = analyticsService;
     }
 
     [PrivilegedAdminOnly]
-    public async Task<IActionResult> Dashboard()
+    public async Task<IActionResult> Dashboard(CancellationToken cancellationToken = default)
     {
         var userCount = _userService.Count();
         var articleCount = _articleService.Count();
@@ -54,8 +57,10 @@ public class AdminController : Controller
         var qaCount = _qaThreadService.Count();
         var diagnosisCount = _aiDiagnosisService.Count();
         var gardenCount = _userPlantService.CountAll();
+        var analyticsTask = _analyticsService.GetOverview(cancellationToken);
+
         await Task.WhenAll(userCount, articleCount, templateCount, sampleCount,
-            communityCount, qaCount, diagnosisCount, gardenCount);
+            communityCount, qaCount, diagnosisCount, gardenCount, analyticsTask);
 
         var vm = new AdminDashboardVM
         {
@@ -66,7 +71,8 @@ public class AdminController : Controller
             GardenPlantCount = gardenCount.Result,
             CommunityPostCount = communityCount.Result,
             QaThreadCount = qaCount.Result,
-            AiDiagnosisCount = diagnosisCount.Result
+            AiDiagnosisCount = diagnosisCount.Result,
+            Analytics = analyticsTask.Result
         };
 
         return View(vm);

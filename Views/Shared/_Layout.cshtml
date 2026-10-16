@@ -3,6 +3,7 @@
 @{
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var currentRole = Context.Session.GetString("Role") ?? "";
+    var currentUid = Context.Session.GetString("Uid");
     var isPrivilegedAdmin = currentRole.Equals("admin", StringComparison.OrdinalIgnoreCase) || currentRole.Equals("super_admin", StringComparison.OrdinalIgnoreCase);
     var isContentAdmin = currentRole.Equals("content_admin", StringComparison.OrdinalIgnoreCase);
     var isRevenueAdmin = new[] { "finance", "support" }.Contains(currentRole, StringComparer.OrdinalIgnoreCase);
@@ -38,7 +39,12 @@
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '@gaMeasurementId', { 'allow_google_signals': false, 'allow_ad_personalization_signals': false });
+            var gaConfig = { 'allow_google_signals': false, 'allow_ad_personalization_signals': false };
+            @if (!string.IsNullOrEmpty(currentUid))
+            {
+                <text>gaConfig['user_id'] = '@currentUid';</text>
+            }
+            gtag('config', '@gaMeasurementId', gaConfig);
         </script>
     }
     <link rel="icon" type="image/png" sizes="64x64" href="~/images/brand/homeplant-favicon.png" />
