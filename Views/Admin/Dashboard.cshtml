@@ -143,11 +143,11 @@
                     </div>
 
                     <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
-                        <span class="small text-muted d-block mb-1 text-uppercase fw-semibold" style="letter-spacing: .08em;">Trung bình 1 ngày (dựa trên 3 ngày gần nhất)</span>
+                        <span class="small text-muted d-block mb-1 text-uppercase fw-semibold" style="letter-spacing: .08em;">Trung bình 1 ngày (trong 30 ngày qua)</span>
                         <div class="d-flex flex-wrap gap-4 align-items-baseline">
-                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyUsers3Days.ToString("N1")</strong> <small class="text-muted">user / ngày</small></div>
-                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailySessions3Days.ToString("N1")</strong> <small class="text-muted">phiên / ngày</small></div>
-                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyPageViews3Days.ToString("N1")</strong> <small class="text-muted">lượt xem / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyUsers30Days.ToString("N1")</strong> <small class="text-muted">user / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailySessions30Days.ToString("N1")</strong> <small class="text-muted">phiên / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyPageViews30Days.ToString("N1")</strong> <small class="text-muted">lượt xem / ngày</small></div>
                         </div>
                     </div>
 

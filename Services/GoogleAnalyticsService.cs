@@ -107,10 +107,10 @@ public sealed class GoogleAnalyticsService(
             var dailyTrends = DailyRows(dailyTask.Result?.RootElement);
             var (newUsers, returningUsers) = RetentionUsers(retentionTask.Result?.RootElement);
 
-            var last3Days = dailyTrends.TakeLast(3).ToList();
-            double avgDailyUsers = last3Days.Count > 0 ? (double)last3Days.Sum(d => d.ActiveUsers) / last3Days.Count : 0;
-            double avgDailySessions = last3Days.Count > 0 ? (double)last3Days.Sum(d => d.Sessions) / last3Days.Count : 0;
-            double avgDailyPageViews = last3Days.Count > 0 ? (double)last3Days.Sum(d => d.PageViews) / last3Days.Count : 0;
+            var daysCount = Math.Max(1, dailyTrends.Count);
+            double avgDailyUsers = (double)dailyTrends.Sum(d => d.ActiveUsers) / daysCount;
+            double avgDailySessions = (double)dailyTrends.Sum(d => d.Sessions) / daysCount;
+            double avgDailyPageViews = (double)dailyTrends.Sum(d => d.PageViews) / daysCount;
 
             return new GoogleAnalyticsOverviewVM
             {
@@ -121,9 +121,9 @@ public sealed class GoogleAnalyticsService(
                 PageViews30Days = pageViews,
                 NewUsers30Days = newUsers,
                 ReturningUsers30Days = returningUsers,
-                AverageDailyUsers3Days = avgDailyUsers,
-                AverageDailySessions3Days = avgDailySessions,
-                AverageDailyPageViews3Days = avgDailyPageViews,
+                AverageDailyUsers30Days = avgDailyUsers,
+                AverageDailySessions30Days = avgDailySessions,
+                AverageDailyPageViews30Days = avgDailyPageViews,
                 AverageEngagementSeconds = avgEngagement,
                 TrafficSources = Rows(sourcesTask.Result?.RootElement, 1, 1),
                 PopularPages = popularPages,
