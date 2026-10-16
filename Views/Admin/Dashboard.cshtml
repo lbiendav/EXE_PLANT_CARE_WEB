@@ -138,8 +138,17 @@
             <div class="col-xl-6">
                 <div class="status-panel h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (14 ngày qua)</h3>
+                        <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (30 ngày qua)</h3>
                         <small class="text-muted">User · Phiên · Lượt xem</small>
+                    </div>
+
+                    <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
+                        <span class="small text-muted d-block mb-1 text-uppercase fw-semibold" style="letter-spacing: .08em;">Trung bình 1 ngày (dựa trên 3 ngày gần nhất)</span>
+                        <div class="d-flex flex-wrap gap-4 align-items-baseline">
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyUsers3Days.ToString("N1")</strong> <small class="text-muted">user / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailySessions3Days.ToString("N1")</strong> <small class="text-muted">phiên / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.Analytics.AverageDailyPageViews3Days.ToString("N1")</strong> <small class="text-muted">lượt xem / ngày</small></div>
+                        </div>
                     </div>
 
                     @if (Model.Analytics.DailyTrends.Count == 0)
@@ -180,14 +189,6 @@
                             </table>
                         </div>
                     }
-
-                    @if (Model.Analytics.NewUsers30Days > 0 || Model.Analytics.ReturningUsers30Days > 0)
-                    {
-                        <div class="mt-3 pt-3 border-top border-secondary-subtle d-flex justify-content-around small">
-                            <span>Người dùng mới: <strong class="text-success">@Model.Analytics.NewUsers30Days.ToString("N0")</strong></span>
-                            <span>Khách quay lại: <strong class="text-info">@Model.Analytics.ReturningUsers30Days.ToString("N0")</strong></span>
-                        </div>
-                    }
                 </div>
             </div>
 
@@ -214,11 +215,12 @@
                     <div class="p-3 mt-3 rounded" style="background: rgba(46, 125, 50, 0.08); border: 1px dashed var(--green);">
                         <h4 class="h6 mb-1 text-success">Theo dõi hành vi của TỪNG USER cụ thể</h4>
                         <p class="small text-muted mb-2">
-                            Website đã tự động đồng bộ <code>User-ID</code> của từng tài khoản đăng nhập lên GA4.
+                            Website đã tự động lưu nhật ký hoạt động trực tiếp vào cơ sở dữ liệu và đồng bộ User-ID lên GA4.
                         </p>
-                        <p class="small text-muted mb-0">
-                            Để xem số lần truy cập, số ngày quay lại, và các trang xem chi tiết của một tài khoản: Mở <strong>Google Analytics &gt; Khám phá (Explore) &gt; Khám phá người dùng (User Explorer)</strong> và tra cứu theo UID của tài khoản.
+                        <p class="small text-muted mb-3">
+                            Xem chi tiết số lần ghé thăm, lần cuối vào web và dòng thời gian thao tác của từng tài khoản ngay trên web:
                         </p>
+                        <a asp-action="Users" class="btn btn-sm btn-outline-success">Xem nhật ký & hoạt động từng User &rarr;</a>
                     </div>
                 </div>
             </div>

@@ -21,6 +21,7 @@ public class AdminController : Controller
     private readonly AiDiagnosisService _aiDiagnosisService;
     private readonly ImageStorageService _imageStorage;
     private readonly GoogleAnalyticsService _analyticsService;
+    private readonly UserActivityService _activityService;
 
     public AdminController(
         UserService userService,
@@ -32,7 +33,8 @@ public class AdminController : Controller
         QaThreadService qaThreadService,
         AiDiagnosisService aiDiagnosisService,
         ImageStorageService imageStorage,
-        GoogleAnalyticsService analyticsService)
+        GoogleAnalyticsService analyticsService,
+        UserActivityService activityService)
     {
         _userService = userService;
         _articleService = articleService;
@@ -44,6 +46,7 @@ public class AdminController : Controller
         _aiDiagnosisService = aiDiagnosisService;
         _imageStorage = imageStorage;
         _analyticsService = analyticsService;
+        _activityService = activityService;
     }
 
     [PrivilegedAdminOnly]
@@ -84,6 +87,24 @@ public class AdminController : Controller
         var users = await _userService.GetAll();
 
         return View(users);
+    }
+
+    [HttpGet]
+    [PrivilegedAdminOnly]
+    public async Task<IActionResult> UserActivities(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return Json(new object[] { });
+        var activities = await _activityService.GetUserActivitiesAsync(id, 60);
+        return Json(activities.Select(a => new
+        {
+            id = a.Id,
+            path = a.Path,
+            title = a.Title,
+            action = a.Action,
+            formattedTime = a.FormattedTime,
+            formattedDate = a.FormattedDate,
+            formattedDateTime = a.FormattedDateTime
+        }));
     }
 
     [HttpPost]

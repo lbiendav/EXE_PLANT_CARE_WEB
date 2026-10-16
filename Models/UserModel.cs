@@ -1,4 +1,4 @@
-﻿using Google.Cloud.Firestore;
+using Google.Cloud.Firestore;
 
 namespace HomePlant.Models;
 
@@ -34,4 +34,10 @@ public class UserModel
 
     [FirestoreProperty("emailCareReminders")]
     public bool EmailCareReminders { get; set; }
+
+    [FirestoreProperty("visitCount")]
+    public int VisitCount { get; set; }
+
+    [FirestoreProperty("lastActiveAt")]
+    public DateTime? LastActiveAt { get; set; }
 }

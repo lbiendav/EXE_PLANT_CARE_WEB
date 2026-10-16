@@ -49,6 +49,9 @@ public sealed class GoogleAnalyticsOverviewVM
     public long PageViews30Days { get; init; }
     public long NewUsers30Days { get; init; }
     public long ReturningUsers30Days { get; init; }
+    public double AverageDailyUsers3Days { get; init; }
+    public double AverageDailySessions3Days { get; init; }
+    public double AverageDailyPageViews3Days { get; init; }
     public double AverageEngagementSeconds { get; init; }
     public string FormattedAverageEngagement
     {

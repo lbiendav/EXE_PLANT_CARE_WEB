@@ -28,6 +28,8 @@
                     <th>Người dùng</th>
                     <th>Email</th>
                     <th>Vai trò</th>
+                    <th>Số lần ghé thăm</th>
+                    <th>Lần cuối vào web</th>
                     <th>Trạng thái</th>
                     <th></th>
                 </tr>
@@ -37,6 +39,11 @@
 
                 @foreach (var user in Model)
                 {
+                    var lastSeen = user.LastActiveAt.HasValue
+                        ? (user.LastActiveAt.Value.Kind == DateTimeKind.Utc ? user.LastActiveAt.Value.AddHours(7) : user.LastActiveAt.Value).ToString("dd/MM/yyyy HH:mm")
+                        : (user.CreatedAt.Kind == DateTimeKind.Utc ? user.CreatedAt.AddHours(7) : user.CreatedAt).ToString("dd/MM/yyyy HH:mm");
+                    var safeName = user.FullName.Replace("'", "\\'");
+                    var safeEmail = user.Email.Replace("'", "\\'");
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
@@ -56,6 +63,16 @@
                         </td>
 
                         <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle font-monospace">
+                                @(user.VisitCount > 0 ? user.VisitCount : 1) lần
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="small text-muted font-monospace">@lastSeen</span>
+                        </td>
+
+                        <td>
                             @if (user.IsLocked)
                             {
                                 <span class="badge bg-danger">Đã khóa</span>
@@ -67,22 +84,27 @@
                         </td>
 
                         <td>
-                            @if (user.Id == Context.Session.GetString("Uid"))
-                            {
-                                <span class="text-muted small">Tài khoản hiện tại</span>
-                            }
-                            else if (!user.IsLocked)
-                            {
-<form asp-action="Ban" asp-route-id="@user.Id" method="post" class="d-inline" onsubmit="return confirm('Khóa tài khoản này?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">Khóa</button>
-                                </form>
-                            }
-                            else
-                            {
-<form asp-action="UnBan" asp-route-id="@user.Id" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-success btn-sm">Mở khóa</button>
-                                </form>
-                            }
+                            <div class="d-flex flex-wrap gap-1 align-items-center">
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="showUserActivities('@user.Id', '@safeName', '@safeEmail')">
+                                    Nhật ký hoạt động
+                                </button>
+                                @if (user.Id == Context.Session.GetString("Uid"))
+                                {
+                                    <span class="text-muted small ms-1">Tài khoản hiện tại</span>
+                                }
+                                else if (!user.IsLocked)
+                                {
+                                    <form asp-action="Ban" asp-route-id="@user.Id" method="post" class="d-inline" onsubmit="return confirm('Khóa tài khoản này?');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Khóa</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="UnBan" asp-route-id="@user.Id" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-outline-success btn-sm">Mở khóa</button>
+                                    </form>
+                                }
+                            </div>
                             @if (user.Id != Context.Session.GetString("Uid"))
                             {
                                 <form asp-action="UpdateRole" asp-route-id="@user.Id" method="post" class="d-flex gap-1 mt-2">
@@ -103,3 +125,85 @@
         </table>
     </div>
 </div>
+
+<!-- Modal xem nhật ký hoạt động của từng User -->
+<div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background-color: var(--bg-surface, #15221c); color: var(--ink, #e0ede4); border: 1px solid var(--hair-soft, rgba(208, 234, 144, 0.2));">
+            <div class="modal-header border-bottom border-secondary-subtle">
+                <div>
+                    <h5 class="modal-title h5 mb-0" id="activityModalTitle">Dòng thời gian hoạt động</h5>
+                    <small class="text-muted" id="modalUserSubtitle"><span id="modalUserName"></span> · <code id="modalUserEmail"></code></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+                <div id="modalLoading" class="text-center py-4">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Đang tải nhật ký hoạt động...</p>
+                </div>
+                <div id="modalEmpty" class="text-center py-4 d-none">
+                    <p class="text-muted mb-0">Chưa ghi nhận hoạt động nào của người dùng này.</p>
+                </div>
+                <div id="modalTimeline" class="d-none"></div>
+            </div>
+            <div class="modal-footer border-top border-secondary-subtle">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function showUserActivities(userId, fullName, email) {
+    document.getElementById('modalUserName').innerText = fullName;
+    document.getElementById('modalUserEmail').innerText = email;
+    const loading = document.getElementById('modalLoading');
+    const empty = document.getElementById('modalEmpty');
+    const timeline = document.getElementById('modalTimeline');
+
+    loading.classList.remove('d-none');
+    empty.classList.add('d-none');
+    timeline.classList.add('d-none');
+    timeline.innerHTML = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('activityModal'));
+    modal.show();
+
+    fetch('/Admin/UserActivities?id=' + encodeURIComponent(userId))
+        .then(res => res.json())
+        .then(data => {
+            loading.classList.add('d-none');
+            if (!data || data.length === 0) {
+                empty.classList.remove('d-none');
+                return;
+            }
+            timeline.classList.remove('d-none');
+            let html = '<div class="list-group list-group-flush">';
+            data.forEach(item => {
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-start py-2 px-0 border-secondary-subtle" style="background: transparent; color: inherit;">
+                        <div class="me-3">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle me-2">${item.action}</span>
+                            <strong>${item.title}</strong>
+                            <code class="small text-muted d-block mt-1">${item.path}</code>
+                        </div>
+                        <div class="text-end text-nowrap">
+                            <span class="d-block small text-muted font-monospace">${item.formattedTime}</span>
+                            <span class="d-block small text-secondary">${item.formattedDate}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            timeline.innerHTML = html;
+        })
+        .catch(err => {
+            loading.classList.add('d-none');
+            empty.classList.remove('d-none');
+            empty.innerHTML = '<span class="text-danger">Không thể tải nhật ký hoạt động. Vui lòng thử lại.</span>';
+        });
+}
+</script>
+}

@@ -195,6 +195,7 @@ builder.Services.AddScoped<FirebaseAuthService>();
 builder.Services.AddScoped<CareLogService>();
 builder.Services.AddScoped<ArticleService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<UserActivityService>();
 builder.Services.AddScoped<PlantSampleService>();
 builder.Services.AddScoped<UserPlantService>();
 builder.Services.AddScoped<PlantTemplateService>();
