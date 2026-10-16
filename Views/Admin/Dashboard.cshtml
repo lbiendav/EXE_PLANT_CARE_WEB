@@ -139,7 +139,7 @@
                 <div class="status-panel h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (30 ngày qua)</h3>
-                        <small class="text-muted">User · Phiên · Lượt xem</small>
+                        <small class="text-muted">Tổng · Mới · Cũ · Phiên · Xem</small>
                     </div>
 
                     <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
@@ -162,11 +162,13 @@
                             <table class="table table-sm align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th style="width: 70px;">Ngày</th>
-                                        <th>Mật độ User</th>
-                                        <th class="text-end" style="width: 70px;">User</th>
-                                        <th class="text-end" style="width: 70px;">Phiên</th>
-                                        <th class="text-end" style="width: 70px;">Xem</th>
+                                        <th style="width: 65px;">Ngày</th>
+                                        <th>Mật độ</th>
+                                        <th class="text-end" style="width: 55px;" title="Tổng số User trong ngày">Tổng</th>
+                                        <th class="text-end text-success" style="width: 55px;" title="User mới truy cập lần đầu">Mới</th>
+                                        <th class="text-end text-info" style="width: 55px;" title="User cũ quay lại">Cũ</th>
+                                        <th class="text-end" style="width: 55px;">Phiên</th>
+                                        <th class="text-end" style="width: 55px;">Xem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -180,7 +182,9 @@
                                                     <div class="progress-bar" role="progressbar" style="width: @(pct)%; background-color: var(--green);" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
                                                 </div>
                                             </td>
-                                            <td class="text-end font-monospace">@day.ActiveUsers</td>
+                                            <td class="text-end font-monospace fw-semibold">@day.ActiveUsers</td>
+                                            <td class="text-end font-monospace text-success">@day.NewUsers</td>
+                                            <td class="text-end font-monospace text-info">@day.ReturningUsers</td>
                                             <td class="text-end font-monospace text-muted">@day.Sessions</td>
                                             <td class="text-end font-monospace text-muted">@day.PageViews</td>
                                         </tr>

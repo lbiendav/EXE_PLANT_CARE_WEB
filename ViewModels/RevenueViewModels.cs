@@ -73,7 +73,7 @@ public sealed class GoogleAnalyticsOverviewVM
 
 public sealed record AnalyticsRowVM(string Label, long Value);
 
-public sealed record AnalyticsDailyRowVM(string DateKey, string DisplayDate, long ActiveUsers, long Sessions, long PageViews);
+public sealed record AnalyticsDailyRowVM(string DateKey, string DisplayDate, long ActiveUsers, long Sessions, long PageViews, long NewUsers = 0, long ReturningUsers = 0);
 
 public sealed record AnalyticsPageDetailVM(
     string Path,

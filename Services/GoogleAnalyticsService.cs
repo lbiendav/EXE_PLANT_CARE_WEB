@@ -65,7 +65,8 @@ public sealed class GoogleAnalyticsService(
                 metrics = new[] {
                     new { name = "activeUsers" },
                     new { name = "sessions" },
-                    new { name = "screenPageViews" }
+                    new { name = "screenPageViews" },
+                    new { name = "newUsers" }
                 },
                 orderBys = new[] { new { dimension = new { dimensionName = "date" }, desc = false } }
             }, cancellationToken);
@@ -193,12 +194,19 @@ public sealed class GoogleAnalyticsService(
                 ? dt.ToString("dd/MM")
                 : rawDate;
             var metricValues = row.GetProperty("metricValues");
+            var active = Metric(metricValues, 0);
+            var sessions = Metric(metricValues, 1);
+            var views = Metric(metricValues, 2);
+            var newUsers = Metric(metricValues, 3);
+            var returningUsers = Math.Max(0, active - newUsers);
             list.Add(new AnalyticsDailyRowVM(
                 rawDate,
                 displayDate,
-                Metric(metricValues, 0),
-                Metric(metricValues, 1),
-                Metric(metricValues, 2)
+                active,
+                sessions,
+                views,
+                newUsers,
+                returningUsers
             ));
         }
         return list;
