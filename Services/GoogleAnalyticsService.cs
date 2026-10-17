@@ -18,21 +18,27 @@ public sealed class GoogleAnalyticsService(
     private static GoogleAnalyticsOverviewVM? _cachedOverview;
     private static DateTimeOffset _cachedAt = DateTimeOffset.MinValue;
     private static readonly SemaphoreSlim _cacheLock = new(1, 1);
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
     public bool IsConfigured => long.TryParse(_propertyId, out _);
 
     public async Task<GoogleAnalyticsOverviewVM> GetOverview(CancellationToken cancellationToken = default)
     {
         if (!IsConfigured) return GoogleAnalyticsOverviewVM.NotConfigured;
-        if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromMinutes(3))
+        if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < CacheDuration)
         {
             return _cachedOverview;
         }
 
-        await _cacheLock.WaitAsync(cancellationToken);
+        var acquired = await _cacheLock.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        if (!acquired)
+        {
+            return _cachedOverview ?? GoogleAnalyticsOverviewVM.NotConfigured;
+        }
+
         try
         {
-            if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromMinutes(3))
+            if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < CacheDuration)
             {
                 return _cachedOverview;
             }
@@ -47,7 +53,8 @@ public sealed class GoogleAnalyticsService(
                     new { name = "activeUsers" },
                     new { name = "sessions" },
                     new { name = "screenPageViews" },
-                    new { name = "userEngagementDuration" }
+                    new { name = "userEngagementDuration" },
+                    new { name = "bounceRate" }
                 }
             }, cancellationToken);
 
@@ -93,7 +100,37 @@ public sealed class GoogleAnalyticsService(
                 metrics = new[] { new { name = "activeUsers" } }
             }, cancellationToken);
 
-            await Task.WhenAll(summaryTask, sourcesTask, pagesTask, dailyTask, retentionTask);
+            var devicesTask = RunReportSafe(token, new
+            {
+                dateRanges = new[] { new { startDate = "30daysAgo", endDate = "today" } },
+                dimensions = new[] { new { name = "deviceCategory" } },
+                metrics = new[] { new { name = "sessions" } },
+                orderBys = new[] { new { metric = new { metricName = "sessions" }, desc = true } },
+                limit = 5
+            }, cancellationToken);
+
+            var landingPagesTask = RunReportSafe(token, new
+            {
+                dateRanges = new[] { new { startDate = "30daysAgo", endDate = "today" } },
+                dimensions = new[] { new { name = "landingPage" }, new { name = "pageTitle" } },
+                metrics = new[] {
+                    new { name = "sessions" },
+                    new { name = "bounceRate" }
+                },
+                orderBys = new[] { new { metric = new { metricName = "sessions" }, desc = true } },
+                limit = 10
+            }, cancellationToken);
+
+            var countriesTask = RunReportSafe(token, new
+            {
+                dateRanges = new[] { new { startDate = "30daysAgo", endDate = "today" } },
+                dimensions = new[] { new { name = "country" } },
+                metrics = new[] { new { name = "sessions" } },
+                orderBys = new[] { new { metric = new { metricName = "sessions" }, desc = true } },
+                limit = 5
+            }, cancellationToken);
+
+            await Task.WhenAll(summaryTask, sourcesTask, pagesTask, dailyTask, retentionTask, devicesTask, landingPagesTask, countriesTask);
 
             var summaryDoc = summaryTask.Result;
             if (summaryDoc == null)
@@ -113,6 +150,7 @@ public sealed class GoogleAnalyticsService(
             var sessions = Metric(metricValues, 1);
             var pageViews = Metric(metricValues, 2);
             var totalDuration = MetricDouble(metricValues, 3);
+            var bounceRate = MetricDouble(metricValues, 4);
             var avgEngagement = activeUsers > 0 ? totalDuration / activeUsers : 0;
 
             var allPages = PageRows(pagesTask.Result?.RootElement);
@@ -140,10 +178,14 @@ public sealed class GoogleAnalyticsService(
                 AverageDailySessions30Days = avgDailySessions,
                 AverageDailyPageViews30Days = avgDailyPageViews,
                 AverageEngagementSeconds = avgEngagement,
-                TrafficSources = Rows(sourcesTask.Result?.RootElement, 1, 1),
+                BounceRate = bounceRate,
+                TrafficSources = Rows(sourcesTask.Result?.RootElement, 1, 0),
                 PopularPages = popularPages,
                 LeastVisitedPages = leastPages,
-                DailyTrends = dailyTrends
+                DailyTrends = dailyTrends,
+                DeviceBreakdown = Rows(devicesTask.Result?.RootElement, 1, 0),
+                LandingPages = LandingPageRows(landingPagesTask.Result?.RootElement),
+                Countries = Rows(countriesTask.Result?.RootElement, 1, 0)
             };
             _cachedOverview = overview;
             _cachedAt = DateTimeOffset.UtcNow;
@@ -201,7 +243,7 @@ public sealed class GoogleAnalyticsService(
             var dimensions = row.GetProperty("dimensionValues");
             var label = string.Join(" · ", Enumerable.Range(0, dimensionCount)
                 .Select(i => dimensions[i].GetProperty("value").GetString()).Where(x => !string.IsNullOrWhiteSpace(x)));
-            return new AnalyticsRowVM(label, Metric(row.GetProperty("metricValues"), metricIndex - 1));
+            return new AnalyticsRowVM(label, Metric(row.GetProperty("metricValues"), metricIndex));
         }).ToList();
     }
 
@@ -257,6 +299,31 @@ public sealed class GoogleAnalyticsService(
             var users = Metric(metricValues, 1);
             var duration = MetricDouble(metricValues, 2);
             list.Add(new AnalyticsPageDetailVM(path, title, views, users, duration));
+        }
+        return list;
+    }
+
+    private static IReadOnlyList<AnalyticsLandingPageVM> LandingPageRows(JsonElement? root)
+    {
+        if (root == null || !root.Value.TryGetProperty("rows", out var rows)) return [];
+        var list = new List<AnalyticsLandingPageVM>();
+        foreach (var row in rows.EnumerateArray())
+        {
+            var dimensions = row.GetProperty("dimensionValues");
+            var path = dimensions[0].GetProperty("value").GetString() ?? "/";
+            var title = dimensions.GetArrayLength() > 1 ? dimensions[1].GetProperty("value").GetString() ?? "" : "";
+
+            if (path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var metricValues = row.GetProperty("metricValues");
+            var sessions = Metric(metricValues, 0);
+            var bounceRate = MetricDouble(metricValues, 1);
+            list.Add(new AnalyticsLandingPageVM(path, title, sessions, bounceRate));
         }
         return list;
     }

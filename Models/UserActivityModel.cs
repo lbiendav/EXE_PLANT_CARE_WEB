@@ -25,25 +25,3 @@ public class UserActivityModel
     public string FormattedDate => LocalVnTime.ToString("dd/MM/yyyy");
     public string FormattedDateTime => LocalVnTime.ToString("dd/MM/yyyy HH:mm:ss");
 }
-
-public class DailyUserSummaryVM
-{
-    public string Uid { get; set; } = "";
-    public string FullName { get; set; } = "";
-    public string Email { get; set; } = "";
-    public string AvatarUrl { get; set; } = "";
-    public bool IsNew { get; set; }
-    public bool IsGuest { get; set; }
-    public int SessionCount { get; set; } = 1;
-    public int PageViewCount { get; set; } = 1;
-    public string LastActiveTime { get; set; } = "";
-    public List<UserActivityItemVM> Activities { get; set; } = [];
-}
-
-public class UserActivityItemVM
-{
-    public string Path { get; set; } = "";
-    public string Title { get; set; } = "";
-    public string Action { get; set; } = "Xem trang";
-    public string Time { get; set; } = "";
-}

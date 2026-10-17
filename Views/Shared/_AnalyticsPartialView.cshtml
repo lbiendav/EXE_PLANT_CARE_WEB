@@ -1,0 +1,576 @@
+@model HomePlant.ViewModels.GoogleAnalyticsOverviewVM
+
+<section class="mt-4 mb-4" aria-labelledby="ga4-analytics-title">
+    <div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+        <div>
+            <span class="kicker">Google Analytics 4 & SEO</span>
+            <h2 id="ga4-analytics-title" class="h3 mb-0">Thống kê lưu lượng, hành vi & hiệu suất website</h2>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge @(Model.Available ? "bg-success" : "bg-secondary")">@(Model.Available ? "Đang đồng bộ GA4" : "Chưa có dữ liệu")</span>
+            <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success">
+                Mở GA4 Console &rarr;
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Configured)
+    {
+        <div class="status-panel">
+            <p class="text-muted mb-2">
+                Chưa bật hoặc chưa cấu hình đầy đủ Google Analytics.
+            </p>
+            <p class="small text-muted mb-0">
+                Để kích hoạt: cấu hình <code>GoogleAnalytics:MeasurementId</code> (mã dạng <code>G-XXXXXXXXXX</code> để thu thập truy cập) và <code>GoogleAnalytics:PropertyId</code> (mã số Property để hiển thị báo cáo tự động tại đây).
+            </p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.Error))
+    {
+        <div class="alert alert-warning">@Model.Error</div>
+    }
+    else
+    {
+        <!-- 5 Cards Chỉ số Tổng Quan (Bao gồm Bounce Rate chuẩn SEO) -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.ActiveUsers30Days.ToString("N0")</strong>
+                    <span>Người truy cập (30 ngày)</span>
+                </div>
+            </div>
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.Sessions30Days.ToString("N0")</strong>
+                    <span>Phiên hoạt động</span>
+                </div>
+            </div>
+            <div class="col-xl col-md-4 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.PageViews30Days.ToString("N0")</strong>
+                    <span>Lượt xem trang</span>
+                </div>
+            </div>
+            <div class="col-xl col-md-6 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.FormattedAverageEngagement</strong>
+                    <span>Thời gian tương tác TB</span>
+                </div>
+            </div>
+            <div class="col-xl col-md-6 col-sm-6">
+                <div class="status-panel analytics-metric h-100">
+                    <strong>@Model.FormattedBounceRate</strong>
+                    <span>Tỷ lệ thoát (Bounce Rate)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Lượt truy cập mỗi ngày (Trái) & Nguồn + Thiết bị (Phải) -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-7">
+                <div class="status-panel h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (30 ngày qua)</h3>
+                        <small class="text-muted">Tổng · Mới · Cũ · Phiên · Xem</small>
+                    </div>
+
+                    <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
+                        <span class="small text-muted d-block mb-1 text-uppercase fw-semibold" style="letter-spacing: .08em;">Trung bình 1 ngày (trong 30 ngày qua)</span>
+                        <div class="d-flex flex-wrap gap-4 align-items-baseline">
+                            <div><strong class="fs-5 text-success">@Model.AverageDailyUsers30Days.ToString("N1")</strong> <small class="text-muted">user / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.AverageDailySessions30Days.ToString("N1")</strong> <small class="text-muted">phiên / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.AverageDailyPageViews30Days.ToString("N1")</strong> <small class="text-muted">lượt xem / ngày</small></div>
+                        </div>
+                    </div>
+
+                    @if (Model.DailyTrends.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Chưa có đủ dữ liệu theo ngày trong khoảng thời gian này.</p>
+                    }
+                    else
+                    {
+                        var maxDailyUsers = Math.Max(1, Model.DailyTrends.Max(d => d.ActiveUsers));
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 65px;">Ngày</th>
+                                        <th>Mật độ</th>
+                                        <th class="text-end" style="width: 55px;" title="Tổng số User trong ngày">Tổng</th>
+                                        <th class="text-end text-success" style="width: 55px;" title="User mới truy cập">Mới</th>
+                                        <th class="text-end text-info" style="width: 55px;" title="User cũ quay lại">Cũ</th>
+                                        <th class="text-end" style="width: 55px;">Phiên</th>
+                                        <th class="text-end" style="width: 55px;">Xem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var day in Model.DailyTrends)
+                                    {
+                                        var pct = Math.Round((double)day.ActiveUsers / maxDailyUsers * 100);
+                                        <tr>
+                                            <td class="text-nowrap"><strong>@day.DisplayDate</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 6px; background-color: var(--hair-soft);">
+                                                    <div class="progress-bar" role="progressbar" style="width: @(pct)%; background-color: var(--green);" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                @if (day.ActiveUsers > 0)
+                                                {
+                                                    <button type="button" class="btn btn-link p-0 text-decoration-none fw-semibold text-light" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'all')" title="Xem chi tiết người dùng ngày @day.DisplayDate">@day.ActiveUsers</button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">0</span>
+                                                }
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                @if (day.NewUsers > 0)
+                                                {
+                                                    <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-success text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'new')" title="Xem chi tiết User MỚI ngày @day.DisplayDate">@day.NewUsers</button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">0</span>
+                                                }
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                @if (day.ReturningUsers > 0)
+                                                {
+                                                    <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-info text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'returning')" title="Xem chi tiết User CŨ ngày @day.DisplayDate">@day.ReturningUsers</button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">0</span>
+                                                }
+                                            </td>
+                                            <td class="text-end font-monospace text-muted">@day.Sessions</td>
+                                            <td class="text-end font-monospace text-muted">@day.PageViews</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Cột phải: Nguồn truy cập & Phân bố Thiết bị + Địa lý -->
+            <div class="col-xl-5">
+                <div class="d-flex flex-column gap-3 h-100">
+                    <div class="status-panel">
+                        <h3 class="h6 text-uppercase mb-3">Nguồn truy cập (Traffic Sources)</h3>
+                        @if (Model.TrafficSources.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">Chưa ghi nhận nguồn traffic.</p>
+                        }
+                        else
+                        {
+                            var totalSessionsFromSources = Math.Max(1, Model.TrafficSources.Sum(s => s.Value));
+                            @foreach (var source in Model.TrafficSources)
+                            {
+                                var pct = Math.Round((double)source.Value / totalSessionsFromSources * 100);
+                                <div class="analytics-row align-items-center">
+                                    <div class="text-truncate me-2" style="max-width: 60%;">
+                                        <span class="d-block text-truncate">@source.Label</span>
+                                        <div class="progress mt-1" style="height: 3px; background-color: var(--hair-soft);">
+                                            <div class="progress-bar bg-success" style="width: @(pct)%;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong>@source.Value.ToString("N0") phiên</strong>
+                                        <small class="text-muted ps-1">(@pct%)</small>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <!-- SEO Section: Thiết bị & Quốc gia -->
+                    <div class="status-panel">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <h4 class="h6 text-uppercase mb-2">Thiết bị (Devices)</h4>
+                                @if (Model.DeviceBreakdown.Count == 0)
+                                {
+                                    <p class="text-muted small mb-0">Chưa có dữ liệu thiết bị.</p>
+                                }
+                                else
+                                {
+                                    @foreach (var dev in Model.DeviceBreakdown)
+                                    {
+                                        <div class="d-flex justify-content-between small py-1 border-bottom border-secondary-subtle">
+                                            <span class="text-capitalize">@dev.Label</span>
+                                            <strong class="font-monospace text-success">@dev.Value.ToString("N0")</strong>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <div class="col-sm-6">
+                                <h4 class="h6 text-uppercase mb-2">Quốc gia (Geo)</h4>
+                                @if (Model.Countries.Count == 0)
+                                {
+                                    <p class="text-muted small mb-0">Chưa có dữ liệu quốc gia.</p>
+                                }
+                                else
+                                {
+                                    @foreach (var c in Model.Countries)
+                                    {
+                                        <div class="d-flex justify-content-between small py-1 border-bottom border-secondary-subtle">
+                                            <span class="text-truncate" style="max-width: 110px;">@c.Label</span>
+                                            <strong class="font-monospace text-info">@c.Value.ToString("N0")</strong>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-panel p-3 rounded" style="background: rgba(46, 125, 50, 0.08); border: 1px dashed var(--green);">
+                        <h4 class="h6 mb-1 text-success">Theo dõi hành vi của TỪNG USER cụ thể</h4>
+                        <p class="small text-muted mb-2">
+                            Website tự động lưu nhật ký hoạt động trực tiếp vào cơ sở dữ liệu và đồng bộ User-ID lên GA4.
+                        </p>
+                        <a href="/Admin/Users" class="btn btn-sm btn-outline-success">Xem nhật ký & hoạt động từng User &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Landing Pages (SEO Chuẩn) & Trang nhiều / ít xem -->
+        <div class="row g-4 mb-4">
+            <!-- SEO Landing Pages -->
+            <div class="col-xl-6">
+                <div class="status-panel h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h3 class="h6 text-uppercase mb-0">Trang đích thu hút traffic (Landing Pages - SEO)</h3>
+                        <span class="badge bg-success-subtle text-success">Điểm tiếp cận đầu</span>
+                    </div>
+                    <p class="small text-muted mb-3">Trang đầu tiên người dùng truy cập vào website qua Google Search hoặc mạng xã hội.</p>
+
+                    @if (Model.LandingPages.Count == 0)
+                    {
+                        <p class="text-muted small mb-0">Chưa có dữ liệu trang đích từ GA4.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Trang đích / Title</th>
+                                        <th class="text-end" style="width: 90px;">Phiên vào</th>
+                                        <th class="text-end" style="width: 90px;" title="Tỷ lệ người dùng rời trang ngay không tương tác">Thoát</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var lp in Model.LandingPages)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong class="d-block text-truncate" style="max-width: 280px;">@(string.IsNullOrWhiteSpace(lp.Title) ? lp.Path : lp.Title)</strong>
+                                                <code class="small text-muted">@lp.Path</code>
+                                            </td>
+                                            <td class="text-end font-monospace fw-semibold">@lp.Sessions.ToString("N0")</td>
+                                            <td class="text-end text-nowrap">
+                                                <span class="badge @(lp.BounceRate > 0.6 ? "bg-warning-subtle text-warning" : "bg-success-subtle text-success")">
+                                                    @lp.FormattedBounceRate
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Popular & Least Visited Pages -->
+            <div class="col-xl-6">
+                <div class="d-flex flex-column gap-3 h-100">
+                    <div class="status-panel">
+                        <h3 class="h6 text-uppercase mb-3">Trang được xem nhiều nhất & Thời gian trên trang</h3>
+                        @if (Model.PopularPages.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">Chưa có dữ liệu trang.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Trang</th>
+                                            <th class="text-end">Lượt xem</th>
+                                            <th class="text-end">User</th>
+                                            <th class="text-end">Thời gian TB</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.PopularPages.Take(6))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong class="d-block text-truncate" style="max-width: 220px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</strong>
+                                                    <code class="small text-muted">@item.Path</code>
+                                                </td>
+                                                <td class="text-end font-monospace">@item.Views.ToString("N0")</td>
+                                                <td class="text-end font-monospace text-muted">@item.Users.ToString("N0")</td>
+                                                <td class="text-end text-nowrap"><span class="badge bg-success-subtle text-success">@item.FormattedDuration</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="status-panel">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h3 class="h6 text-uppercase mb-0">Trang ít xem (Cần cải thiện SEO / Nội dung)</h3>
+                            <span class="badge bg-warning-subtle text-warning">Tối ưu hóa</span>
+                        </div>
+                        @if (Model.LeastVisitedPages.Count == 0)
+                        {
+                            <p class="text-muted small mb-0">Chưa có dữ liệu trang ít xem.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Trang</th>
+                                            <th class="text-end">Lượt xem</th>
+                                            <th class="text-end">Thời gian TB</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.LeastVisitedPages.Take(4))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <span class="d-block text-truncate" style="max-width: 240px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</span>
+                                                    <code class="small text-muted">@item.Path</code>
+                                                </td>
+                                                <td class="text-end font-monospace text-warning">@item.Views.ToString("N0")</td>
+                                                <td class="text-end text-nowrap"><span class="badge bg-secondary-subtle text-muted">@item.FormattedDuration</span></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</section>
+
+<!-- Modal xem chi tiết người dùng mới / cũ theo ngày -->
+<div class="modal fade" id="dailyUsersModal" tabindex="-1" aria-labelledby="dailyUsersModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="background-color: var(--bg-surface, #15221c); color: var(--ink, #e0ede4); border: 1px solid var(--hair-soft, rgba(208, 234, 144, 0.2));">
+            <div class="modal-header border-bottom border-secondary-subtle">
+                <div>
+                    <h5 class="modal-title h5 mb-1" id="dailyUsersModalTitle">Chi tiết người dùng</h5>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-light active" id="btnTabAll" onclick="filterDailyUsers('all')">
+                                Tất cả (<span id="modalCountAll">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="btnTabNew" onclick="filterDailyUsers('new')">
+                                User Mới (<span id="modalCountNew">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="btnTabReturning" onclick="filterDailyUsers('returning')">
+                                User Cũ (<span id="modalCountReturning">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div id="dailyUsersLoading" class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Đang tải danh sách người dùng và các trang đã xem...</p>
+                </div>
+                <div id="dailyUsersEmpty" class="text-center py-5 d-none">
+                    <div class="text-muted mb-2">
+                        <svg width="42" height="42" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <h6 class="text-muted mb-1" id="dailyUsersEmptyMsg">Không có dữ liệu người dùng trong mục này.</h6>
+                    <small class="text-muted d-block">Danh tính cụ thể (tên, email, các trang đã xem) được tự động ghi nhận khi người dùng thao tác trên website HomePlant.</small>
+                </div>
+                <div id="dailyUsersContainer" class="d-flex flex-column gap-3 d-none"></div>
+            </div>
+            <div class="modal-footer border-top border-secondary-subtle">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+if (typeof window.dailyUsersInitialized === 'undefined') {
+    window.dailyUsersInitialized = true;
+    window.allDailyUsers = [];
+    window.currentFilterType = 'all';
+
+    window.openDailyUsersModal = function(dateKey, displayDate, type) {
+        window.currentFilterType = type || 'all';
+        const titleEl = document.getElementById('dailyUsersModalTitle');
+        if (titleEl) {
+            titleEl.innerHTML = 'Người dùng truy cập ngày <span class="text-success font-monospace">' + displayDate + '</span>';
+        }
+        
+        const loading = document.getElementById('dailyUsersLoading');
+        const empty = document.getElementById('dailyUsersEmpty');
+        const container = document.getElementById('dailyUsersContainer');
+
+        if (loading) loading.classList.remove('d-none');
+        if (empty) empty.classList.add('d-none');
+        if (container) {
+            container.classList.add('d-none');
+            container.innerHTML = '';
+        }
+
+        const modalEl = document.getElementById('dailyUsersModal');
+        if (modalEl) {
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        fetch('/Admin/DailyUsers?date=' + encodeURIComponent(dateKey) + '&type=all')
+            .then(res => res.json())
+            .then(data => {
+                if (loading) loading.classList.add('d-none');
+                window.allDailyUsers = (data && data.users) ? data.users : [];
+
+                const countNew = window.allDailyUsers.filter(u => u.isNew).length;
+                const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
+
+                const countAllEl = document.getElementById('modalCountAll');
+                const countNewEl = document.getElementById('modalCountNew');
+                const countRetEl = document.getElementById('modalCountReturning');
+
+                if (countAllEl) countAllEl.innerText = window.allDailyUsers.length;
+                if (countNewEl) countNewEl.innerText = countNew;
+                if (countRetEl) countRetEl.innerText = countRet;
+
+                window.filterDailyUsers(window.currentFilterType);
+            })
+            .catch(err => {
+                if (loading) loading.classList.add('d-none');
+                if (empty) empty.classList.remove('d-none');
+                const emptyMsg = document.getElementById('dailyUsersEmptyMsg');
+                if (emptyMsg) emptyMsg.innerText = 'Không thể tải dữ liệu: ' + err.message;
+            });
+    };
+
+    window.filterDailyUsers = function(type) {
+        window.currentFilterType = type;
+        const tabAll = document.getElementById('btnTabAll');
+        const tabNew = document.getElementById('btnTabNew');
+        const tabRet = document.getElementById('btnTabReturning');
+
+        if (tabAll) tabAll.classList.toggle('active', type === 'all');
+        if (tabNew) tabNew.classList.toggle('active', type === 'new');
+        if (tabRet) tabRet.classList.toggle('active', type === 'returning');
+
+        const empty = document.getElementById('dailyUsersEmpty');
+        const container = document.getElementById('dailyUsersContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        let filtered = window.allDailyUsers || [];
+        if (type === 'new') filtered = filtered.filter(u => u.isNew);
+        if (type === 'returning') filtered = filtered.filter(u => !u.isNew);
+
+        if (filtered.length === 0) {
+            if (empty) empty.classList.remove('d-none');
+            container.classList.add('d-none');
+            const emptyMsg = document.getElementById('dailyUsersEmptyMsg');
+            if (emptyMsg) {
+                if (type === 'returning' && (window.allDailyUsers || []).some(u => u.isNew)) {
+                    const countNew = window.allDailyUsers.filter(u => u.isNew).length;
+                    emptyMsg.innerHTML = 'Ngày này không có User cũ quay lại.<br><button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="window.filterDailyUsers(\'new\')">Xem ' + countNew + ' User Mới</button>';
+                } else if (type === 'new' && (window.allDailyUsers || []).some(u => !u.isNew)) {
+                    const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
+                    emptyMsg.innerHTML = 'Ngày này không có User mới.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="window.filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
+                } else {
+                    emptyMsg.innerText = 'Không có dữ liệu người dùng trong mục này.';
+                }
+            }
+            return;
+        }
+
+        if (empty) empty.classList.add('d-none');
+        container.classList.remove('d-none');
+
+        filtered.forEach((u) => {
+            const card = document.createElement('div');
+            card.className = 'p-3 rounded border';
+            card.style.background = 'rgba(255, 255, 255, 0.03)';
+            card.style.borderColor = 'rgba(208, 234, 144, 0.15)';
+
+            const isNewBadge = u.isNew 
+                ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
+                : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
+                
+            const guestBadge = u.isGuest 
+                ? '<span class="badge bg-secondary-subtle text-muted">Khách vãng lai</span>' 
+                : '<span class="badge bg-primary-subtle text-primary">Tài khoản</span>';
+
+            let activitiesHtml = '';
+            if (u.activities && u.activities.length > 0) {
+                activitiesHtml = `
+                    <div class="mt-3 pt-2 border-top border-secondary-subtle">
+                        <small class="text-muted text-uppercase fw-semibold d-block mb-2" style="letter-spacing: .05em; font-size: 0.75rem;">
+                            Các trang đã xem trong phiên (${u.activities.length} lượt):
+                        </small>
+                        <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto;">
+                            ${u.activities.map(a => `
+                                <div class="d-flex align-items-baseline gap-2 small">
+                                    <span class="font-monospace text-muted" style="font-size: 0.8rem; min-width: 58px;">${a.time}</span>
+                                    <span class="badge bg-secondary-subtle text-light px-1">${a.action || 'Xem'}</span>
+                                    <strong class="text-success text-truncate">${a.title}</strong>
+                                    <code class="text-muted small">${a.path}</code>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
+            }
+
+            const avatar = u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid));
+
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="${u.fullName}"/>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <strong class="text-light">${u.fullName}</strong>
+                                ${isNewBadge}
+                                ${guestBadge}
+                            </div>
+                            <small class="text-muted">${u.email || u.uid}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 font-monospace small">
+                        <span class="badge bg-dark border border-secondary-subtle text-light">${u.sessionCount || 1} phiên</span>
+                        <span class="badge bg-dark border border-secondary-subtle text-success">${u.pageViewCount || (u.activities ? u.activities.length : 1)} lượt xem</span>
+                    </div>
+                </div>
+                ${activitiesHtml}
+            `;
+            container.appendChild(card);
+        });
+    };
+}
+</script>

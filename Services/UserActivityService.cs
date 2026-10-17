@@ -221,155 +221,52 @@ public class UserActivityService
                 });
             }
 
-            // Fallback: If daily_user_activities has no records yet for this date, query users collection
-            if (result.Count == 0)
+            // Indexed fallback: if daily_user_activities is empty for this date, query targeted users created on that date
+            if (result.Count == 0 && DateTime.TryParseExact(dateKey, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var dayDt))
             {
-                var allUsers = await _db.Collection("users").GetSnapshotAsync();
-                foreach (var doc in allUsers.Documents)
+                var dayStartUtc = DateTime.SpecifyKind(dayDt.AddHours(-7), DateTimeKind.Utc);
+                var dayEndUtc = DateTime.SpecifyKind(dayDt.AddDays(1).AddHours(-7), DateTimeKind.Utc);
+
+                var startTs = Timestamp.FromDateTime(dayStartUtc);
+                var endTs = Timestamp.FromDateTime(dayEndUtc);
+
+                var newUsersSnap = await _db.Collection("users")
+                    .WhereGreaterThanOrEqualTo("createdAt", startTs)
+                    .WhereLessThan("createdAt", endTs)
+                    .Limit(30)
+                    .GetSnapshotAsync();
+
+                foreach (var doc in newUsersSnap.Documents)
                 {
                     var u = doc.ConvertTo<UserModel>();
-                    var createdVn = u.CreatedAt.AddHours(7).ToString("yyyyMMdd");
-                    var lastActiveVn = u.LastActiveAt?.AddHours(7).ToString("yyyyMMdd");
-
-                    var isUserNew = createdVn == dateKey;
-                    var isUserReturning = !isUserNew && lastActiveVn == dateKey;
-
-                    if (isUserNew || isUserReturning)
+                    result.Add(new DailyUserSummaryVM
                     {
-                        var userActivities = await GetUserActivitiesAsync(u.Id, 25);
-                        var dayActivities = userActivities
-                            .Where(a => a.CreatedAt.AddHours(7).ToString("yyyyMMdd") == dateKey)
-                            .Select(a => new UserActivityItemVM
+                        Uid = u.Id,
+                        FullName = string.IsNullOrWhiteSpace(u.FullName) ? "Người dùng" : u.FullName,
+                        Email = u.Email,
+                        AvatarUrl = u.AvatarUrl,
+                        IsNew = true,
+                        IsGuest = false,
+                        SessionCount = Math.Max(1, u.VisitCount),
+                        PageViewCount = 1,
+                        LastActiveTime = u.CreatedAt.AddHours(7).ToString("HH:mm:ss"),
+                        Activities =
+                        [
+                            new UserActivityItemVM
                             {
-                                Path = a.Path,
-                                Title = a.Title,
-                                Action = a.Action,
-                                Time = a.FormattedTime
-                            })
-                            .ToList();
-
-                        if (dayActivities.Count == 0)
-                        {
-                            if (isUserNew)
-                            {
-                                dayActivities.Add(new UserActivityItemVM
-                                {
-                                    Path = "/Account/Register",
-                                    Title = "Đăng ký tài khoản HomePlant",
-                                    Action = "Tạo tài khoản mới thành công",
-                                    Time = u.CreatedAt.AddHours(7).ToString("HH:mm:ss")
-                                });
+                                Path = "/Account/Register",
+                                Title = "Đăng ký tài khoản HomePlant",
+                                Action = "Tạo tài khoản mới",
+                                Time = u.CreatedAt.AddHours(7).ToString("HH:mm:ss")
                             }
-                            else if (u.LastActiveAt.HasValue && lastActiveVn == dateKey)
-                            {
-                                dayActivities.Add(new UserActivityItemVM
-                                {
-                                    Path = "/Account/Login",
-                                    Title = "Đăng nhập hệ thống",
-                                    Action = "Truy cập website",
-                                    Time = u.LastActiveAt.Value.AddHours(7).ToString("HH:mm:ss")
-                                });
-                            }
-                        }
-
-                        result.Add(new DailyUserSummaryVM
-                        {
-                            Uid = u.Id,
-                            FullName = string.IsNullOrWhiteSpace(u.FullName) ? "Người dùng" : u.FullName,
-                            Email = u.Email,
-                            AvatarUrl = u.AvatarUrl,
-                            IsNew = isUserNew,
-                            IsGuest = false,
-                            SessionCount = Math.Max(1, u.VisitCount),
-                            PageViewCount = Math.Max(1, dayActivities.Count),
-                            LastActiveTime = u.LastActiveAt?.AddHours(7).ToString("HH:mm:ss") ?? "",
-                            Activities = dayActivities
-                        });
-                    }
+                        ]
+                    });
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get daily users for date {DateKey}", dateKey);
-        }
-
-        // Reconcile with Google Analytics 4 so the modal counts match the table numbers exactly
-        try
-        {
-            var gaOverview = await _gaService.GetOverview();
-            var gaDailyRow = gaOverview.DailyTrends.FirstOrDefault(d => d.DateKey == dateKey);
-            if (gaDailyRow != null)
-            {
-                int currentNew = result.Count(u => u.IsNew);
-                int currentReturning = result.Count(u => !u.IsNew);
-
-                int targetNew = (int)Math.Max(gaDailyRow.NewUsers, currentNew);
-                int targetReturning = (int)Math.Max(gaDailyRow.ReturningUsers, currentReturning);
-
-                if (targetNew + targetReturning < gaDailyRow.ActiveUsers)
-                {
-                    targetReturning += (int)(gaDailyRow.ActiveUsers - (targetNew + targetReturning));
-                }
-
-                // Add anonymous guest records for any missing new visitors recorded in GA4
-                for (int i = 1; i <= targetNew - currentNew; i++)
-                {
-                    result.Add(new DailyUserSummaryVM
-                    {
-                        Uid = $"guest_new_{dateKey}_{i}",
-                        FullName = $"Khách vãng lai #{i}",
-                        Email = "Chưa đăng ký tài khoản (Khách mới)",
-                        AvatarUrl = "",
-                        IsNew = true,
-                        IsGuest = true,
-                        SessionCount = 1,
-                        PageViewCount = 1,
-                        LastActiveTime = "Trong ngày",
-                        Activities =
-                        [
-                            new UserActivityItemVM
-                            {
-                                Path = "/Home",
-                                Title = "Khám phá HomePlant",
-                                Action = "Khách mới truy cập website",
-                                Time = "--:--"
-                            }
-                        ]
-                    });
-                }
-
-                // Add anonymous guest records for any missing returning visitors recorded in GA4
-                for (int i = 1; i <= targetReturning - currentReturning; i++)
-                {
-                    result.Add(new DailyUserSummaryVM
-                    {
-                        Uid = $"guest_ret_{dateKey}_{i}",
-                        FullName = $"Khách vãng lai quay lại #{i}",
-                        Email = "Chưa đăng nhập (Khách cũ)",
-                        AvatarUrl = "",
-                        IsNew = false,
-                        IsGuest = true,
-                        SessionCount = 1,
-                        PageViewCount = 1,
-                        LastActiveTime = "Trong ngày",
-                        Activities =
-                        [
-                            new UserActivityItemVM
-                            {
-                                Path = "/Library",
-                                Title = "Xem thư viện cây cảnh",
-                                Action = "Khách cũ quay lại truy cập",
-                                Time = "--:--"
-                            }
-                        ]
-                    });
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to reconcile daily users with GA4 for {DateKey}", dateKey);
         }
 
         if (string.Equals(type, "new", StringComparison.OrdinalIgnoreCase))
@@ -388,23 +285,14 @@ public class UserActivityService
     {
         try
         {
-            var usersSnap = await _db.Collection("users").GetSnapshotAsync();
-            var allUsers = usersSnap.Documents.Select(d => d.ConvertTo<UserModel>()).ToList();
-
-            var dailySnap = await _db.Collection("daily_user_activities").GetSnapshotAsync();
+            var minDateKey = DateTime.UtcNow.AddHours(7).AddDays(-30).ToString("yyyyMMdd");
+            var dailySnap = await _db.Collection("daily_user_activities")
+                .WhereGreaterThanOrEqualTo("dateKey", minDateKey)
+                .GetSnapshotAsync();
 
             var dailyDocsByDate = dailySnap.Documents
                 .GroupBy(d => d.ContainsField("dateKey") ? d.GetValue<string>("dateKey") : "")
                 .Where(g => !string.IsNullOrEmpty(g.Key))
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var usersCreatedByDate = allUsers
-                .GroupBy(u => u.CreatedAt.AddHours(7).ToString("yyyyMMdd"))
-                .ToDictionary(g => g.Key, g => g.ToList());
-
-            var usersLastActiveByDate = allUsers
-                .Where(u => u.LastActiveAt.HasValue)
-                .GroupBy(u => u.LastActiveAt!.Value.AddHours(7).ToString("yyyyMMdd"))
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var updatedDailyTrends = new List<AnalyticsDailyRowVM>();
@@ -438,23 +326,6 @@ public class UserActivityService
                         distinctActiveUserIdsIn30Days.Add(uid);
                     }
                 }
-                else
-                {
-                    if (usersCreatedByDate.TryGetValue(dateKey, out var createdUsers))
-                    {
-                        dbNewCount += createdUsers.Count;
-                        foreach (var u in createdUsers) distinctActiveUserIdsIn30Days.Add(u.Id);
-                    }
-
-                    if (usersLastActiveByDate.TryGetValue(dateKey, out var activeUsers))
-                    {
-                        var returningOnDay = activeUsers
-                            .Where(u => u.CreatedAt.AddHours(7).ToString("yyyyMMdd") != dateKey)
-                            .ToList();
-                        dbReturningCount += returningOnDay.Count;
-                        foreach (var u in returningOnDay) distinctActiveUserIdsIn30Days.Add(u.Id);
-                    }
-                }
 
                 existingDailyRows.TryGetValue(dateKey, out var originalRow);
                 var sessions = originalRow?.Sessions ?? 0;
@@ -462,8 +333,7 @@ public class UserActivityService
                 var display = originalRow?.DisplayDate ?? displayDate;
 
                 // Merge Google Analytics 4 and Database:
-                // Use GA4 authoritative tracking for total, new and returning users so historical data is not lost,
-                // while ensuring any newly registered or active users tracked in DB are also included.
+                // Use GA4 as authoritative for traffic and combine with recorded database accounts
                 long newCount = Math.Max(originalRow?.NewUsers ?? 0, dbNewCount);
                 long returningCount = Math.Max(originalRow?.ReturningUsers ?? 0, dbReturningCount);
                 long activeCount = Math.Max(originalRow?.ActiveUsers ?? 0, newCount + returningCount);
@@ -510,10 +380,14 @@ public class UserActivityService
                 AverageDailySessions30Days = avgDailySessions,
                 AverageDailyPageViews30Days = avgDailyPageViews,
                 AverageEngagementSeconds = gaOverview.AverageEngagementSeconds,
+                BounceRate = gaOverview.BounceRate,
                 TrafficSources = gaOverview.TrafficSources,
                 PopularPages = gaOverview.PopularPages,
                 LeastVisitedPages = gaOverview.LeastVisitedPages,
-                DailyTrends = updatedDailyTrends
+                DailyTrends = updatedDailyTrends,
+                DeviceBreakdown = gaOverview.DeviceBreakdown,
+                LandingPages = gaOverview.LandingPages,
+                Countries = gaOverview.Countries
             };
         }
         catch (Exception ex)
