@@ -472,7 +472,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const countNew = window.allDailyUsers.filter(u => u.isNew).length;
                 const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
-                const realCount = window.allDailyUsers.filter(u => !u.uid.startsWith('ga4_')).length;
+                const realCount = window.allDailyUsers.filter(u => u.uid && !u.uid.startsWith('ga4_')).length;
                 const guestCount = window.allDailyUsers.length - realCount;
 
                 const countAllEl = document.getElementById('modalCountAll');
@@ -589,14 +589,16 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
             }
 
-            const avatar = isGa4Guest
-                ? 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="%237ca58a" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
-                : (u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid)));
+            const avatarHtml = isGa4Guest
+                ? `<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: rgba(124, 165, 138, 0.15); border: 1px solid rgba(208, 234, 144, 0.3); color: #7ca58a;">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                   </div>`
+                : `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
 
             card.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="${u.fullName}"/>
+                        ${avatarHtml}
                         <div>
                             <div class="d-flex align-items-center gap-2">
                                 <strong class="text-light">${u.fullName}</strong>
