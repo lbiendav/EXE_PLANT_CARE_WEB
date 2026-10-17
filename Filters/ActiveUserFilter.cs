@@ -111,11 +111,25 @@ public sealed class ActiveUserFilter(
                 !string.Equals(action, "UserActivities", StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(action, "DailyUsers", StringComparison.OrdinalIgnoreCase))
             {
+                var guestVid = context.HttpContext.Request.Cookies["hp_guest_vid"];
+                var isNewGuest = string.IsNullOrEmpty(guestVid);
+                if (isNewGuest)
+                {
+                    guestVid = "guest_" + Guid.NewGuid().ToString("N")[..8];
+                    context.HttpContext.Response.Cookies.Append("hp_guest_vid", guestVid, new CookieOptions
+                    {
+                        Expires = DateTimeOffset.UtcNow.AddDays(365),
+                        HttpOnly = true,
+                        SameSite = SameSiteMode.Lax,
+                        IsEssential = true
+                    });
+                }
+
                 var guestId = session.GetString("GuestTrackingId");
                 var isNewSession = false;
                 if (string.IsNullOrEmpty(guestId))
                 {
-                    guestId = "guest_" + Guid.NewGuid().ToString("N")[..8];
+                    guestId = guestVid!;
                     session.SetString("GuestTrackingId", guestId);
                     isNewSession = true;
                 }
@@ -132,7 +146,7 @@ public sealed class ActiveUserFilter(
                         email: "Chưa đăng nhập (Khách)",
                         avatarUrl: "",
                         isGuest: true,
-                        isNew: true,
+                        isNew: isNewGuest,
                         path: path,
                         title: title,
                         action: actionName,

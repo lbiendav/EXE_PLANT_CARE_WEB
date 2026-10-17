@@ -341,8 +341,8 @@ public class UserActivityService
                     ? $"{dateKey[6..8]}/{dateKey[4..6]}"
                     : dateKey;
 
-                long newCount = 0;
-                long returningCount = 0;
+                long dbNewCount = 0;
+                long dbReturningCount = 0;
 
                 if (dailyDocsByDate.TryGetValue(dateKey, out var dayDocs) && dayDocs.Count > 0)
                 {
@@ -350,8 +350,8 @@ public class UserActivityService
                     {
                         var uid = doc.ContainsField("uid") ? doc.GetValue<string>("uid") : doc.Id;
                         var isNew = doc.ContainsField("isNew") && doc.GetValue<bool>("isNew");
-                        if (isNew) newCount++;
-                        else returningCount++;
+                        if (isNew) dbNewCount++;
+                        else dbReturningCount++;
                         distinctActiveUserIdsIn30Days.Add(uid);
                     }
                 }
@@ -359,7 +359,7 @@ public class UserActivityService
                 {
                     if (usersCreatedByDate.TryGetValue(dateKey, out var createdUsers))
                     {
-                        newCount += createdUsers.Count;
+                        dbNewCount += createdUsers.Count;
                         foreach (var u in createdUsers) distinctActiveUserIdsIn30Days.Add(u.Id);
                     }
 
@@ -368,19 +368,34 @@ public class UserActivityService
                         var returningOnDay = activeUsers
                             .Where(u => u.CreatedAt.AddHours(7).ToString("yyyyMMdd") != dateKey)
                             .ToList();
-                        returningCount += returningOnDay.Count;
+                        dbReturningCount += returningOnDay.Count;
                         foreach (var u in returningOnDay) distinctActiveUserIdsIn30Days.Add(u.Id);
                     }
                 }
-
-                totalDatabaseNewUsers += newCount;
-                totalDatabaseReturningUsers += returningCount;
-                long activeCount = newCount + returningCount;
 
                 existingDailyRows.TryGetValue(dateKey, out var originalRow);
                 var sessions = originalRow?.Sessions ?? 0;
                 var pageViews = originalRow?.PageViews ?? 0;
                 var display = originalRow?.DisplayDate ?? displayDate;
+
+                // Merge Google Analytics 4 and Database:
+                // Use GA4 authoritative tracking for total, new and returning users so historical data is not lost,
+                // while ensuring any newly registered or active users tracked in DB are also included.
+                long newCount = Math.Max(originalRow?.NewUsers ?? 0, dbNewCount);
+                long returningCount = Math.Max(originalRow?.ReturningUsers ?? 0, dbReturningCount);
+                long activeCount = Math.Max(originalRow?.ActiveUsers ?? 0, newCount + returningCount);
+
+                if (activeCount > newCount + returningCount)
+                {
+                    returningCount = activeCount - newCount;
+                }
+                else if (activeCount < newCount + returningCount)
+                {
+                    activeCount = newCount + returningCount;
+                }
+
+                totalDatabaseNewUsers += newCount;
+                totalDatabaseReturningUsers += returningCount;
 
                 updatedDailyTrends.Add(new AnalyticsDailyRowVM(
                     dateKey,
@@ -403,11 +418,11 @@ public class UserActivityService
                 Configured = gaOverview.Configured,
                 Available = gaOverview.Available || updatedDailyTrends.Count > 0,
                 Error = gaOverview.Error,
-                ActiveUsers30Days = distinctActiveUserIdsIn30Days.Count > 0 ? distinctActiveUserIdsIn30Days.Count : (totalDatabaseNewUsers + totalDatabaseReturningUsers),
+                ActiveUsers30Days = Math.Max(gaOverview.ActiveUsers30Days, distinctActiveUserIdsIn30Days.Count),
                 Sessions30Days = gaOverview.Sessions30Days,
                 PageViews30Days = gaOverview.PageViews30Days,
-                NewUsers30Days = totalDatabaseNewUsers,
-                ReturningUsers30Days = totalDatabaseReturningUsers,
+                NewUsers30Days = Math.Max(gaOverview.NewUsers30Days, totalDatabaseNewUsers),
+                ReturningUsers30Days = Math.Max(gaOverview.ReturningUsers30Days, totalDatabaseReturningUsers),
                 AverageDailyUsers30Days = avgDailyUsers,
                 AverageDailySessions30Days = avgDailySessions,
                 AverageDailyPageViews30Days = avgDailyPageViews,
