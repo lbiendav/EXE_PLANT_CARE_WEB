@@ -69,17 +69,21 @@
         <div class="row g-4 mb-4">
             <div class="col-xl-7">
                 <div class="status-panel h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="h6 text-uppercase mb-0">Thành viên & Lưu lượng mỗi ngày (30 ngày qua)</h3>
-                        <small class="text-muted">User (Thành viên thật) · Phiên & Xem (Traffic GA4)</small>
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h3 class="h6 text-uppercase mb-0">Thành viên truy cập mỗi ngày (30 ngày qua)</h3>
+                        <small class="text-muted">User (Thành viên có tài khoản)</small>
                     </div>
 
                     <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
                         <span class="small text-muted d-block mb-1 text-uppercase fw-semibold" style="letter-spacing: .08em;">Trung bình 1 ngày (trong 30 ngày qua)</span>
                         <div class="d-flex flex-wrap gap-4 align-items-baseline">
-                            <div><strong class="fs-5 text-success">@Model.AverageDailyUsers30Days.ToString("N1")</strong> <small class="text-muted">user / ngày</small></div>
-                            <div><strong class="fs-5 text-success">@Model.AverageDailySessions30Days.ToString("N1")</strong> <small class="text-muted">phiên / ngày</small></div>
-                            <div><strong class="fs-5 text-success">@Model.AverageDailyPageViews30Days.ToString("N1")</strong> <small class="text-muted">lượt xem / ngày</small></div>
+                            <div><strong class="fs-5 text-success">@Model.AverageDailyUsers30Days.ToString("N1")</strong> <small class="text-muted">thành viên / ngày</small></div>
+                            @{
+                                var avgNew = Model.DailyTrends.Count > 0 ? (double)Model.DailyTrends.Sum(d => d.NewUsers) / Model.DailyTrends.Count : 0;
+                                var avgRet = Model.DailyTrends.Count > 0 ? (double)Model.DailyTrends.Sum(d => d.ReturningUsers) / Model.DailyTrends.Count : 0;
+                            }
+                            <div><strong class="fs-5 text-success">@avgNew.ToString("N1")</strong> <small class="text-muted">user mới / ngày</small></div>
+                            <div><strong class="fs-5 text-info">@avgRet.ToString("N1")</strong> <small class="text-muted">user cũ / ngày</small></div>
                         </div>
                     </div>
 
@@ -99,8 +103,6 @@
                                         <th class="text-end" style="width: 60px;" title="Tổng số thành viên có tài khoản tương tác trong ngày">Tổng User</th>
                                         <th class="text-end text-success" style="width: 55px;" title="Thành viên tạo tài khoản mới thành công">Mới</th>
                                         <th class="text-end text-info" style="width: 55px;" title="Thành viên cũ quay lại đăng nhập">Cũ</th>
-                                        <th class="text-end" style="width: 55px;" title="Tổng phiên truy cập website (GA4, bao gồm cả khách vãng lai)">Phiên</th>
-                                        <th class="text-end" style="width: 55px;" title="Tổng lượt xem trang (GA4, bao gồm cả khách vãng lai)">Xem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -144,8 +146,6 @@
                                                     <span class="text-muted">0</span>
                                                 }
                                             </td>
-                                            <td class="text-end font-monospace text-muted">@day.Sessions</td>
-                                            <td class="text-end font-monospace text-muted">@day.PageViews</td>
                                         </tr>
                                     }
                                 </tbody>
