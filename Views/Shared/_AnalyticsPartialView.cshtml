@@ -70,8 +70,8 @@
             <div class="col-xl-7">
                 <div class="status-panel h-100">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="h6 text-uppercase mb-0">Lượt truy cập mỗi ngày (30 ngày qua)</h3>
-                        <small class="text-muted">Tổng · Mới · Cũ · Phiên · Xem</small>
+                        <h3 class="h6 text-uppercase mb-0">Thành viên & Lưu lượng mỗi ngày (30 ngày qua)</h3>
+                        <small class="text-muted">User (Thành viên thật) · Phiên & Xem (Traffic GA4)</small>
                     </div>
 
                     <div class="mb-3 p-3 rounded" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.25);">
@@ -96,11 +96,11 @@
                                     <tr>
                                         <th style="width: 80px; cursor: pointer;" onclick="toggleDailyTrendsSort()" title="Nhấn để đổi chiều xem ngày (Mới nhất / Cũ nhất)">Ngày <span id="sortDirectionIcon" class="text-success small">↓</span></th>
                                         <th>Mật độ</th>
-                                        <th class="text-end" style="width: 55px;" title="Tổng số User trong ngày">Tổng</th>
-                                        <th class="text-end text-success" style="width: 55px;" title="User mới truy cập">Mới</th>
-                                        <th class="text-end text-info" style="width: 55px;" title="User cũ quay lại">Cũ</th>
-                                        <th class="text-end" style="width: 55px;">Phiên</th>
-                                        <th class="text-end" style="width: 55px;">Xem</th>
+                                        <th class="text-end" style="width: 60px;" title="Tổng số thành viên có tài khoản tương tác trong ngày">Tổng User</th>
+                                        <th class="text-end text-success" style="width: 55px;" title="Thành viên tạo tài khoản mới thành công">Mới</th>
+                                        <th class="text-end text-info" style="width: 55px;" title="Thành viên cũ quay lại đăng nhập">Cũ</th>
+                                        <th class="text-end" style="width: 55px;" title="Tổng phiên truy cập website (GA4, bao gồm cả khách vãng lai)">Phiên</th>
+                                        <th class="text-end" style="width: 55px;" title="Tổng lượt xem trang (GA4, bao gồm cả khách vãng lai)">Xem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -398,18 +398,18 @@
                         <span class="text-success fw-semibold">Tổng ghi nhận:</span>
                         <span id="modalGa4Summary" class="text-light">--</span>
                     </div>
-                    <small class="text-muted" id="modalDbSummary">--</small>
+                    <small class="text-muted" id="modalDbSummary">100% tài khoản thành viên thật</small>
                 </div>
                 <div id="dailyUsersLoading" class="text-center py-5">
                     <div class="spinner-border text-success" role="status"></div>
-                    <p class="text-muted mt-2 mb-0">Đang tải danh sách người dùng và các trang đã xem...</p>
+                    <p class="text-muted mt-2 mb-0">Đang tải danh sách thành viên và các trang đã xem...</p>
                 </div>
                 <div id="dailyUsersEmpty" class="text-center py-5 d-none">
                     <div class="text-muted mb-2">
                         <svg width="42" height="42" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     </div>
-                    <h6 class="text-muted mb-1" id="dailyUsersEmptyMsg">Không có dữ liệu người dùng trong mục này.</h6>
-                    <small class="text-muted d-block">Danh tính cụ thể (tên, email, các trang đã xem) được tự động ghi nhận khi người dùng thao tác trên website HomePlant.</small>
+                    <h6 class="text-muted mb-1" id="dailyUsersEmptyMsg">Không có dữ liệu thành viên trong mục này.</h6>
+                    <small class="text-muted d-block">Chỉ tính các tài khoản thành viên thật đã đăng ký hoặc đăng nhập trên website HomePlant.</small>
                 </div>
                 <div id="dailyUsersContainer" class="d-flex flex-column gap-3 d-none"></div>
             </div>
@@ -442,7 +442,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         window.currentFilterType = type || 'all';
         const titleEl = document.getElementById('dailyUsersModalTitle');
         if (titleEl) {
-            titleEl.innerHTML = 'Người dùng truy cập ngày <span class="text-success font-monospace">' + displayDate + '</span>';
+            titleEl.innerHTML = 'Thành viên truy cập ngày <span class="text-success font-monospace">' + displayDate + '</span>';
         }
         
         const loading = document.getElementById('dailyUsersLoading');
@@ -472,8 +472,6 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const countNew = window.allDailyUsers.filter(u => u.isNew).length;
                 const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
-                const realCount = window.allDailyUsers.filter(u => u.uid && !u.uid.startsWith('ga4_')).length;
-                const guestCount = window.allDailyUsers.length - realCount;
 
                 const countAllEl = document.getElementById('modalCountAll');
                 const countNewEl = document.getElementById('modalCountNew');
@@ -487,16 +485,8 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                     summaryInfo.classList.remove('d-none');
                     const ga4El = document.getElementById('modalGa4Summary');
                     const dbEl = document.getElementById('modalDbSummary');
-                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' người (' + countNew + ' mới, ' + countRet + ' cũ)';
-                    if (dbEl) {
-                        if (realCount > 0 && guestCount > 0) {
-                            dbEl.innerText = realCount + ' tài khoản lưu vết, ' + guestCount + ' khách vãng lai (GA4)';
-                        } else if (realCount > 0) {
-                            dbEl.innerText = realCount + ' tài khoản lưu vết chi tiết';
-                        } else {
-                            dbEl.innerText = guestCount + ' khách vãng lai ghi nhận qua GA4';
-                        }
-                    }
+                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' thành viên (' + countNew + ' mới, ' + countRet + ' cũ)';
+                    if (dbEl) dbEl.innerText = '100% tài khoản thành viên thật trong hệ thống';
                 }
 
                 window.filterDailyUsers(window.currentFilterType);
@@ -535,12 +525,12 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
             if (emptyMsg) {
                 if (type === 'returning' && (window.allDailyUsers || []).some(u => u.isNew)) {
                     const countNew = window.allDailyUsers.filter(u => u.isNew).length;
-                    emptyMsg.innerHTML = 'Ngày này không có User cũ quay lại.<br><button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="window.filterDailyUsers(\'new\')">Xem ' + countNew + ' User Mới</button>';
+                    emptyMsg.innerHTML = 'Ngày này chưa có User cũ đăng nhập.<br><button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="window.filterDailyUsers(\'new\')">Xem ' + countNew + ' User Mới</button>';
                 } else if (type === 'new' && (window.allDailyUsers || []).some(u => !u.isNew)) {
                     const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
-                    emptyMsg.innerHTML = 'Ngày này không có User mới.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="window.filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
+                    emptyMsg.innerHTML = 'Ngày này chưa có User mới đăng ký.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="window.filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
                 } else {
-                    emptyMsg.innerText = 'Không có dữ liệu người dùng trong mục này.';
+                    emptyMsg.innerText = 'Ngày này không có tài khoản thành viên nào đăng nhập / đăng ký.';
                 }
             }
             return;
@@ -559,12 +549,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
                 : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
                 
-            const isGa4Guest = u.uid && u.uid.startsWith('ga4_');
-            const guestBadge = isGa4Guest
-                ? '<span class="badge bg-secondary-subtle text-muted">Khách ẩn danh (GA4)</span>'
-                : (u.isGuest 
-                    ? '<span class="badge bg-secondary-subtle text-muted">Khách vãng lai</span>' 
-                    : '<span class="badge bg-primary-subtle text-primary">Tài khoản</span>');
+            const accountBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Thành viên</span>';
 
             let activitiesHtml = '';
             if (u.activities && u.activities.length > 0) {
@@ -589,11 +574,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
             }
 
-            const avatarHtml = isGa4Guest
-                ? `<div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background: rgba(124, 165, 138, 0.15); border: 1px solid rgba(208, 234, 144, 0.3); color: #7ca58a;">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-                   </div>`
-                : `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
+            const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
 
             card.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
@@ -603,7 +584,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                             <div class="d-flex align-items-center gap-2">
                                 <strong class="text-light">${u.fullName}</strong>
                                 ${isNewBadge}
-                                ${guestBadge}
+                                ${accountBadge}
                             </div>
                             <small class="text-muted">${u.email || u.uid}</small>
                         </div>
