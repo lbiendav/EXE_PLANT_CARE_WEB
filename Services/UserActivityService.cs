@@ -269,6 +269,84 @@ public class UserActivityService
             _logger.LogWarning(ex, "Failed to get daily users for date {DateKey}", dateKey);
         }
 
+        // Reconcile with GA4 daily stats so modal counts match table numbers exactly
+        try
+        {
+            var gaOverview = await _gaService.GetOverview();
+            var gaDailyRow = gaOverview.DailyTrends.FirstOrDefault(d => d.DateKey == dateKey);
+            if (gaDailyRow != null)
+            {
+                int currentNew = result.Count(u => u.IsNew);
+                int currentReturning = result.Count(u => !u.IsNew);
+
+                int targetNew = (int)Math.Max(gaDailyRow.NewUsers, currentNew);
+                int targetReturning = (int)Math.Max(gaDailyRow.ReturningUsers, currentReturning);
+
+                if (targetNew + targetReturning < gaDailyRow.ActiveUsers)
+                {
+                    targetReturning += (int)(gaDailyRow.ActiveUsers - (targetNew + targetReturning));
+                }
+
+                // Add anonymous guest records for any missing new visitors recorded in GA4
+                for (int i = 1; i <= targetNew - currentNew; i++)
+                {
+                    result.Add(new DailyUserSummaryVM
+                    {
+                        Uid = $"ga4_new_{dateKey}_{i}",
+                        FullName = $"Khách vãng lai mới #{i}",
+                        Email = "Khách truy cập ẩn danh (GA4)",
+                        AvatarUrl = "",
+                        IsNew = true,
+                        IsGuest = true,
+                        SessionCount = 1,
+                        PageViewCount = 1,
+                        LastActiveTime = "Trong ngày",
+                        Activities =
+                        [
+                            new UserActivityItemVM
+                            {
+                                Path = "/",
+                                Title = "Khách mới truy cập website qua GA4",
+                                Action = "Truy cập ẩn danh",
+                                Time = "--:--"
+                            }
+                        ]
+                    });
+                }
+
+                // Add anonymous guest records for any missing returning visitors recorded in GA4
+                for (int i = 1; i <= targetReturning - currentReturning; i++)
+                {
+                    result.Add(new DailyUserSummaryVM
+                    {
+                        Uid = $"ga4_ret_{dateKey}_{i}",
+                        FullName = $"Khách vãng lai quay lại #{i}",
+                        Email = "Khách cũ quay lại ẩn danh (GA4)",
+                        AvatarUrl = "",
+                        IsNew = false,
+                        IsGuest = true,
+                        SessionCount = 1,
+                        PageViewCount = 1,
+                        LastActiveTime = "Trong ngày",
+                        Activities =
+                        [
+                            new UserActivityItemVM
+                            {
+                                Path = "/",
+                                Title = "Khách cũ quay lại truy cập qua GA4",
+                                Action = "Truy cập ẩn danh",
+                                Time = "--:--"
+                            }
+                        ]
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to reconcile daily users with GA4 for {DateKey}", dateKey);
+        }
+
         if (string.Equals(type, "new", StringComparison.OrdinalIgnoreCase))
         {
             return result.Where(u => u.IsNew).ToList();
@@ -302,9 +380,11 @@ public class UserActivityService
 
             var existingDailyRows = gaOverview.DailyTrends.ToDictionary(d => d.DateKey, d => d);
 
-            var dateKeysToProcess = gaOverview.DailyTrends.Count > 0
-                ? gaOverview.DailyTrends.Select(d => d.DateKey).ToList()
-                : Enumerable.Range(0, 30).Select(i => DateTime.UtcNow.AddHours(7).AddDays(-i).ToString("yyyyMMdd")).Reverse().ToList();
+            // Generate full 30 consecutive days up to today (descending: newest first)
+            var todayVn = DateTime.UtcNow.AddHours(7).Date;
+            var dateKeysToProcess = Enumerable.Range(0, 30)
+                .Select(i => todayVn.AddDays(-i).ToString("yyyyMMdd"))
+                .ToList();
 
             foreach (var dateKey in dateKeysToProcess)
             {
@@ -332,11 +412,24 @@ public class UserActivityService
                 var pageViews = originalRow?.PageViews ?? 0;
                 var display = originalRow?.DisplayDate ?? displayDate;
 
+                long gaNew = originalRow?.NewUsers ?? 0;
+                long gaReturning = originalRow?.ReturningUsers ?? 0;
+                long gaActive = originalRow?.ActiveUsers ?? 0;
+
                 // Merge Google Analytics 4 and Database:
-                // Use GA4 as authoritative for traffic and combine with recorded database accounts
-                long newCount = Math.Max(originalRow?.NewUsers ?? 0, dbNewCount);
-                long returningCount = Math.Max(originalRow?.ReturningUsers ?? 0, dbReturningCount);
-                long activeCount = Math.Max(originalRow?.ActiveUsers ?? 0, newCount + returningCount);
+                long newCount = Math.Max(gaNew, dbNewCount);
+                long returningCount = Math.Max(gaReturning, dbReturningCount);
+                long activeCount = Math.Max(gaActive, newCount + returningCount);
+
+                // Fix non-zero sessions with 0 active users (e.g. 1 session but 0 engaged user recorded by GA4)
+                if (sessions > 0 && activeCount == 0)
+                {
+                    activeCount = 1;
+                    if (newCount == 0 && returningCount == 0)
+                    {
+                        returningCount = 1;
+                    }
+                }
 
                 if (activeCount > newCount + returningCount)
                 {

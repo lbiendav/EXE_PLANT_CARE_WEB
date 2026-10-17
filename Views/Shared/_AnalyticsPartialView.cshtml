@@ -91,10 +91,10 @@
                     {
                         var maxDailyUsers = Math.Max(1, Model.DailyTrends.Max(d => d.ActiveUsers));
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
+                            <table class="table table-sm align-middle mb-0" id="dailyTrendsTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 65px;">Ngày</th>
+                                        <th style="width: 80px; cursor: pointer;" onclick="toggleDailyTrendsSort()" title="Nhấn để đổi chiều xem ngày (Mới nhất / Cũ nhất)">Ngày <span id="sortDirectionIcon" class="text-success small">↓</span></th>
                                         <th>Mật độ</th>
                                         <th class="text-end" style="width: 55px;" title="Tổng số User trong ngày">Tổng</th>
                                         <th class="text-end text-success" style="width: 55px;" title="User mới truy cập">Mới</th>
@@ -393,6 +393,13 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body p-3">
+                <div id="modalSummaryInfo" class="p-2 mb-3 rounded d-flex justify-content-between align-items-center small d-none" style="background: rgba(208, 234, 144, 0.08); border: 1px solid rgba(208, 234, 144, 0.2);">
+                    <div>
+                        <span class="text-success fw-semibold">Tổng ghi nhận:</span>
+                        <span id="modalGa4Summary" class="text-light">--</span>
+                    </div>
+                    <small class="text-muted" id="modalDbSummary">--</small>
+                </div>
                 <div id="dailyUsersLoading" class="text-center py-5">
                     <div class="spinner-border text-success" role="status"></div>
                     <p class="text-muted mt-2 mb-0">Đang tải danh sách người dùng và các trang đã xem...</p>
@@ -418,6 +425,18 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
     window.dailyUsersInitialized = true;
     window.allDailyUsers = [];
     window.currentFilterType = 'all';
+    window.dailyTrendsAscending = false;
+
+    window.toggleDailyTrendsSort = function() {
+        const tbody = document.querySelector('#dailyTrendsTable tbody');
+        if (!tbody) return;
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        rows.reverse();
+        rows.forEach(r => tbody.appendChild(r));
+        window.dailyTrendsAscending = !window.dailyTrendsAscending;
+        const icon = document.getElementById('sortDirectionIcon');
+        if (icon) icon.innerText = window.dailyTrendsAscending ? '↑' : '↓';
+    };
 
     window.openDailyUsersModal = function(dateKey, displayDate, type) {
         window.currentFilterType = type || 'all';
@@ -429,9 +448,11 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         const loading = document.getElementById('dailyUsersLoading');
         const empty = document.getElementById('dailyUsersEmpty');
         const container = document.getElementById('dailyUsersContainer');
+        const summaryInfo = document.getElementById('modalSummaryInfo');
 
         if (loading) loading.classList.remove('d-none');
         if (empty) empty.classList.add('d-none');
+        if (summaryInfo) summaryInfo.classList.add('d-none');
         if (container) {
             container.classList.add('d-none');
             container.innerHTML = '';
@@ -451,6 +472,8 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const countNew = window.allDailyUsers.filter(u => u.isNew).length;
                 const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
+                const realCount = window.allDailyUsers.filter(u => !u.uid.startsWith('ga4_')).length;
+                const guestCount = window.allDailyUsers.length - realCount;
 
                 const countAllEl = document.getElementById('modalCountAll');
                 const countNewEl = document.getElementById('modalCountNew');
@@ -459,6 +482,22 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 if (countAllEl) countAllEl.innerText = window.allDailyUsers.length;
                 if (countNewEl) countNewEl.innerText = countNew;
                 if (countRetEl) countRetEl.innerText = countRet;
+
+                if (summaryInfo && window.allDailyUsers.length > 0) {
+                    summaryInfo.classList.remove('d-none');
+                    const ga4El = document.getElementById('modalGa4Summary');
+                    const dbEl = document.getElementById('modalDbSummary');
+                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' người (' + countNew + ' mới, ' + countRet + ' cũ)';
+                    if (dbEl) {
+                        if (realCount > 0 && guestCount > 0) {
+                            dbEl.innerText = realCount + ' tài khoản lưu vết, ' + guestCount + ' khách vãng lai (GA4)';
+                        } else if (realCount > 0) {
+                            dbEl.innerText = realCount + ' tài khoản lưu vết chi tiết';
+                        } else {
+                            dbEl.innerText = guestCount + ' khách vãng lai ghi nhận qua GA4';
+                        }
+                    }
+                }
 
                 window.filterDailyUsers(window.currentFilterType);
             })
@@ -520,9 +559,12 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
                 : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
                 
-            const guestBadge = u.isGuest 
-                ? '<span class="badge bg-secondary-subtle text-muted">Khách vãng lai</span>' 
-                : '<span class="badge bg-primary-subtle text-primary">Tài khoản</span>';
+            const isGa4Guest = u.uid && u.uid.startsWith('ga4_');
+            const guestBadge = isGa4Guest
+                ? '<span class="badge bg-secondary-subtle text-muted">Khách ẩn danh (GA4)</span>'
+                : (u.isGuest 
+                    ? '<span class="badge bg-secondary-subtle text-muted">Khách vãng lai</span>' 
+                    : '<span class="badge bg-primary-subtle text-primary">Tài khoản</span>');
 
             let activitiesHtml = '';
             if (u.activities && u.activities.length > 0) {
@@ -547,7 +589,9 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
             }
 
-            const avatar = u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid));
+            const avatar = isGa4Guest
+                ? 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="%237ca58a" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
+                : (u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid)));
 
             card.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
