@@ -243,6 +243,30 @@ public class UserActivityService
                             })
                             .ToList();
 
+                        if (dayActivities.Count == 0)
+                        {
+                            if (isUserNew)
+                            {
+                                dayActivities.Add(new UserActivityItemVM
+                                {
+                                    Path = "/Account/Register",
+                                    Title = "Đăng ký tài khoản HomePlant",
+                                    Action = "Tạo tài khoản mới thành công",
+                                    Time = u.CreatedAt.AddHours(7).ToString("HH:mm:ss")
+                                });
+                            }
+                            else if (u.LastActiveAt.HasValue && lastActiveVn == dateKey)
+                            {
+                                dayActivities.Add(new UserActivityItemVM
+                                {
+                                    Path = "/Account/Login",
+                                    Title = "Đăng nhập hệ thống",
+                                    Action = "Truy cập website",
+                                    Time = u.LastActiveAt.Value.AddHours(7).ToString("HH:mm:ss")
+                                });
+                            }
+                        }
+
                         result.Add(new DailyUserSummaryVM
                         {
                             Uid = u.Id,

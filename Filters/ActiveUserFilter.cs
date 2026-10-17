@@ -174,7 +174,10 @@ public sealed class ActiveUserFilter(
             "plans/index" => ("Bảng giá gói thành viên", "Xem gói dịch vụ"),
             "checkout/index" => ("Thanh toán gói dịch vụ", "Mở trang thanh toán"),
             "notifications/index" => ("Trung tâm thông báo", "Xem thông báo"),
-            "account/login" => ("Đăng nhập", "Đăng nhập"),
+            "account/login" => ("Đăng nhập", isPost ? "Xác thực đăng nhập" : "Mở trang đăng nhập"),
+            "account/register" => ("Đăng ký tài khoản", isPost ? "Hoàn tất đăng ký" : "Mở form đăng ký"),
+            "account/registerpending" => ("Kích hoạt tài khoản", "Chờ xác nhận email"),
+            "account/forgotpassword" => ("Quên mật khẩu", isPost ? "Gửi yêu cầu khôi phục" : "Mở trang quên mật khẩu"),
             _ => ($"{controller} - {action}", isPost ? "Thực hiện thao tác" : "Xem trang")
         };
     }
