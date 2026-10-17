@@ -59,11 +59,14 @@ public sealed class ActiveUserFilter(
             var isAdminPage = string.Equals(controller, "Admin", StringComparison.OrdinalIgnoreCase) ||
                               string.Equals(controller, "Revenue", StringComparison.OrdinalIgnoreCase) ||
                               path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) ||
-                              path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase);
+                              path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/readyz", StringComparison.OrdinalIgnoreCase);
 
             if (!isAdminPage &&
                 !string.Equals(action, "UnreadCount", StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(action, "UserActivities", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(action, "UserActivities", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(action, "DailyUsers", StringComparison.OrdinalIgnoreCase))
             {
                 var isNewSession = false;
                 if (session.GetString("UserSessionTracked") == null)
@@ -78,7 +81,63 @@ public sealed class ActiveUserFilter(
                 {
                     session.SetString("LastNavKey", currentNavKey);
                     var (title, actionName) = ResolveActivity(controller, action, method);
+                    var fullName = string.IsNullOrWhiteSpace(state.User.FullName) ? "Người dùng" : state.User.FullName;
+                    var email = state.User.Email ?? "";
+                    var avatarUrl = state.User.AvatarUrl ?? "";
+                    var isNewUser = (state.User.CreatedAt.AddHours(7).ToString("yyyyMMdd") == DateTime.UtcNow.AddHours(7).ToString("yyyyMMdd")) || (state.User.VisitCount <= 1);
+
                     _ = activityService.LogActivityAsync(uid, path, title, actionName, isNewSession);
+                    _ = activityService.LogDailyActivityAsync(uid, fullName, email, avatarUrl, isGuest: false, isNew: isNewUser, path, title, actionName, isNewSession);
+                }
+            }
+        }
+        else
+        {
+            // Anonymous guest tracking
+            var controller = context.RouteData.Values["controller"]?.ToString() ?? "";
+            var action = context.RouteData.Values["action"]?.ToString() ?? "";
+            var method = context.HttpContext.Request.Method;
+            var path = context.HttpContext.Request.Path.Value ?? "/";
+
+            var isAdminPage = string.Equals(controller, "Admin", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(controller, "Revenue", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/Revenue", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase) ||
+                              path.StartsWith("/readyz", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAdminPage &&
+                !string.Equals(action, "UnreadCount", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(action, "UserActivities", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(action, "DailyUsers", StringComparison.OrdinalIgnoreCase))
+            {
+                var guestId = session.GetString("GuestTrackingId");
+                var isNewSession = false;
+                if (string.IsNullOrEmpty(guestId))
+                {
+                    guestId = "guest_" + Guid.NewGuid().ToString("N")[..8];
+                    session.SetString("GuestTrackingId", guestId);
+                    isNewSession = true;
+                }
+
+                var currentNavKey = $"{method}:{controller}/{action}";
+                var lastNavKey = session.GetString("LastNavKey");
+                if (lastNavKey != currentNavKey || isNewSession)
+                {
+                    session.SetString("LastNavKey", currentNavKey);
+                    var (title, actionName) = ResolveActivity(controller, action, method);
+                    _ = activityService.LogDailyActivityAsync(
+                        userId: guestId,
+                        fullName: $"Khách vãng lai #{guestId[6..]}",
+                        email: "Chưa đăng nhập (Khách)",
+                        avatarUrl: "",
+                        isGuest: true,
+                        isNew: true,
+                        path: path,
+                        title: title,
+                        action: actionName,
+                        isNewSession: isNewSession
+                    );
                 }
             }
         }

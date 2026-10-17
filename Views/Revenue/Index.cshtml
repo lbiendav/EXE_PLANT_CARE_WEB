@@ -143,9 +143,36 @@
                                                         <div class="progress-bar" role="progressbar" style="width: @(pct)%; background-color: var(--green);" aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
                                                 </td>
-                                                <td class="text-end font-monospace fw-semibold">@day.ActiveUsers</td>
-                                                <td class="text-end font-monospace text-success">@day.NewUsers</td>
-                                                <td class="text-end font-monospace text-info">@day.ReturningUsers</td>
+                                                <td class="text-end font-monospace">
+                                                    @if (day.ActiveUsers > 0)
+                                                    {
+                                                        <button type="button" class="btn btn-link p-0 text-decoration-none fw-semibold text-light" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'all')" title="Xem chi tiết người dùng ngày @day.DisplayDate">@day.ActiveUsers</button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">0</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end font-monospace">
+                                                    @if (day.NewUsers > 0)
+                                                    {
+                                                        <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-success text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'new')" title="Xem chi tiết User MỚI ngày @day.DisplayDate">@day.NewUsers</button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">0</span>
+                                                    }
+                                                </td>
+                                                <td class="text-end font-monospace">
+                                                    @if (day.ReturningUsers > 0)
+                                                    {
+                                                        <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-info text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'returning')" title="Xem chi tiết User CŨ ngày @day.DisplayDate">@day.ReturningUsers</button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">0</span>
+                                                    }
+                                                </td>
                                                 <td class="text-end font-monospace text-muted">@day.Sessions</td>
                                                 <td class="text-end font-monospace text-muted">@day.PageViews</td>
                                             </tr>
@@ -328,3 +355,179 @@
 @if (Model.Tab == "audit") {
 <div class="table-responsive status-panel"><table class="table align-middle mb-0"><thead><tr><th>Thời gian</th><th>Quản trị viên</th><th>Hành động</th><th>Đối tượng</th><th>Lý do</th></tr></thead><tbody>@foreach (var log in Model.AuditLogs) { <tr><td>@log.CreatedAt.ToOffset(TimeSpan.FromHours(7)).ToString("dd/MM/yy HH:mm:ss")</td><td>@log.AdminEmail</td><td><code>@log.Action</code></td><td>@log.TargetType<br/><small>@log.TargetId</small></td><td>@log.Reason</td></tr> }</tbody></table></div>
 }
+
+<!-- Modal xem chi tiết người dùng mới / cũ theo ngày -->
+<div class="modal fade" id="dailyUsersModal" tabindex="-1" aria-labelledby="dailyUsersModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="background-color: var(--bg-surface, #15221c); color: var(--ink, #e0ede4); border: 1px solid var(--hair-soft, rgba(208, 234, 144, 0.2));">
+            <div class="modal-header border-bottom border-secondary-subtle">
+                <div>
+                    <h5 class="modal-title h5 mb-1" id="dailyUsersModalTitle">Chi tiết người dùng</h5>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-light active" id="btnTabAll" onclick="filterDailyUsers('all')">
+                                Tất cả (<span id="modalCountAll">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-success" id="btnTabNew" onclick="filterDailyUsers('new')">
+                                User Mới (<span id="modalCountNew">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-info" id="btnTabReturning" onclick="filterDailyUsers('returning')">
+                                User Cũ (<span id="modalCountReturning">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-3">
+                <div id="dailyUsersLoading" class="text-center py-5">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p class="text-muted mt-2 mb-0">Đang tải danh sách người dùng và các trang đã xem...</p>
+                </div>
+                <div id="dailyUsersEmpty" class="text-center py-5 d-none">
+                    <div class="text-muted mb-2">
+                        <svg width="42" height="42" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <h6 class="text-muted mb-1" id="dailyUsersEmptyMsg">Không có dữ liệu người dùng trong mục này.</h6>
+                    <small class="text-muted d-block">Danh tính cụ thể (tên, email, các trang đã xem) được tự động ghi nhận khi người dùng thao tác trên website HomePlant.</small>
+                </div>
+                <div id="dailyUsersContainer" class="d-flex flex-column gap-3 d-none"></div>
+            </div>
+            <div class="modal-footer border-top border-secondary-subtle">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let allDailyUsers = [];
+let currentFilterType = 'all';
+
+function openDailyUsersModal(dateKey, displayDate, type) {
+    currentFilterType = type || 'all';
+    document.getElementById('dailyUsersModalTitle').innerHTML = 'Người dùng truy cập ngày <span class="text-success font-monospace">' + displayDate + '</span>';
+    
+    const loading = document.getElementById('dailyUsersLoading');
+    const empty = document.getElementById('dailyUsersEmpty');
+    const container = document.getElementById('dailyUsersContainer');
+
+    loading.classList.remove('d-none');
+    empty.classList.add('d-none');
+    container.classList.add('d-none');
+    container.innerHTML = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('dailyUsersModal'));
+    modal.show();
+
+    fetch('/Admin/Revenue/DailyUsers?date=' + encodeURIComponent(dateKey) + '&type=all')
+        .then(res => res.json())
+        .then(data => {
+            loading.classList.add('d-none');
+            allDailyUsers = (data && data.users) ? data.users : [];
+
+            const countNew = allDailyUsers.filter(u => u.isNew).length;
+            const countRet = allDailyUsers.filter(u => !u.isNew).length;
+
+            document.getElementById('modalCountAll').innerText = allDailyUsers.length;
+            document.getElementById('modalCountNew').innerText = countNew;
+            document.getElementById('modalCountReturning').innerText = countRet;
+
+            filterDailyUsers(currentFilterType);
+        })
+        .catch(err => {
+            loading.classList.add('d-none');
+            empty.classList.remove('d-none');
+            document.getElementById('dailyUsersEmptyMsg').innerText = 'Không thể tải dữ liệu: ' + err.message;
+        });
+}
+
+function filterDailyUsers(type) {
+    currentFilterType = type;
+    document.getElementById('btnTabAll').classList.toggle('active', type === 'all');
+    document.getElementById('btnTabNew').classList.toggle('active', type === 'new');
+    document.getElementById('btnTabReturning').classList.toggle('active', type === 'returning');
+
+    const empty = document.getElementById('dailyUsersEmpty');
+    const container = document.getElementById('dailyUsersContainer');
+    container.innerHTML = '';
+
+    let filtered = allDailyUsers;
+    if (type === 'new') filtered = allDailyUsers.filter(u => u.isNew);
+    if (type === 'returning') filtered = allDailyUsers.filter(u => !u.isNew);
+
+    if (filtered.length === 0) {
+        empty.classList.remove('d-none');
+        container.classList.add('d-none');
+        return;
+    }
+
+    empty.classList.add('d-none');
+    container.classList.remove('d-none');
+
+    filtered.forEach((u) => {
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded border';
+        card.style.background = 'rgba(255, 255, 255, 0.03)';
+        card.style.borderColor = 'rgba(208, 234, 144, 0.15)';
+
+        const isNewBadge = u.isNew 
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
+            : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
+            
+        const guestBadge = u.isGuest 
+            ? '<span class="badge bg-secondary-subtle text-muted">Khách chưa đăng nhập</span>' 
+            : '<span class="badge bg-primary-subtle text-primary">Tài khoản</span>';
+
+        let activitiesHtml = '';
+        if (u.activities && u.activities.length > 0) {
+            activitiesHtml = `
+                <div class="mt-3 pt-2 border-top border-secondary-subtle">
+                    <small class="text-muted text-uppercase fw-semibold d-block mb-2" style="letter-spacing: .05em; font-size: 0.75rem;">
+                        Các trang đã xem trong phiên (${u.activities.length} lượt):
+                    </small>
+                    <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto;">
+                        ${u.activities.map(a => `
+                            <div class="d-flex align-items-baseline gap-2 small">
+                                <span class="font-monospace text-muted" style="font-size: 0.8rem; min-width: 58px;">${a.time}</span>
+                                <span class="badge bg-secondary-subtle text-light px-1">${a.action || 'Xem'}</span>
+                                <strong class="text-success text-truncate">${a.title}</strong>
+                                <code class="text-muted small">${a.path}</code>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
+        }
+
+        const avatar = u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid));
+
+        card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <img src="${avatar}" class="rounded-circle" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="${u.fullName}"/>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <strong class="text-light">${u.fullName}</strong>
+                            ${isNewBadge}
+                            ${guestBadge}
+                        </div>
+                        <small class="text-muted">${u.email || u.uid}</small>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 font-monospace small">
+                    <span class="badge bg-dark border border-secondary-subtle text-light">${u.sessionCount || 1} phiên</span>
+                    <span class="badge bg-dark border border-secondary-subtle text-success">${u.pageViewCount || (u.activities ? u.activities.length : 1)} lượt xem</span>
+                </div>
+            </div>
+            ${activitiesHtml}
+        `;
+        container.appendChild(card);
+    });
+}
+</script>
+}
+

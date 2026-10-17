@@ -107,6 +107,23 @@ public class AdminController : Controller
         }));
     }
 
+    [HttpGet]
+    [PrivilegedAdminOnly]
+    public async Task<IActionResult> DailyUsers(string date, string type = "all")
+    {
+        if (string.IsNullOrWhiteSpace(date)) return Json(new { success = false, message = "Missing date" });
+        var users = await _activityService.GetDailyUsersAsync(date, type ?? "all");
+        return Json(new
+        {
+            dateKey = date,
+            type = type ?? "all",
+            total = users.Count,
+            newCount = users.Count(u => u.IsNew),
+            returningCount = users.Count(u => !u.IsNew),
+            users = users
+        });
+    }
+
     [HttpPost]
     [PrivilegedAdminOnly]
     public async Task<IActionResult> Ban(string id)

@@ -13,6 +13,22 @@ public sealed class RevenueController(RevenueAdminService revenue, ILogger<Reven
     public async Task<IActionResult> Index(string tab = "overview", string query = "", string status = "", string detail = "") =>
         View(await revenue.Dashboard(tab, query ?? "", status ?? "", detail ?? ""));
 
+    [HttpGet("DailyUsers")]
+    public async Task<IActionResult> DailyUsers([FromServices] UserActivityService activityService, string date, string type = "all")
+    {
+        if (string.IsNullOrWhiteSpace(date)) return Json(new { success = false, message = "Missing date" });
+        var users = await activityService.GetDailyUsersAsync(date, type ?? "all");
+        return Json(new
+        {
+            dateKey = date,
+            type = type ?? "all",
+            total = users.Count,
+            newCount = users.Count(u => u.IsNew),
+            returningCount = users.Count(u => !u.IsNew),
+            users = users
+        });
+    }
+
     [HttpGet("Orders/{id}")]
     public async Task<IActionResult> Order(string id)
     {
