@@ -37,6 +37,15 @@ public class UserService
             .ConvertTo<UserModel>();
     }
 
+    public async Task<UserModel?> GetById(string uid)
+    {
+        if (!FirestoreDocumentId.IsValid(uid))
+            return null;
+
+        var doc = await _db.Collection("users").Document(uid).GetSnapshotAsync();
+        return doc.Exists ? doc.ConvertTo<UserModel>() : null;
+    }
+
     public async Task<List<UserModel>> GetAll()
     {
         var snapshot =

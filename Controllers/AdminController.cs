@@ -22,6 +22,7 @@ public class AdminController : Controller
     private readonly ImageStorageService _imageStorage;
     private readonly GoogleAnalyticsService _analyticsService;
     private readonly UserActivityService _activityService;
+    private readonly PlantSpeciesRequestService _speciesRequestService;
 
     public AdminController(
         UserService userService,
@@ -34,7 +35,8 @@ public class AdminController : Controller
         AiDiagnosisService aiDiagnosisService,
         ImageStorageService imageStorage,
         GoogleAnalyticsService analyticsService,
-        UserActivityService activityService)
+        UserActivityService activityService,
+        PlantSpeciesRequestService speciesRequestService)
     {
         _userService = userService;
         _articleService = articleService;
@@ -47,6 +49,7 @@ public class AdminController : Controller
         _imageStorage = imageStorage;
         _analyticsService = analyticsService;
         _activityService = activityService;
+        _speciesRequestService = speciesRequestService;
     }
 
     [PrivilegedAdminOnly]
@@ -60,10 +63,11 @@ public class AdminController : Controller
         var qaCount = _qaThreadService.Count();
         var diagnosisCount = _aiDiagnosisService.Count();
         var gardenCount = _userPlantService.CountAll();
+        var speciesRequestCount = _speciesRequestService.CountPending();
         var analyticsTask = _analyticsService.GetOverview(cancellationToken);
 
         await Task.WhenAll(userCount, articleCount, templateCount, sampleCount,
-            communityCount, qaCount, diagnosisCount, gardenCount, analyticsTask);
+            communityCount, qaCount, diagnosisCount, gardenCount, speciesRequestCount, analyticsTask);
 
         var enrichedAnalytics = await _activityService.EnrichWithDatabaseUsersAsync(analyticsTask.Result);
 
@@ -77,6 +81,7 @@ public class AdminController : Controller
             CommunityPostCount = communityCount.Result,
             QaThreadCount = qaCount.Result,
             AiDiagnosisCount = diagnosisCount.Result,
+            PendingSpeciesRequestCount = speciesRequestCount.Result,
             Analytics = enrichedAnalytics
         };
 
@@ -510,5 +515,133 @@ public class AdminController : Controller
         await _imageStorage.Delete(diagnosis.UploadedImageUrl, CancellationToken.None);
 
         return RedirectToAction(nameof(AiDiagnoses));
+    }
+
+    public async Task<IActionResult> SpeciesRequests(string? status = null)
+    {
+        var requests = await _speciesRequestService.GetAll(status);
+        ViewBag.CurrentStatus = status;
+        ViewBag.PendingCount = await _speciesRequestService.CountPending();
+        return View(requests);
+    }
+
+    public async Task<IActionResult> ReviewSpeciesRequest(string id)
+    {
+        var request = await _speciesRequestService.GetById(id);
+        if (request == null)
+            return NotFound();
+
+        ViewBag.Request = request;
+        var vm = new PlantSampleFormVM
+        {
+            Name = request.ProposedName,
+            ScientificName = request.ScientificName,
+            Description = request.Description,
+            Light = request.Light,
+            Water = request.Water,
+            Soil = request.Soil,
+            Fertilizer = request.Fertilizer,
+            ExistingImageUrl = request.ImageUrl
+        };
+
+        return View(vm);
+    }
+
+    [HttpPost]
+    [EnableRateLimiting("upload")]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public async Task<IActionResult> ProcessSpeciesRequest(string id, string action, PlantSampleFormVM vm)
+    {
+        var request = await _speciesRequestService.GetById(id);
+        if (request == null)
+            return NotFound();
+
+        if (action == "reject")
+        {
+            request.Status = "rejected";
+            await _speciesRequestService.Update(id, request);
+
+            var userPlant = await _userPlantService.GetById(request.UserId, request.UserPlantId);
+            if (userPlant != null)
+            {
+                userPlant.SpeciesApprovalStatus = "rejected";
+                await _userPlantService.Update(request.UserId, request.UserPlantId, userPlant);
+            }
+
+            TempData["Warning"] = $"Đã từ chối yêu cầu giống cây '{request.ProposedName}'. Cây của người dùng đã được chuyển sang trạng thái 'Hãy nhập lại giống cây'.";
+            return RedirectToAction(nameof(SpeciesRequests));
+        }
+
+        if (string.IsNullOrWhiteSpace(vm.Name))
+        {
+            ModelState.AddModelError(nameof(vm.Name), "Vui lòng nhập tên cây.");
+            ViewBag.Request = request;
+            return View("ReviewSpeciesRequest", vm);
+        }
+
+        var imageUrl = vm.Photo != null
+            ? await _imageStorage.Upload(vm.Photo, HttpContext.RequestAborted) ?? ""
+            : vm.ExistingImageUrl ?? "";
+
+        var plant = new PlantSampleModel
+        {
+            Name = vm.Name.Trim(),
+            ScientificName = vm.ScientificName?.Trim() ?? "",
+            Description = vm.Description?.Trim() ?? "",
+            Image = imageUrl,
+            CreatedAt = Timestamp.GetCurrentTimestamp(),
+            Care = new CareModel
+            {
+                Light = vm.Light ?? "",
+                Water = vm.Water ?? "",
+                Soil = vm.Soil ?? "",
+                Fertilizer = vm.Fertilizer ?? ""
+            },
+            Diseases = CleanDiseases(vm.Diseases)
+        };
+
+        var newSampleId = await _samplePlantService.Add(plant);
+
+        var plantToUpdate = await _userPlantService.GetById(request.UserId, request.UserPlantId);
+        if (plantToUpdate != null)
+        {
+            plantToUpdate.TemplateId = newSampleId;
+            plantToUpdate.CustomSpeciesName = null;
+            plantToUpdate.SpeciesApprovalStatus = "approved";
+            await _userPlantService.Update(request.UserId, request.UserPlantId, plantToUpdate);
+        }
+
+        request.Status = "approved";
+        request.ApprovedSampleId = newSampleId;
+        request.ProposedName = vm.Name.Trim();
+        request.ScientificName = vm.ScientificName?.Trim() ?? "";
+        request.Description = vm.Description?.Trim() ?? "";
+        request.ImageUrl = imageUrl;
+        await _speciesRequestService.Update(id, request);
+
+        TempData["Success"] = $"Đã phê duyệt và thêm loài cây '{plant.Name}' vào Thư viện thành công! Cây trong vườn của người dùng đã được cập nhật.";
+        return RedirectToAction(nameof(SpeciesRequests));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteSpeciesRequest(string id)
+    {
+        var request = await _speciesRequestService.GetById(id);
+        if (request == null)
+            return NotFound();
+
+        if (request.Status == "pending")
+        {
+            var userPlant = await _userPlantService.GetById(request.UserId, request.UserPlantId);
+            if (userPlant != null)
+            {
+                userPlant.SpeciesApprovalStatus = "rejected";
+                await _userPlantService.Update(request.UserId, request.UserPlantId, userPlant);
+            }
+        }
+
+        await _speciesRequestService.Delete(id);
+        TempData["Success"] = "Đã xóa yêu cầu giống cây.";
+        return RedirectToAction(nameof(SpeciesRequests));
     }
 }

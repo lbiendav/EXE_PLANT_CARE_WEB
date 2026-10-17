@@ -48,6 +48,19 @@
     </div>
 
     <div class="col-lg-3 col-md-4 col-sm-6">
+        <a asp-action="SpeciesRequests" class="admin-stat-card">
+            <div class="stat-number">
+                @Model.PendingSpeciesRequestCount
+                @if (Model.PendingSpeciesRequestCount > 0)
+                {
+                    <span class="badge bg-warning text-dark fs-6 align-middle ms-1">Mới</span>
+                }
+            </div>
+            <div class="stat-label">Duyệt giống cây</div>
+        </a>
+    </div>
+
+    <div class="col-lg-3 col-md-4 col-sm-6">
         <a asp-action="GardenPlants" class="admin-stat-card">
             <div class="stat-number">@Model.GardenPlantCount</div>
             <div class="stat-label">Cây trong vườn</div>

@@ -27,7 +27,35 @@
             <span class="status-pill bg-@plant.StatusColorClass">@plant.DisplayStatus</span>
         </div>
 
-        @if (species != null)
+        @if (plant.SpeciesApprovalStatus == "pending")
+        {
+            <div class="card mt-3 border-warning">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-warning text-dark">Đang kiểm duyệt</span>
+                        <h5 class="fw-bold mb-0">@(string.IsNullOrWhiteSpace(plant.CustomSpeciesName) ? "Loài cây đề xuất" : plant.CustomSpeciesName)</h5>
+                    </div>
+                    <p class="text-muted small mb-0">
+                        Giống cây này đã được gửi đến quản trị viên để kiểm duyệt, chuẩn hóa thông tin và bổ sung vào thư viện. Sau khi được duyệt, thông tin chăm sóc chi tiết sẽ được tự động cập nhật tại đây.
+                    </p>
+                </div>
+            </div>
+        }
+        else if (plant.SpeciesApprovalStatus == "rejected")
+        {
+            <div class="card mt-3 border-danger">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-danger">Hãy nhập lại giống cây</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Giống cây đề xuất không được phê duyệt. Vui lòng bấm vào bên dưới để chọn một loài cây chuẩn từ thư viện hoặc gửi đề xuất giống cây mới.
+                    </p>
+                    <a asp-action="Edit" asp-route-id="@plant.Id" class="btn btn-warning btn-sm">Cập nhật giống cây</a>
+                </div>
+            </div>
+        }
+        else if (species != null)
         {
             <div class="card mt-3">
                 <div class="card-body p-4">
@@ -54,7 +82,25 @@
         <div class="card mb-3">
             <div class="card-body p-4">
                 <h6 class="kicker mb-3">Thông tin chung</h6>
-                <div class="field-row"><span class="field-label">Loài cây</span><span class="field-value">@(species?.Name ?? "Chưa xác định")</span></div>
+                <div class="field-row">
+                    <span class="field-label">Loài cây</span>
+                    <span class="field-value">
+                        @if (plant.SpeciesApprovalStatus == "pending")
+                        {
+                            <span>@(plant.CustomSpeciesName ?? "Chưa xác định")</span>
+                            <span class="badge bg-warning text-dark ms-2">Đang kiểm duyệt</span>
+                        }
+                        else if (plant.SpeciesApprovalStatus == "rejected")
+                        {
+                            <span class="badge bg-danger">Hãy nhập lại giống cây</span>
+                            <a asp-action="Edit" asp-route-id="@plant.Id" class="btn btn-outline-warning btn-sm ms-2">Sửa cây</a>
+                        }
+                        else
+                        {
+                            <span>@(species?.Name ?? "Chưa xác định")</span>
+                        }
+                    </span>
+                </div>
                 <div class="field-row"><span class="field-label">Bắt đầu chăm từ</span><span class="field-value">@plant.PlantedAt.ToDateTime().AddHours(7).ToString("dd/MM/yyyy")</span></div>
             </div>
         </div>

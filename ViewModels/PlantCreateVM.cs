@@ -13,6 +13,9 @@ public class PlantCreateVM
     [Required(ErrorMessage = "Vui lòng chọn loại cây")]
     public string PlantSampleId { get; set; } = "";
 
+    [StringLength(100, ErrorMessage = "Tên giống cây không được quá 100 ký tự")]
+    public string? CustomSpeciesName { get; set; }
+
     public string CurrentStatus { get; set; } = "Khỏe mạnh";
 
     [Range(1, 3650, ErrorMessage = "Chu kỳ tưới phải từ 1 đến 3650")]

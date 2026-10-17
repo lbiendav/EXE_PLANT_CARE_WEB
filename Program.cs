@@ -197,6 +197,7 @@ builder.Services.AddScoped<ArticleService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<UserActivityService>();
 builder.Services.AddScoped<PlantSampleService>();
+builder.Services.AddScoped<PlantSpeciesRequestService>();
 builder.Services.AddScoped<UserPlantService>();
 builder.Services.AddScoped<PlantTemplateService>();
 builder.Services.AddScoped<ImageStorageService>();

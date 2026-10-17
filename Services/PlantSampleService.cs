@@ -36,12 +36,14 @@ public class PlantSampleService
 
     public async Task<int> Count() => checked((int)((await _db.Collection("sample_plants").Count().GetSnapshotAsync()).Count ?? 0));
 
-    public async Task Add(PlantSampleModel plant)
+    public async Task<string> Add(PlantSampleModel plant)
     {
         _cache?.Remove(CacheKey);
-        await _db
+        var docRef = await _db
             .Collection("sample_plants")
             .AddAsync(plant);
+        plant.Id = docRef.Id;
+        return docRef.Id;
     }
 
     public async Task Delete(string id)

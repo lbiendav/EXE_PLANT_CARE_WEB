@@ -40,6 +40,14 @@
         <div class="form-text">Để trống nếu muốn giữ ảnh hiện tại.</div>
     </div>
 
+    @if (Model.SpeciesApprovalStatus == "rejected")
+    {
+        <div class="alert alert-danger mb-4" role="alert">
+            <h6 class="alert-heading fw-bold mb-1">Giống cây trước đó không được phê duyệt</h6>
+            <div>Hãy nhập lại giống cây bằng cách chọn loại cây từ thư viện hoặc đề xuất giống cây mới chính xác hơn.</div>
+        </div>
+    }
+
     <div class="mb-3">
         <label class="form-label" asp-for="Nickname">Tên gọi</label>
         <input asp-for="Nickname" class="form-control" />
@@ -52,6 +60,15 @@
             <option value="">Chọn loại cây</option>
         </select>
         <span asp-validation-for="PlantSampleId" class="text-danger small"></span>
+    </div>
+
+    <div id="customSpeciesGroup" class="mb-3 @(Model.PlantSampleId == "__custom__" ? "" : "d-none")">
+        <label class="form-label" asp-for="CustomSpeciesName">Tên giống cây đề xuất <span class="text-danger">*</span></label>
+        <input asp-for="CustomSpeciesName"
+               class="form-control"
+               placeholder="Ví dụ: Cây Trầu Bà Đế Vương Đỏ" />
+        <span asp-validation-for="CustomSpeciesName" class="text-danger small"></span>
+        <div class="form-text text-muted">Loại cây này sẽ được gửi đến quản trị viên để kiểm duyệt và thêm vào thư viện.</div>
     </div>
 
     <div class="mb-4">
@@ -77,6 +94,22 @@
         document.getElementById("photoPlaceholder").classList.add("d-none");
         document.getElementById("photoPlaceholderText").textContent = file.name;
     });
+
+    var sampleSelect = document.getElementById("PlantSampleId");
+    var customSpeciesGroup = document.getElementById("customSpeciesGroup");
+    function updateCustomSpeciesVisibility() {
+        if (sampleSelect && customSpeciesGroup) {
+            if (sampleSelect.value === "__custom__") {
+                customSpeciesGroup.classList.remove("d-none");
+            } else {
+                customSpeciesGroup.classList.add("d-none");
+            }
+        }
+    }
+    if (sampleSelect) {
+        sampleSelect.addEventListener("change", updateCustomSpeciesVisibility);
+        updateCustomSpeciesVisibility();
+    }
 
     document.getElementById("plantEditForm").addEventListener("submit", function () {
         var button = this.querySelector('button[type="submit"]');

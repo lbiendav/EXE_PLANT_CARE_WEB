@@ -69,7 +69,21 @@ else
 
                         <h5 class="fw-bold mb-0">@plant.CustomName</h5>
 
-                        @if (species != null)
+                        @if (plant.SpeciesApprovalStatus == "pending")
+                        {
+                            <small class="mb-3 d-flex flex-wrap align-items-center gap-1">
+                                <span class="text-muted fst-italic">@(string.IsNullOrWhiteSpace(plant.CustomSpeciesName) ? "Loài cây đề xuất" : plant.CustomSpeciesName)</span>
+                                <span class="badge bg-warning text-dark">Đang kiểm duyệt</span>
+                            </small>
+                        }
+                        else if (plant.SpeciesApprovalStatus == "rejected")
+                        {
+                            <small class="mb-3 d-flex flex-wrap align-items-center gap-1">
+                                <span class="badge bg-danger">Hãy nhập lại giống cây</span>
+                                <a asp-action="Edit" asp-route-id="@plant.Id" class="badge bg-secondary text-decoration-none">Sửa</a>
+                            </small>
+                        }
+                        else if (species != null)
                         {
                             <small class="text-muted fst-italic mb-3">
                                 @species.Name · @species.ScientificName

@@ -23,6 +23,12 @@ public class UserPlantModel
     [FirestoreProperty("status")]
     public string Status { get; set; } = "healthy";
 
+    [FirestoreProperty("customSpeciesName")]
+    public string? CustomSpeciesName { get; set; }
+
+    [FirestoreProperty("speciesApprovalStatus")]
+    public string? SpeciesApprovalStatus { get; set; } // "pending", "approved", "rejected", or null
+
     [FirestoreProperty("createdAt")]
     public Timestamp CreatedAt { get; set; }
 

@@ -23,9 +23,14 @@
         <p class="text-muted mt-2 mb-0">Nguồn dữ liệu chuẩn cho thư viện và form thêm cây của người dùng.</p>
     </div>
 
-    <a asp-action="CreateSamplePlant" class="btn btn-success">
-        + Thêm cây mới
-    </a>
+    <div class="d-flex gap-2">
+        <a asp-action="SpeciesRequests" class="btn btn-outline-warning">
+            Duyệt giống cây mới
+        </a>
+        <a asp-action="CreateSamplePlant" class="btn btn-success">
+            + Thêm cây mới
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">

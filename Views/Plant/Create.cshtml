@@ -63,6 +63,15 @@
         <span asp-validation-for="PlantSampleId" class="text-danger small"></span>
     </div>
 
+    <div id="customSpeciesGroup" class="mb-3 @(Model.PlantSampleId == "__custom__" ? "" : "d-none")">
+        <label class="form-label" asp-for="CustomSpeciesName">Tên giống cây đề xuất <span class="text-danger">*</span></label>
+        <input asp-for="CustomSpeciesName"
+               class="form-control"
+               placeholder="Ví dụ: Cây Trầu Bà Đế Vương Đỏ" />
+        <span asp-validation-for="CustomSpeciesName" class="text-danger small"></span>
+        <div class="form-text text-muted">Loại cây này sẽ được gửi đến quản trị viên để kiểm duyệt và thêm vào thư viện. Cây trong vườn sẽ hiển thị trạng thái <em>Đang kiểm duyệt</em>.</div>
+    </div>
+
     <div class="mb-4">
         <label class="form-label" asp-for="CurrentStatus">Trạng thái sức khỏe</label>
         <select asp-for="CurrentStatus" class="form-select">
@@ -155,6 +164,22 @@
         placeholder.classList.add("d-none");
         placeholderText.textContent = file.name;
     });
+
+    var sampleSelect = document.getElementById("PlantSampleId");
+    var customSpeciesGroup = document.getElementById("customSpeciesGroup");
+    function updateCustomSpeciesVisibility() {
+        if (sampleSelect && customSpeciesGroup) {
+            if (sampleSelect.value === "__custom__") {
+                customSpeciesGroup.classList.remove("d-none");
+            } else {
+                customSpeciesGroup.classList.add("d-none");
+            }
+        }
+    }
+    if (sampleSelect) {
+        sampleSelect.addEventListener("change", updateCustomSpeciesVisibility);
+        updateCustomSpeciesVisibility();
+    }
 
     document.getElementById("plantCreateForm").addEventListener("submit", function () {
         var button = this.querySelector('button[type="submit"]');

@@ -17,6 +17,8 @@ public class PlantController : Controller
     private readonly CareLogService _careLogService;
     private readonly CareReminderService _careReminderService;
     private readonly AiDiagnosisService _diagnosisService;
+    private readonly PlantSpeciesRequestService _speciesRequestService;
+    private readonly UserService _userService;
 
     public PlantController(
         UserPlantService userPlantService,
@@ -25,7 +27,9 @@ public class PlantController : Controller
         ImageStorageService imageStorage,
         CareLogService careLogService,
         CareReminderService careReminderService,
-        AiDiagnosisService diagnosisService)
+        AiDiagnosisService diagnosisService,
+        PlantSpeciesRequestService speciesRequestService,
+        UserService userService)
     {
         _userPlantService = userPlantService;
         _templateService = templateService;
@@ -34,6 +38,8 @@ public class PlantController : Controller
         _careLogService = careLogService;
         _careReminderService = careReminderService;
         _diagnosisService = diagnosisService;
+        _speciesRequestService = speciesRequestService;
+        _userService = userService;
     }
 
     public async Task<IActionResult> Index()
@@ -100,9 +106,20 @@ public class PlantController : Controller
                 ModelState.AddModelError(nameof(vm.SourceDiagnosisId), "Phiên phân tích AI không tồn tại hoặc không thuộc tài khoản của bạn.");
         }
 
-        if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
+        bool isCustomSpecies = vm.PlantSampleId == "__custom__";
+        if (isCustomSpecies)
+        {
+            vm.CustomSpeciesName = vm.CustomSpeciesName?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(vm.CustomSpeciesName))
+            {
+                ModelState.AddModelError(nameof(vm.CustomSpeciesName), "Vui lòng nhập tên giống cây đề xuất.");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
             (vm.PlantSampleId.Contains('/') || await _samplePlantService.GetById(vm.PlantSampleId) == null))
+        {
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loại cây không tồn tại. Vui lòng chọn lại.");
+        }
 
         ValidateUnit(vm.WateringFrequency, vm.WateringFrequencyUnit, nameof(vm.WateringFrequencyUnit));
         ValidateUnit(vm.FertilizingFrequency, vm.FertilizingFrequencyUnit, nameof(vm.FertilizingFrequencyUnit));
@@ -136,7 +153,9 @@ public class PlantController : Controller
         var plant = new UserPlantModel
         {
             PlantId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
-            TemplateId = vm.PlantSampleId,
+            TemplateId = isCustomSpecies ? "" : vm.PlantSampleId,
+            CustomSpeciesName = isCustomSpecies ? vm.CustomSpeciesName : null,
+            SpeciesApprovalStatus = isCustomSpecies ? "pending" : null,
             CustomName = vm.Nickname,
             Status = ToStoredStatus(vm.CurrentStatus),
             ImageUrl = imageUrl ?? "",
@@ -179,7 +198,25 @@ public class PlantController : Controller
             throw;
         }
 
-        TempData["Success"] = "Đã thêm cây vào vườn.";
+        if (isCustomSpecies)
+        {
+            var user = await _userService.GetById(uid);
+            await _speciesRequestService.Add(new PlantSpeciesRequestModel
+            {
+                UserId = uid,
+                UserEmail = user?.Email ?? HttpContext.Session.GetString("Email") ?? "",
+                UserDisplayName = user?.FullName ?? HttpContext.Session.GetString("Name") ?? "Người dùng",
+                UserPlantId = plant.Id,
+                PlantCustomName = plant.CustomName,
+                ProposedName = vm.CustomSpeciesName!,
+                Status = "pending"
+            });
+            TempData["Success"] = "Đã thêm cây vào vườn! Giống cây đề xuất đang được gửi để quản trị viên kiểm duyệt.";
+        }
+        else
+        {
+            TempData["Success"] = "Đã thêm cây vào vườn.";
+        }
         if (vm.Photo != null && imageUrl == null)
             TempData["Warning"] = "Cây đã được thêm, nhưng dịch vụ ảnh chưa nhận được file. Bạn có thể chọn lại ảnh trong mục Sửa cây.";
 
@@ -225,13 +262,17 @@ public class PlantController : Controller
         if (plant == null)
             return NotFound();
 
-        await PopulateSpecies(plant.TemplateId, includeLegacySelected: true);
+        bool isCustom = (string.IsNullOrEmpty(plant.TemplateId) || plant.SpeciesApprovalStatus == "pending" || plant.SpeciesApprovalStatus == "rejected") && !string.IsNullOrEmpty(plant.CustomSpeciesName);
+        var selectedSpecies = isCustom ? "__custom__" : plant.TemplateId;
+        await PopulateSpecies(selectedSpecies, includeLegacySelected: true, includeCustomOption: true);
 
         return View(new PlantEditVM
         {
             Id = plant.Id,
             Nickname = plant.CustomName,
-            PlantSampleId = plant.TemplateId,
+            PlantSampleId = selectedSpecies,
+            CustomSpeciesName = plant.CustomSpeciesName,
+            SpeciesApprovalStatus = plant.SpeciesApprovalStatus,
             CurrentStatus = plant.DisplayStatus,
             ExistingImageUrl = plant.ImageUrl
         });
@@ -252,9 +293,20 @@ public class PlantController : Controller
         if (existing == null)
             return NotFound();
 
-        if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
+        bool isCustomSpecies = vm.PlantSampleId == "__custom__";
+        if (isCustomSpecies)
+        {
+            vm.CustomSpeciesName = vm.CustomSpeciesName?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(vm.CustomSpeciesName))
+            {
+                ModelState.AddModelError(nameof(vm.CustomSpeciesName), "Vui lòng nhập tên giống cây đề xuất.");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(vm.PlantSampleId) &&
             (vm.PlantSampleId.Contains('/') || await GetSpecies(vm.PlantSampleId) == null))
+        {
             ModelState.AddModelError(nameof(vm.PlantSampleId), "Loài cây không tồn tại. Vui lòng chọn lại.");
+        }
 
         vm.Nickname = vm.Nickname?.Trim() ?? "";
 
@@ -262,7 +314,8 @@ public class PlantController : Controller
         {
             vm.Id = id;
             vm.ExistingImageUrl = existing.ImageUrl;
-            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true);
+            vm.SpeciesApprovalStatus = existing.SpeciesApprovalStatus;
+            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true, includeCustomOption: true);
             return View(vm);
         }
 
@@ -271,7 +324,19 @@ public class PlantController : Controller
             : null;
         var previousImage = existing.ImageUrl;
 
-        existing.TemplateId = vm.PlantSampleId;
+        if (isCustomSpecies)
+        {
+            existing.TemplateId = "";
+            existing.CustomSpeciesName = vm.CustomSpeciesName;
+            existing.SpeciesApprovalStatus = "pending";
+        }
+        else
+        {
+            existing.TemplateId = vm.PlantSampleId;
+            existing.CustomSpeciesName = null;
+            existing.SpeciesApprovalStatus = null;
+        }
+
         existing.CustomName = vm.Nickname;
         existing.Status = ToStoredStatus(vm.CurrentStatus);
         existing.ImageUrl = uploadedImage ?? existing.ImageUrl ?? "";
@@ -286,7 +351,8 @@ public class PlantController : Controller
             ModelState.AddModelError(nameof(vm.Nickname), ex.Message);
             vm.Id = id;
             vm.ExistingImageUrl = previousImage;
-            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true);
+            vm.SpeciesApprovalStatus = existing.SpeciesApprovalStatus;
+            await PopulateSpecies(vm.PlantSampleId, includeLegacySelected: true, includeCustomOption: true);
             return View(vm);
         }
         catch
@@ -298,7 +364,26 @@ public class PlantController : Controller
         if (uploadedImage != null)
             await _imageStorage.Delete(previousImage, CancellationToken.None);
 
-        TempData["Success"] = "Đã cập nhật cây.";
+        if (isCustomSpecies)
+        {
+            var user = await _userService.GetById(uid);
+            await _speciesRequestService.Add(new PlantSpeciesRequestModel
+            {
+                UserId = uid,
+                UserEmail = user?.Email ?? HttpContext.Session.GetString("Email") ?? "",
+                UserDisplayName = user?.FullName ?? HttpContext.Session.GetString("Name") ?? "Người dùng",
+                UserPlantId = existing.Id,
+                PlantCustomName = existing.CustomName,
+                ProposedName = vm.CustomSpeciesName!,
+                Status = "pending"
+            });
+            TempData["Success"] = "Đã cập nhật cây! Giống cây đề xuất đang được gửi để quản trị viên kiểm duyệt.";
+        }
+        else
+        {
+            TempData["Success"] = "Đã cập nhật cây.";
+        }
+
         if (vm.Photo != null && uploadedImage == null)
             TempData["Warning"] = "Thông tin đã được lưu, nhưng ảnh mới không tải lên được. Ảnh cũ vẫn được giữ.";
 
@@ -372,7 +457,8 @@ public class PlantController : Controller
 
     private async Task PopulateSpecies(
         string? selectedId = null,
-        bool includeLegacySelected = false)
+        bool includeLegacySelected = false,
+        bool includeCustomOption = true)
     {
         var options = (await _samplePlantService.GetAll())
             .OrderBy(plant => plant.Name)
@@ -381,11 +467,17 @@ public class PlantController : Controller
 
         if (includeLegacySelected &&
             !string.IsNullOrWhiteSpace(selectedId) &&
+            selectedId != "__custom__" &&
             options.All(option => option.Value != selectedId))
         {
             var legacy = await _templateService.GetById(selectedId);
             if (legacy != null)
                 options.Insert(0, new SelectListItem($"{legacy.Name} (dữ liệu cũ)", legacy.Id, true));
+        }
+
+        if (includeCustomOption)
+        {
+            options.Add(new SelectListItem("+ Thêm loại cây mới (Đề xuất giống cây)", "__custom__", selectedId == "__custom__"));
         }
 
         ViewBag.PlantSamples = options;
