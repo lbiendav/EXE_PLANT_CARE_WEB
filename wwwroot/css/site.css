@@ -153,6 +153,52 @@ code {
     white-space: pre-line;
 }
 
+/* ── Article list table styles ── */
+.article-thumb-box {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg0);
+    border: 1px solid var(--hair);
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.article-thumb-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+}
+
+/* Prevent parent card hover from scaling all table thumbnails at once */
+.card:hover .article-thumb-box img {
+    transform: none;
+}
+
+/* Zoom thumbnail when row or thumbnail itself is hovered */
+.table tbody tr:hover .article-thumb-box img,
+.article-thumb-box:hover img {
+    transform: scale(1.08);
+}
+
+.article-title-link {
+    color: var(--bone) !important;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.article-title-link:hover,
+.table tbody tr:hover .article-title-link {
+    color: var(--green) !important;
+}
+
+
 /* Home care guides stay in one discoverable horizontal rail. */
 .home-guide-scroll {
     display: flex;

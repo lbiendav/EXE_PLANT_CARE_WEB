@@ -35,9 +35,31 @@
 
                 @foreach (var item in Model)
                 {
+                    var coverImg = string.IsNullOrWhiteSpace(item.CoverImage)
+                        ? "https://i.ibb.co/MkMj38WM/plant.png"
+                        : item.CoverImage;
+
                     <tr>
 
-                        <td class="fw-semibold">@item.Title</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-3">
+                                <a asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="article-thumb-box"
+                                   tabindex="-1"
+                                   aria-hidden="true">
+                                    <img src="@coverImg"
+                                         alt="@item.Title"
+                                         loading="lazy"
+                                         onerror="this.onerror=null;this.src='https://i.ibb.co/MkMj38WM/plant.png';" />
+                                </a>
+                                <a asp-action="Details"
+                                   asp-route-id="@item.Id"
+                                   class="fw-semibold article-title-link">
+                                    @item.Title
+                                </a>
+                            </div>
+                        </td>
 
                         <td class="text-muted">@item.Views</td>
 
