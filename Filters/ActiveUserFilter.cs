@@ -84,7 +84,7 @@ public sealed class ActiveUserFilter(
                     var fullName = string.IsNullOrWhiteSpace(state.User.FullName) ? "Người dùng" : state.User.FullName;
                     var email = state.User.Email ?? "";
                     var avatarUrl = state.User.AvatarUrl ?? "";
-                    var isNewUser = (state.User.CreatedAt.AddHours(7).ToString("yyyyMMdd") == DateTime.UtcNow.AddHours(7).ToString("yyyyMMdd")) || (state.User.VisitCount <= 1);
+                    var isNewUser = state.User.CreatedAt.AddHours(7).ToString("yyyyMMdd") == DateTime.UtcNow.AddHours(7).ToString("yyyyMMdd");
 
                     _ = activityService.LogActivityAsync(uid, path, title, actionName, isNewSession);
                     _ = activityService.LogDailyActivityAsync(uid, fullName, email, avatarUrl, isGuest: false, isNew: isNewUser, path, title, actionName, isNewSession);

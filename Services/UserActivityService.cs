@@ -227,9 +227,9 @@ public class UserActivityService
                     var lastActiveVn = u.LastActiveAt?.AddHours(7).ToString("yyyyMMdd");
 
                     var isUserNew = createdVn == dateKey;
-                    var isActiveToday = lastActiveVn == dateKey || isUserNew;
+                    var isUserReturning = !isUserNew && lastActiveVn == dateKey;
 
-                    if (isActiveToday)
+                    if (isUserNew || isUserReturning)
                     {
                         var userActivities = await GetUserActivitiesAsync(u.Id, 25);
                         var dayActivities = userActivities
@@ -249,7 +249,7 @@ public class UserActivityService
                             FullName = string.IsNullOrWhiteSpace(u.FullName) ? "Người dùng" : u.FullName,
                             Email = u.Email,
                             AvatarUrl = u.AvatarUrl,
-                            IsNew = isUserNew || u.VisitCount <= 1,
+                            IsNew = isUserNew,
                             IsGuest = false,
                             SessionCount = Math.Max(1, u.VisitCount),
                             PageViewCount = Math.Max(1, dayActivities.Count),
