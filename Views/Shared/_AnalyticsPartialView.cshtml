@@ -94,15 +94,38 @@
                     else
                     {
                         var maxDailyUsers = Math.Max(1, Model.DailyTrends.Max(d => d.ActiveUsers));
-                        <div class="table-responsive">
+                        <style>
+                            .daily-trends-scroll-wrap::-webkit-scrollbar {
+                                width: 6px;
+                            }
+                            .daily-trends-scroll-wrap::-webkit-scrollbar-track {
+                                background: rgba(255, 255, 255, 0.02);
+                                border-radius: 4px;
+                            }
+                            .daily-trends-scroll-wrap::-webkit-scrollbar-thumb {
+                                background: rgba(208, 234, 144, 0.25);
+                                border-radius: 4px;
+                            }
+                            .daily-trends-scroll-wrap::-webkit-scrollbar-thumb:hover {
+                                background: rgba(208, 234, 144, 0.5);
+                            }
+                            .daily-trends-sticky-th {
+                                position: sticky;
+                                top: 0;
+                                background-color: var(--bg2, #27392c) !important;
+                                z-index: 2;
+                                box-shadow: inset 0 -1px 0 rgba(208, 234, 144, 0.2);
+                            }
+                        </style>
+                        <div class="table-responsive daily-trends-scroll-wrap" style="max-height: 440px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(208, 234, 144, 0.3) transparent;">
                             <table class="table table-sm align-middle mb-0" id="dailyTrendsTable">
                                 <thead>
                                     <tr>
-                                        <th style="width: 80px; cursor: pointer;" onclick="toggleDailyTrendsSort()" title="Nhấn để đổi chiều xem ngày (Mới nhất / Cũ nhất)">Ngày <span id="sortDirectionIcon" class="text-success small">↓</span></th>
-                                        <th>Mật độ</th>
-                                        <th class="text-end" style="width: 60px;" title="Tổng số thành viên có tài khoản tương tác trong ngày">Tổng User</th>
-                                        <th class="text-end text-success" style="width: 55px;" title="Thành viên tạo tài khoản mới thành công">Mới</th>
-                                        <th class="text-end text-info" style="width: 55px;" title="Thành viên cũ quay lại đăng nhập">Cũ</th>
+                                        <th class="daily-trends-sticky-th" style="width: 80px; cursor: pointer;" onclick="toggleDailyTrendsSort()" title="Nhấn để đổi chiều xem ngày (Mới nhất / Cũ nhất)">Ngày <span id="sortDirectionIcon" class="text-success small">↓</span></th>
+                                        <th class="daily-trends-sticky-th">Mật độ</th>
+                                        <th class="daily-trends-sticky-th text-end" style="width: 60px;" title="Tổng số thành viên có tài khoản tương tác trong ngày">Tổng User</th>
+                                        <th class="daily-trends-sticky-th text-end text-success" style="width: 55px;" title="Thành viên tạo tài khoản mới thành công">Mới</th>
+                                        <th class="daily-trends-sticky-th text-end text-info" style="width: 55px;" title="Thành viên cũ quay lại đăng nhập">Cũ</th>
                                     </tr>
                                 </thead>
                                 <tbody>
