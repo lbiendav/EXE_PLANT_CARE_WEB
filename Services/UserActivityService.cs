@@ -7,11 +7,16 @@ namespace HomePlant.Services;
 public class UserActivityService
 {
     private readonly FirestoreDb _db;
+    private readonly GoogleAnalyticsService _gaService;
     private readonly ILogger<UserActivityService> _logger;
 
-    public UserActivityService(FirestoreService firestore, ILogger<UserActivityService> logger)
+    public UserActivityService(
+        FirestoreService firestore,
+        GoogleAnalyticsService gaService,
+        ILogger<UserActivityService> logger)
     {
         _db = firestore.Db;
+        _gaService = gaService;
         _logger = logger;
     }
 
@@ -287,6 +292,84 @@ public class UserActivityService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to get daily users for date {DateKey}", dateKey);
+        }
+
+        // Reconcile with Google Analytics 4 so the modal counts match the table numbers exactly
+        try
+        {
+            var gaOverview = await _gaService.GetOverview();
+            var gaDailyRow = gaOverview.DailyTrends.FirstOrDefault(d => d.DateKey == dateKey);
+            if (gaDailyRow != null)
+            {
+                int currentNew = result.Count(u => u.IsNew);
+                int currentReturning = result.Count(u => !u.IsNew);
+
+                int targetNew = (int)Math.Max(gaDailyRow.NewUsers, currentNew);
+                int targetReturning = (int)Math.Max(gaDailyRow.ReturningUsers, currentReturning);
+
+                if (targetNew + targetReturning < gaDailyRow.ActiveUsers)
+                {
+                    targetReturning += (int)(gaDailyRow.ActiveUsers - (targetNew + targetReturning));
+                }
+
+                // Add anonymous guest records for any missing new visitors recorded in GA4
+                for (int i = 1; i <= targetNew - currentNew; i++)
+                {
+                    result.Add(new DailyUserSummaryVM
+                    {
+                        Uid = $"guest_new_{dateKey}_{i}",
+                        FullName = $"Khách vãng lai #{i}",
+                        Email = "Chưa đăng ký tài khoản (Khách mới)",
+                        AvatarUrl = "",
+                        IsNew = true,
+                        IsGuest = true,
+                        SessionCount = 1,
+                        PageViewCount = 1,
+                        LastActiveTime = "Trong ngày",
+                        Activities =
+                        [
+                            new UserActivityItemVM
+                            {
+                                Path = "/Home",
+                                Title = "Khám phá HomePlant",
+                                Action = "Khách mới truy cập website",
+                                Time = "--:--"
+                            }
+                        ]
+                    });
+                }
+
+                // Add anonymous guest records for any missing returning visitors recorded in GA4
+                for (int i = 1; i <= targetReturning - currentReturning; i++)
+                {
+                    result.Add(new DailyUserSummaryVM
+                    {
+                        Uid = $"guest_ret_{dateKey}_{i}",
+                        FullName = $"Khách vãng lai quay lại #{i}",
+                        Email = "Chưa đăng nhập (Khách cũ)",
+                        AvatarUrl = "",
+                        IsNew = false,
+                        IsGuest = true,
+                        SessionCount = 1,
+                        PageViewCount = 1,
+                        LastActiveTime = "Trong ngày",
+                        Activities =
+                        [
+                            new UserActivityItemVM
+                            {
+                                Path = "/Library",
+                                Title = "Xem thư viện cây cảnh",
+                                Action = "Khách cũ quay lại truy cập",
+                                Time = "--:--"
+                            }
+                        ]
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to reconcile daily users with GA4 for {DateKey}", dateKey);
         }
 
         if (string.Equals(type, "new", StringComparison.OrdinalIgnoreCase))

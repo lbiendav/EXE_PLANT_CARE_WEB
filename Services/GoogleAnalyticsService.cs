@@ -15,13 +15,28 @@ public sealed class GoogleAnalyticsService(
     private const string AnalyticsScope = "https://www.googleapis.com/auth/analytics.readonly";
     private readonly string _propertyId = configuration["GoogleAnalytics:PropertyId"]?.Trim() ?? "";
 
+    private static GoogleAnalyticsOverviewVM? _cachedOverview;
+    private static DateTimeOffset _cachedAt = DateTimeOffset.MinValue;
+    private static readonly SemaphoreSlim _cacheLock = new(1, 1);
+
     public bool IsConfigured => long.TryParse(_propertyId, out _);
 
     public async Task<GoogleAnalyticsOverviewVM> GetOverview(CancellationToken cancellationToken = default)
     {
         if (!IsConfigured) return GoogleAnalyticsOverviewVM.NotConfigured;
+        if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromMinutes(3))
+        {
+            return _cachedOverview;
+        }
+
+        await _cacheLock.WaitAsync(cancellationToken);
         try
         {
+            if (_cachedOverview != null && DateTimeOffset.UtcNow - _cachedAt < TimeSpan.FromMinutes(3))
+            {
+                return _cachedOverview;
+            }
+
             var scoped = credential.IsCreateScopedRequired ? credential.CreateScoped(AnalyticsScope) : credential;
             var token = await scoped.UnderlyingCredential.GetAccessTokenForRequestAsync(cancellationToken: cancellationToken);
 
@@ -112,7 +127,7 @@ public sealed class GoogleAnalyticsService(
             double avgDailySessions = (double)dailyTrends.Sum(d => d.Sessions) / daysCount;
             double avgDailyPageViews = (double)dailyTrends.Sum(d => d.PageViews) / daysCount;
 
-            return new GoogleAnalyticsOverviewVM
+            var overview = new GoogleAnalyticsOverviewVM
             {
                 Configured = true,
                 Available = true,
@@ -130,11 +145,18 @@ public sealed class GoogleAnalyticsService(
                 LeastVisitedPages = leastPages,
                 DailyTrends = dailyTrends
             };
+            _cachedOverview = overview;
+            _cachedAt = DateTimeOffset.UtcNow;
+            return overview;
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Unable to load the GA4 report for property {PropertyId}.", _propertyId);
             return new GoogleAnalyticsOverviewVM { Configured = true, Error = "GA4 chưa trả dữ liệu. Kiểm tra quyền Viewer của service account và Analytics Data API." };
+        }
+        finally
+        {
+            _cacheLock.Release();
         }
     }
 
