@@ -1,5 +1,6 @@
 using Google.Cloud.Firestore;
 using HomePlant.Models;
+using HomePlant.ViewModels;
 
 namespace HomePlant.Services;
 
@@ -274,5 +275,129 @@ public class UserActivityService
         }
 
         return result;
+    }
+
+    public async Task<GoogleAnalyticsOverviewVM> EnrichWithDatabaseUsersAsync(GoogleAnalyticsOverviewVM gaOverview)
+    {
+        try
+        {
+            var usersSnap = await _db.Collection("users").GetSnapshotAsync();
+            var allUsers = usersSnap.Documents.Select(d => d.ConvertTo<UserModel>()).ToList();
+
+            var dailySnap = await _db.Collection("daily_user_activities").GetSnapshotAsync();
+
+            var dailyDocsByDate = dailySnap.Documents
+                .GroupBy(d => d.ContainsField("dateKey") ? d.GetValue<string>("dateKey") : "")
+                .Where(g => !string.IsNullOrEmpty(g.Key))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var usersCreatedByDate = allUsers
+                .GroupBy(u => u.CreatedAt.AddHours(7).ToString("yyyyMMdd"))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var usersLastActiveByDate = allUsers
+                .Where(u => u.LastActiveAt.HasValue)
+                .GroupBy(u => u.LastActiveAt!.Value.AddHours(7).ToString("yyyyMMdd"))
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var updatedDailyTrends = new List<AnalyticsDailyRowVM>();
+            long totalDatabaseNewUsers = 0;
+            long totalDatabaseReturningUsers = 0;
+            var distinctActiveUserIdsIn30Days = new HashSet<string>();
+
+            var existingDailyRows = gaOverview.DailyTrends.ToDictionary(d => d.DateKey, d => d);
+
+            var dateKeysToProcess = gaOverview.DailyTrends.Count > 0
+                ? gaOverview.DailyTrends.Select(d => d.DateKey).ToList()
+                : Enumerable.Range(0, 30).Select(i => DateTime.UtcNow.AddHours(7).AddDays(-i).ToString("yyyyMMdd")).Reverse().ToList();
+
+            foreach (var dateKey in dateKeysToProcess)
+            {
+                var displayDate = dateKey.Length == 8
+                    ? $"{dateKey[6..8]}/{dateKey[4..6]}"
+                    : dateKey;
+
+                long newCount = 0;
+                long returningCount = 0;
+
+                if (dailyDocsByDate.TryGetValue(dateKey, out var dayDocs) && dayDocs.Count > 0)
+                {
+                    foreach (var doc in dayDocs)
+                    {
+                        var uid = doc.ContainsField("uid") ? doc.GetValue<string>("uid") : doc.Id;
+                        var isNew = doc.ContainsField("isNew") && doc.GetValue<bool>("isNew");
+                        if (isNew) newCount++;
+                        else returningCount++;
+                        distinctActiveUserIdsIn30Days.Add(uid);
+                    }
+                }
+                else
+                {
+                    if (usersCreatedByDate.TryGetValue(dateKey, out var createdUsers))
+                    {
+                        newCount += createdUsers.Count;
+                        foreach (var u in createdUsers) distinctActiveUserIdsIn30Days.Add(u.Id);
+                    }
+
+                    if (usersLastActiveByDate.TryGetValue(dateKey, out var activeUsers))
+                    {
+                        var returningOnDay = activeUsers
+                            .Where(u => u.CreatedAt.AddHours(7).ToString("yyyyMMdd") != dateKey)
+                            .ToList();
+                        returningCount += returningOnDay.Count;
+                        foreach (var u in returningOnDay) distinctActiveUserIdsIn30Days.Add(u.Id);
+                    }
+                }
+
+                totalDatabaseNewUsers += newCount;
+                totalDatabaseReturningUsers += returningCount;
+                long activeCount = newCount + returningCount;
+
+                existingDailyRows.TryGetValue(dateKey, out var originalRow);
+                var sessions = originalRow?.Sessions ?? 0;
+                var pageViews = originalRow?.PageViews ?? 0;
+                var display = originalRow?.DisplayDate ?? displayDate;
+
+                updatedDailyTrends.Add(new AnalyticsDailyRowVM(
+                    dateKey,
+                    display,
+                    activeCount,
+                    sessions,
+                    pageViews,
+                    newCount,
+                    returningCount
+                ));
+            }
+
+            var daysCount = Math.Max(1, updatedDailyTrends.Count);
+            double avgDailyUsers = (double)updatedDailyTrends.Sum(d => d.ActiveUsers) / daysCount;
+            double avgDailySessions = (double)updatedDailyTrends.Sum(d => d.Sessions) / daysCount;
+            double avgDailyPageViews = (double)updatedDailyTrends.Sum(d => d.PageViews) / daysCount;
+
+            return new GoogleAnalyticsOverviewVM
+            {
+                Configured = gaOverview.Configured,
+                Available = gaOverview.Available || updatedDailyTrends.Count > 0,
+                Error = gaOverview.Error,
+                ActiveUsers30Days = distinctActiveUserIdsIn30Days.Count > 0 ? distinctActiveUserIdsIn30Days.Count : (totalDatabaseNewUsers + totalDatabaseReturningUsers),
+                Sessions30Days = gaOverview.Sessions30Days,
+                PageViews30Days = gaOverview.PageViews30Days,
+                NewUsers30Days = totalDatabaseNewUsers,
+                ReturningUsers30Days = totalDatabaseReturningUsers,
+                AverageDailyUsers30Days = avgDailyUsers,
+                AverageDailySessions30Days = avgDailySessions,
+                AverageDailyPageViews30Days = avgDailyPageViews,
+                AverageEngagementSeconds = gaOverview.AverageEngagementSeconds,
+                TrafficSources = gaOverview.TrafficSources,
+                PopularPages = gaOverview.PopularPages,
+                LeastVisitedPages = gaOverview.LeastVisitedPages,
+                DailyTrends = updatedDailyTrends
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to enrich overview with database users");
+            return gaOverview;
+        }
     }
 }

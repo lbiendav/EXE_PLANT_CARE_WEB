@@ -65,6 +65,8 @@ public class AdminController : Controller
         await Task.WhenAll(userCount, articleCount, templateCount, sampleCount,
             communityCount, qaCount, diagnosisCount, gardenCount, analyticsTask);
 
+        var enrichedAnalytics = await _activityService.EnrichWithDatabaseUsersAsync(analyticsTask.Result);
+
         var vm = new AdminDashboardVM
         {
             UserCount = userCount.Result,
@@ -75,7 +77,7 @@ public class AdminController : Controller
             CommunityPostCount = communityCount.Result,
             QaThreadCount = qaCount.Result,
             AiDiagnosisCount = diagnosisCount.Result,
-            Analytics = analyticsTask.Result
+            Analytics = enrichedAnalytics
         };
 
         return View(vm);

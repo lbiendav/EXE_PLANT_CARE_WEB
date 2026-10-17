@@ -441,6 +441,17 @@ function filterDailyUsers(type) {
     if (filtered.length === 0) {
         empty.classList.remove('d-none');
         container.classList.add('d-none');
+        if (type === 'returning' && allDailyUsers.some(u => u.isNew)) {
+            const countNew = allDailyUsers.filter(u => u.isNew).length;
+            document.getElementById('dailyUsersEmptyMsg').innerHTML = 
+                'Ngày này không có User cũ quay lại.<br><button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="filterDailyUsers(\'new\')">Xem ' + countNew + ' User Mới</button>';
+        } else if (type === 'new' && allDailyUsers.some(u => !u.isNew)) {
+            const countRet = allDailyUsers.filter(u => !u.isNew).length;
+            document.getElementById('dailyUsersEmptyMsg').innerHTML = 
+                'Ngày này không có User mới đăng ký.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
+        } else {
+            document.getElementById('dailyUsersEmptyMsg').innerText = 'Không có dữ liệu người dùng trong mục này.';
+        }
         return;
     }
 

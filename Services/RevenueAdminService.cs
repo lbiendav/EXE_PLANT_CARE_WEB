@@ -16,7 +16,8 @@ public sealed class RevenueAdminService(
     LivePaymentService livePayments,
     PaymentReceiptService paymentReceipts,
     GoogleAnalyticsService analyticsService,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    UserActivityService activityService)
 {
     private readonly FirestoreDb _db = firestore.Db;
 
@@ -32,6 +33,11 @@ public sealed class RevenueAdminService(
         var plansTask = GetSnapshotWithRetry(_db.Collection("plan_settings"));
         var auditTask = GetSnapshotWithRetry(_db.Collection("revenue_audit_logs").OrderByDescending("createdAt").Limit(100));
         await Task.WhenAll(usersTask, ordersTask, subscriptionsTask, transactionsTask, plansTask, auditTask, analyticsTask);
+
+        var gaOverview = analyticsTask.Result;
+        var enrichedAnalytics = tab == "overview"
+            ? await activityService.EnrichWithDatabaseUsersAsync(gaOverview)
+            : gaOverview;
 
         var users = usersTask.Result.Documents.Select(x => x.ConvertTo<UserModel>()).ToList();
         var usersById = users.ToDictionary(x => x.Id, x => x);
@@ -144,7 +150,7 @@ public sealed class RevenueAdminService(
             UnmatchedPayments = visibleUnmatched.Take(50).ToList(),
             AuditLogs = auditTask.Result.Documents.Select(ToAudit).ToList(),
             PayOsConfigured = new[] { "ClientId", "ApiKey", "ChecksumKey" }.All(key => !string.IsNullOrWhiteSpace(configuration[$"Payments:PayOS:{key}"])),
-            Analytics = analyticsTask.Result
+            Analytics = enrichedAnalytics
         };
     }
 
