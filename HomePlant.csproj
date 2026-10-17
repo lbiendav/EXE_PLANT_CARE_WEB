@@ -5,7 +5,6 @@
     <UserSecretsId>HomePlant-LocalDevelopment</UserSecretsId>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RazorCompileOnBuild>false</RazorCompileOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
