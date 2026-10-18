@@ -495,6 +495,35 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 return s > 0 ? (m + 'm ' + s + 's') : (m + 'm');
             };
 
+            const getCategoryStyle = function(category) {
+                switch (category) {
+                    case 'Thư viện cây':
+                        return { bg: 'rgba(34, 197, 94, 0.16)', text: '#86efac', border: 'rgba(74, 222, 128, 0.45)' };
+                    case 'Cẩm nang':
+                        return { bg: 'rgba(56, 189, 248, 0.16)', text: '#7dd3fc', border: 'rgba(56, 189, 248, 0.45)' };
+                    case 'Cộng đồng':
+                        return { bg: 'rgba(168, 85, 247, 0.16)', text: '#d8b4fe', border: 'rgba(192, 132, 252, 0.45)' };
+                    case 'Gói đăng ký':
+                        return { bg: 'rgba(234, 179, 8, 0.16)', text: '#fde047', border: 'rgba(250, 204, 21, 0.45)' };
+                    case 'Vườn của tôi':
+                        return { bg: 'rgba(16, 185, 129, 0.16)', text: '#6ee7b7', border: 'rgba(52, 211, 153, 0.45)' };
+                    case 'Chuyên gia':
+                        return { bg: 'rgba(249, 115, 22, 0.16)', text: '#fdba74', border: 'rgba(251, 146, 60, 0.45)' };
+                    case 'Nhắc việc':
+                        return { bg: 'rgba(244, 63, 94, 0.16)', text: '#fda4af', border: 'rgba(251, 113, 133, 0.45)' };
+                    default:
+                        return { bg: 'rgba(255, 255, 255, 0.08)', text: '#f1f5f9', border: 'rgba(255, 255, 255, 0.2)' };
+                }
+            };
+
+            const renderBadges = function(isNew) {
+                const isNewHtml = isNew 
+                    ? '<span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Mới</span>' 
+                    : '<span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Cũ</span>';
+                const memberHtml = '<span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">Thành viên</span>';
+                return { isNewHtml, memberHtml };
+            };
+
             // Summary banner for the 7 feature pages
             const summaryBanner = document.createElement('div');
             summaryBanner.className = 'p-3 rounded border mb-3';
@@ -504,28 +533,43 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
             let pillsHtml = navCategories.map(c => {
                 const stat = catStats[c.name];
                 const hasVisits = stat.visits > 0;
-                const badgeClass = hasVisits
-                    ? 'bg-success-subtle text-success border border-success-subtle'
-                    : 'bg-dark text-muted border border-secondary-subtle opacity-75';
-                return `
-                    <div class="d-flex align-items-center justify-content-between p-2 rounded ${badgeClass}" style="min-width: 155px; flex: 1 1 calc(25% - 8px);">
-                        <div>
-                            <span class="me-1">${c.icon}</span>
-                            <strong>${c.name}</strong>
+                const cStyle = getCategoryStyle(c.name);
+                if (hasVisits) {
+                    return `
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" 
+                             style="background: ${cStyle.bg}; border: 1px solid ${cStyle.border}; min-width: 155px; flex: 1 1 calc(25% - 8px);">
+                            <div>
+                                <span class="me-1" style="font-size: 1.05rem;">${c.icon}</span>
+                                <strong style="color: #ffffff; font-size: 0.9rem;">${c.name}</strong>
+                            </div>
+                            <div class="text-end font-monospace small">
+                                <strong style="color: ${cStyle.text}; font-size: 0.95rem;">${stat.visits} lượt</strong>
+                                <small class="d-block" style="color: #fbbf24; font-size: 0.75rem;">⏱ ${formatSecHelper(stat.totalDuration)}</small>
+                            </div>
                         </div>
-                        <div class="text-end font-monospace small">
-                            ${hasVisits ? `<strong>${stat.visits} lượt</strong> <small class="d-block text-warning">⏱ ${formatSecHelper(stat.totalDuration)}</small>` : `<span class="text-muted">0 lượt</span>`}
+                    `;
+                } else {
+                    return `
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded" 
+                             style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); min-width: 155px; flex: 1 1 calc(25% - 8px); opacity: 0.5;">
+                            <div>
+                                <span class="me-1" style="font-size: 1.05rem;">${c.icon}</span>
+                                <span style="color: #94a3b8; font-size: 0.88rem;">${c.name}</span>
+                            </div>
+                            <div class="text-end font-monospace small">
+                                <span style="color: #64748b; font-size: 0.85rem;">0 lượt</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             }).join('');
 
             summaryBanner.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-secondary-subtle">
-                    <span class="small text-uppercase fw-semibold text-success" style="letter-spacing: .05em;">
+                    <span class="small text-uppercase fw-semibold" style="color: #4ade80; letter-spacing: .05em;">
                         Thống kê 7 trang tính năng chính được truy cập
                     </span>
-                    <small class="text-muted">Chỉ hiển thị khi có thành viên truy cập</small>
+                    <small style="color: #94a3b8;">Chỉ hiển thị khi có thành viên truy cập</small>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     ${pillsHtml}
@@ -540,12 +584,8 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 card.style.background = 'rgba(255, 255, 255, 0.03)';
                 card.style.borderColor = 'rgba(255, 193, 7, 0.25)';
 
-                const isNewBadge = u.isNew 
-                    ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
-                    : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
-                    
-                const accountBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Thành viên</span>';
-                const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
+                const badges = renderBadges(u.isNew);
+                const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.4);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
 
                 const pages = (u.pageSummaries || []);
                 const userFeatureSec = pages.reduce((acc, p) => acc + (p.totalDurationSeconds || 0), 0);
@@ -554,28 +594,29 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const tableRowsHtml = pages.map((p) => {
                     const timesStr = (p.visitTimes && p.visitTimes.length > 0)
-                        ? `<div class="text-muted small mt-1 font-monospace" style="font-size: 0.72rem;">Thời điểm: ${p.visitTimes.join(', ')}</div>`
+                        ? `<div class="font-monospace mt-1" style="color: #94a3b8; font-size: 0.74rem;">Thời điểm: ${p.visitTimes.join(', ')}</div>`
                         : '';
+                    const cStyle = getCategoryStyle(p.category);
                     const catBadge = p.category 
-                        ? `<span class="badge bg-success-subtle text-success border border-success-subtle me-1" style="font-size: 0.72rem;">${p.category}</span>`
+                        ? `<span class="badge me-1" style="background: ${cStyle.bg}; color: ${cStyle.text}; border: 1px solid ${cStyle.border}; font-size: 0.75rem; font-weight: 600; padding: 3px 8px;">${p.category}</span>`
                         : '';
                     return `
                         <tr>
                             <td class="align-middle py-2">
                                 <div class="d-flex align-items-center gap-1 mb-1">
                                     ${catBadge}
-                                    <strong class="text-light text-truncate" style="max-width: 320px;" title="${p.title || p.path}">${p.title || p.path}</strong>
+                                    <strong style="color: #ffffff; font-size: 0.92rem;" class="text-truncate" style="max-width: 320px;" title="${p.title || p.path}">${p.title || p.path}</strong>
                                 </div>
-                                <code class="text-muted small">${p.path}</code>
+                                <code style="color: #86efac; background: rgba(0, 0, 0, 0.35); padding: 2px 6px; border-radius: 4px; font-size: 0.78rem;">${p.path}</code>
                                 ${timesStr}
                             </td>
                             <td class="text-center align-middle py-2">
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 font-monospace fw-semibold" style="font-size: 0.8rem;">
+                                <span class="badge font-monospace" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.45); font-size: 0.85rem; font-weight: 700; padding: 4px 10px;">
                                     ${p.visitCount} lần
                                 </span>
                             </td>
                             <td class="text-end align-middle py-2 font-monospace">
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.8rem;">
+                                <span class="badge font-monospace" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.45); font-size: 0.85rem; font-weight: 700; padding: 4px 10px;">
                                     ⏱ ${p.formattedDuration || '0s'}
                                 </span>
                             </td>
@@ -589,18 +630,18 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                             ${avatarHtml}
                             <div>
                                 <div class="d-flex align-items-center gap-2">
-                                    <strong class="text-light">${u.fullName}</strong>
-                                    ${isNewBadge}
-                                    ${accountBadge}
+                                    <strong style="color: #ffffff; font-size: 1rem;">${u.fullName}</strong>
+                                    ${badges.isNewHtml}
+                                    ${badges.memberHtml}
                                 </div>
-                                <small class="text-muted">${u.email || u.uid}</small>
+                                <small style="color: #94a3b8;">${u.email || u.uid}</small>
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 font-monospace small">
-                            <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian ở lại các trang tính năng của User này">
+                            <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); font-size: 0.82rem; padding: 4px 8px;" title="Tổng thời gian ở lại các trang tính năng của User này">
                                 ⏱ Tổng thời gian: ${totalUserDuration}
                             </span>
-                            <span class="badge bg-dark border border-secondary-subtle text-light">
+                            <span class="badge" style="background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.82rem; padding: 4px 8px;">
                                 ${pages.length} trang · ${totalUserViews} lượt truy cập
                             </span>
                         </div>
@@ -608,10 +649,10 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                     <div class="table-responsive mt-1">
                         <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.85rem;">
                             <thead>
-                                <tr class="text-muted border-bottom border-secondary-subtle" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                <tr style="color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">
                                     <th>Trang tính năng đã xem</th>
-                                    <th class="text-center" style="width: 120px;">Số lần truy cập</th>
-                                    <th class="text-end" style="width: 130px;">Thời gian ở lại</th>
+                                    <th class="text-center" style="width: 130px;">Số lần truy cập</th>
+                                    <th class="text-end" style="width: 140px;">Thời gian ở lại</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -629,36 +670,32 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
             const card = document.createElement('div');
             card.className = 'p-3 rounded border';
             card.style.background = 'rgba(255, 255, 255, 0.03)';
-            card.style.borderColor = 'rgba(208, 234, 144, 0.15)';
+            card.style.borderColor = 'rgba(208, 234, 144, 0.2)';
 
-            const isNewBadge = u.isNew 
-                ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
-                : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
-                
-            const accountBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Thành viên</span>';
+            const badges = renderBadges(u.isNew);
 
             let activitiesHtml = '';
             if (u.activities && u.activities.length > 0) {
                 activitiesHtml = `
                     <div class="mt-3 pt-2 border-top border-secondary-subtle">
-                        <small class="text-muted text-uppercase fw-semibold d-block mb-2" style="letter-spacing: .05em; font-size: 0.75rem;">
+                        <small class="text-uppercase fw-semibold d-block mb-2" style="color: #94a3b8; letter-spacing: .05em; font-size: 0.75rem;">
                             Các trang đã xem trong phiên (${u.activities.length} lượt):
                         </small>
                         <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto;">
                             ${u.activities.map(a => `
                                 <div class="d-flex align-items-baseline gap-2 small flex-wrap">
-                                    <span class="font-monospace text-muted" style="font-size: 0.8rem; min-width: 58px;">${a.time}</span>
-                                    <span class="badge bg-secondary-subtle text-light px-1">${a.action || 'Xem'}</span>
-                                    <strong class="text-success text-truncate">${a.title}</strong>
-                                    <code class="text-muted small">${a.path}</code>
-                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle ms-auto font-monospace" style="font-size: 0.72rem;">⏱ ${a.formattedDuration || '20s'}</span>
+                                    <span class="font-monospace" style="color: #94a3b8; font-size: 0.8rem; min-width: 58px;">${a.time}</span>
+                                    <span class="badge px-1" style="background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15);">${a.action || 'Xem'}</span>
+                                    <strong style="color: #4ade80;" class="text-truncate">${a.title}</strong>
+                                    <code style="color: #94a3b8;">${a.path}</code>
+                                    <span class="badge ms-auto font-monospace" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 0.75rem;">⏱ ${a.formattedDuration || '20s'}</span>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 `;
             } else {
-                activitiesHtml = '<div class="mt-2 text-muted small fst-italic">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
+                activitiesHtml = '<div class="mt-2 small fst-italic" style="color: #94a3b8;">Chưa có chi tiết trang cụ thể cho phiên này.</div>';
             }
 
             const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
@@ -669,17 +706,17 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                         ${avatarHtml}
                         <div>
                             <div class="d-flex align-items-center gap-2">
-                                <strong class="text-light">${u.fullName}</strong>
-                                ${isNewBadge}
-                                ${accountBadge}
+                                <strong style="color: #ffffff; font-size: 1rem;">${u.fullName}</strong>
+                                ${badges.isNewHtml}
+                                ${badges.memberHtml}
                             </div>
-                            <small class="text-muted">${u.email || u.uid}</small>
+                            <small style="color: #94a3b8;">${u.email || u.uid}</small>
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 font-monospace small">
-                        <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian tương tác">⏱ ${u.formattedTotalDuration || '0s'}</span>
-                        <span class="badge bg-dark border border-secondary-subtle text-light">${u.sessionCount || 1} phiên</span>
-                        <span class="badge bg-dark border border-secondary-subtle text-success">${u.pageViewCount || (u.activities ? u.activities.length : 1)} lượt xem</span>
+                        <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); font-size: 0.82rem; padding: 4px 8px;" title="Tổng thời gian tương tác">⏱ ${u.formattedTotalDuration || '0s'}</span>
+                        <span class="badge" style="background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.2); font-size: 0.82rem; padding: 4px 8px;">${u.sessionCount || 1} phiên</span>
+                        <span class="badge" style="background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.35); font-size: 0.82rem; padding: 4px 8px;">${u.pageViewCount || (u.activities ? u.activities.length : 1)} lượt xem</span>
                     </div>
                 </div>
                 ${activitiesHtml}
