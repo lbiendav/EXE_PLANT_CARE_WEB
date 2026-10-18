@@ -100,6 +100,19 @@ public class DailyUserSummaryVM
     public int PageViewCount { get; set; } = 1;
     public string LastActiveTime { get; set; } = "";
     public List<UserActivityItemVM> Activities { get; set; } = [];
+    public List<UserPageVisitSummaryVM> PageSummaries { get; set; } = [];
+    public int TotalDurationSeconds { get; set; }
+    public string FormattedTotalDuration { get; set; } = "";
+}
+
+public class UserPageVisitSummaryVM
+{
+    public string Path { get; set; } = "";
+    public string Title { get; set; } = "";
+    public int VisitCount { get; set; }
+    public int TotalDurationSeconds { get; set; }
+    public string FormattedDuration { get; set; } = "";
+    public List<string> VisitTimes { get; set; } = [];
 }
 
 public class UserActivityItemVM
@@ -108,4 +121,6 @@ public class UserActivityItemVM
     public string Title { get; set; } = "";
     public string Action { get; set; } = "Xem trang";
     public string Time { get; set; } = "";
+    public int DurationSeconds { get; set; }
+    public string FormattedDuration { get; set; } = "";
 }

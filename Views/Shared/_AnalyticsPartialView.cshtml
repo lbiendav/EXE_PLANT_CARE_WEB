@@ -126,6 +126,7 @@
                                         <th class="daily-trends-sticky-th text-end" style="width: 60px;" title="Tổng số thành viên có tài khoản tương tác trong ngày">Tổng User</th>
                                         <th class="daily-trends-sticky-th text-end text-success" style="width: 55px;" title="Thành viên tạo tài khoản mới thành công">Mới</th>
                                         <th class="daily-trends-sticky-th text-end text-info" style="width: 55px;" title="Thành viên cũ quay lại đăng nhập">Cũ</th>
+                                        <th class="daily-trends-sticky-th text-end text-warning" style="width: 60px;" title="Lượt xem trang của thành viên trong ngày">Trang</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -163,6 +164,16 @@
                                                 @if (day.ReturningUsers > 0)
                                                 {
                                                     <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-info text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'returning')" title="Xem chi tiết User CŨ ngày @day.DisplayDate">@day.ReturningUsers</button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">0</span>
+                                                }
+                                            </td>
+                                            <td class="text-end font-monospace">
+                                                @if (day.PageViews > 0)
+                                                {
+                                                    <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold text-warning text-decoration-underline" onclick="openDailyUsersModal('@day.DateKey', '@day.DisplayDate', 'pages')" title="Xem chi tiết các trang đã xem ngày @day.DisplayDate">@day.PageViews</button>
                                                 }
                                                 else
                                                 {
@@ -260,135 +271,6 @@
             </div>
         </div>
 
-        <!-- Row 3: Landing Pages (SEO Chuẩn) & Trang nhiều / ít xem -->
-        <div class="row g-4 mb-4">
-            <!-- SEO Landing Pages -->
-            <div class="col-xl-6">
-                <div class="status-panel h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h3 class="h6 text-uppercase mb-0">Trang đích thu hút traffic (Landing Pages - SEO)</h3>
-                        <span class="badge bg-success-subtle text-success">Điểm tiếp cận đầu</span>
-                    </div>
-                    <p class="small text-muted mb-3">Trang đầu tiên người dùng truy cập vào website qua Google Search hoặc mạng xã hội.</p>
-
-                    @if (Model.LandingPages.Count == 0)
-                    {
-                        <p class="text-muted small mb-0">Chưa có dữ liệu trang đích từ GA4.</p>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-sm align-middle mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Trang đích / Title</th>
-                                        <th class="text-end" style="width: 90px;">Phiên vào</th>
-                                        <th class="text-end" style="width: 90px;" title="Tỷ lệ người dùng rời trang ngay không tương tác">Thoát</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var lp in Model.LandingPages)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <strong class="d-block text-truncate" style="max-width: 280px;">@(string.IsNullOrWhiteSpace(lp.Title) ? lp.Path : lp.Title)</strong>
-                                                <code class="small text-muted">@lp.Path</code>
-                                            </td>
-                                            <td class="text-end font-monospace fw-semibold">@lp.Sessions.ToString("N0")</td>
-                                            <td class="text-end text-nowrap">
-                                                <span class="badge @(lp.BounceRate > 0.6 ? "bg-warning-subtle text-warning" : "bg-success-subtle text-success")">
-                                                    @lp.FormattedBounceRate
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            <!-- Popular & Least Visited Pages -->
-            <div class="col-xl-6">
-                <div class="d-flex flex-column gap-3 h-100">
-                    <div class="status-panel">
-                        <h3 class="h6 text-uppercase mb-3">Trang được xem nhiều nhất & Thời gian trên trang</h3>
-                        @if (Model.PopularPages.Count == 0)
-                        {
-                            <p class="text-muted small mb-0">Chưa có dữ liệu trang.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Trang</th>
-                                            <th class="text-end">Lượt xem</th>
-                                            <th class="text-end">User</th>
-                                            <th class="text-end">Thời gian TB</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in Model.PopularPages.Take(6))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <strong class="d-block text-truncate" style="max-width: 220px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</strong>
-                                                    <code class="small text-muted">@item.Path</code>
-                                                </td>
-                                                <td class="text-end font-monospace">@item.Views.ToString("N0")</td>
-                                                <td class="text-end font-monospace text-muted">@item.Users.ToString("N0")</td>
-                                                <td class="text-end text-nowrap"><span class="badge bg-success-subtle text-success">@item.FormattedDuration</span></td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </div>
-
-                    <div class="status-panel">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h3 class="h6 text-uppercase mb-0">Trang ít xem (Cần cải thiện SEO / Nội dung)</h3>
-                            <span class="badge bg-warning-subtle text-warning">Tối ưu hóa</span>
-                        </div>
-                        @if (Model.LeastVisitedPages.Count == 0)
-                        {
-                            <p class="text-muted small mb-0">Chưa có dữ liệu trang ít xem.</p>
-                        }
-                        else
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-sm align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Trang</th>
-                                            <th class="text-end">Lượt xem</th>
-                                            <th class="text-end">Thời gian TB</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var item in Model.LeastVisitedPages.Take(4))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <span class="d-block text-truncate" style="max-width: 240px;">@(string.IsNullOrWhiteSpace(item.Title) ? item.Path : item.Title)</span>
-                                                    <code class="small text-muted">@item.Path</code>
-                                                </td>
-                                                <td class="text-end font-monospace text-warning">@item.Views.ToString("N0")</td>
-                                                <td class="text-end text-nowrap"><span class="badge bg-secondary-subtle text-muted">@item.FormattedDuration</span></td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
     }
 </section>
 
@@ -409,6 +291,9 @@
                             </button>
                             <button type="button" class="btn btn-outline-info" id="btnTabReturning" onclick="filterDailyUsers('returning')">
                                 User Cũ (<span id="modalCountReturning">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" id="btnTabPages" onclick="filterDailyUsers('pages')">
+                                Trang (<span id="modalCountPages">0</span>)
                             </button>
                         </div>
                     </div>
@@ -495,20 +380,23 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const countNew = window.allDailyUsers.filter(u => u.isNew).length;
                 const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
+                const countPages = window.allDailyUsers.reduce((sum, u) => sum + (u.pageViewCount || (u.activities ? u.activities.length : 0)), 0);
 
                 const countAllEl = document.getElementById('modalCountAll');
                 const countNewEl = document.getElementById('modalCountNew');
                 const countRetEl = document.getElementById('modalCountReturning');
+                const countPagesEl = document.getElementById('modalCountPages');
 
                 if (countAllEl) countAllEl.innerText = window.allDailyUsers.length;
                 if (countNewEl) countNewEl.innerText = countNew;
                 if (countRetEl) countRetEl.innerText = countRet;
+                if (countPagesEl) countPagesEl.innerText = countPages;
 
                 if (summaryInfo && window.allDailyUsers.length > 0) {
                     summaryInfo.classList.remove('d-none');
                     const ga4El = document.getElementById('modalGa4Summary');
                     const dbEl = document.getElementById('modalDbSummary');
-                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' thành viên (' + countNew + ' mới, ' + countRet + ' cũ)';
+                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' thành viên (' + countNew + ' mới, ' + countRet + ' cũ, ' + countPages + ' lượt xem trang)';
                     if (dbEl) dbEl.innerText = '100% tài khoản thành viên thật trong hệ thống';
                 }
 
@@ -527,10 +415,12 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         const tabAll = document.getElementById('btnTabAll');
         const tabNew = document.getElementById('btnTabNew');
         const tabRet = document.getElementById('btnTabReturning');
+        const tabPages = document.getElementById('btnTabPages');
 
         if (tabAll) tabAll.classList.toggle('active', type === 'all');
         if (tabNew) tabNew.classList.toggle('active', type === 'new');
         if (tabRet) tabRet.classList.toggle('active', type === 'returning');
+        if (tabPages) tabPages.classList.toggle('active', type === 'pages');
 
         const empty = document.getElementById('dailyUsersEmpty');
         const container = document.getElementById('dailyUsersContainer');
@@ -540,6 +430,9 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         let filtered = window.allDailyUsers || [];
         if (type === 'new') filtered = filtered.filter(u => u.isNew);
         if (type === 'returning') filtered = filtered.filter(u => !u.isNew);
+        if (type === 'pages') {
+            filtered = filtered.filter(u => (u.pageSummaries && u.pageSummaries.length > 0) || (u.activities && u.activities.length > 0));
+        }
 
         if (filtered.length === 0) {
             if (empty) empty.classList.remove('d-none');
@@ -552,6 +445,8 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 } else if (type === 'new' && (window.allDailyUsers || []).some(u => !u.isNew)) {
                     const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
                     emptyMsg.innerHTML = 'Ngày này chưa có User mới đăng ký.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="window.filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
+                } else if (type === 'pages') {
+                    emptyMsg.innerText = 'Ngày này chưa ghi nhận lượt xem trang nào từ các tài khoản thành viên.';
                 } else {
                     emptyMsg.innerText = 'Ngày này không có tài khoản thành viên nào đăng nhập / đăng ký.';
                 }
@@ -561,6 +456,100 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
         if (empty) empty.classList.add('d-none');
         container.classList.remove('d-none');
+
+        if (type === 'pages') {
+            filtered.forEach((u) => {
+                const card = document.createElement('div');
+                card.className = 'p-3 rounded border';
+                card.style.background = 'rgba(255, 255, 255, 0.03)';
+                card.style.borderColor = 'rgba(255, 193, 7, 0.25)';
+
+                const isNewBadge = u.isNew 
+                    ? '<span class="badge bg-success-subtle text-success border border-success-subtle">User Mới</span>' 
+                    : '<span class="badge bg-info-subtle text-info border border-info-subtle">User Cũ</span>';
+                    
+                const accountBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Thành viên</span>';
+                const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
+
+                const pages = (u.pageSummaries && u.pageSummaries.length > 0)
+                    ? u.pageSummaries
+                    : [{
+                        path: (u.activities && u.activities[0]) ? u.activities[0].path : '/',
+                        title: (u.activities && u.activities[0]) ? u.activities[0].title : 'Xem trang',
+                        visitCount: u.pageViewCount || 1,
+                        formattedDuration: u.formattedTotalDuration || '20s',
+                        visitTimes: (u.activities ? u.activities.map(a => a.time) : [])
+                    }];
+
+                const totalUserDuration = u.formattedTotalDuration || '0s';
+                const totalUserViews = u.pageViewCount || (u.activities ? u.activities.length : 1);
+
+                const tableRowsHtml = pages.map((p) => {
+                    const timesStr = (p.visitTimes && p.visitTimes.length > 0)
+                        ? `<div class="text-muted small mt-1 font-monospace" style="font-size: 0.72rem;">Thời điểm: ${p.visitTimes.join(', ')}</div>`
+                        : '';
+                    return `
+                        <tr>
+                            <td class="align-middle py-2">
+                                <strong class="text-light d-block text-truncate" style="max-width: 340px;" title="${p.title || p.path}">${p.title || p.path}</strong>
+                                <code class="text-muted small">${p.path}</code>
+                                ${timesStr}
+                            </td>
+                            <td class="text-center align-middle py-2">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 font-monospace fw-semibold" style="font-size: 0.8rem;">
+                                    ${p.visitCount} lần
+                                </span>
+                            </td>
+                            <td class="text-end align-middle py-2 font-monospace">
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1" style="font-size: 0.8rem;">
+                                    ⏱ ${p.formattedDuration || '0s'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                card.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-2 border-bottom border-secondary-subtle">
+                        <div class="d-flex align-items-center gap-2">
+                            ${avatarHtml}
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <strong class="text-light">${u.fullName}</strong>
+                                    ${isNewBadge}
+                                    ${accountBadge}
+                                </div>
+                                <small class="text-muted">${u.email || u.uid}</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 font-monospace small">
+                            <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian người dùng tương tác trong ngày">
+                                ⏱ Tổng thời gian: ${totalUserDuration}
+                            </span>
+                            <span class="badge bg-dark border border-secondary-subtle text-light">
+                                ${pages.length} trang · ${totalUserViews} lượt truy cập
+                            </span>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-1">
+                        <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.85rem;">
+                            <thead>
+                                <tr class="text-muted border-bottom border-secondary-subtle" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                                    <th>Trang truy cập</th>
+                                    <th class="text-center" style="width: 120px;">Số lần truy cập</th>
+                                    <th class="text-end" style="width: 130px;">Thời gian ở lại</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            return;
+        }
 
         filtered.forEach((u) => {
             const card = document.createElement('div');
@@ -583,11 +572,12 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                         </small>
                         <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto;">
                             ${u.activities.map(a => `
-                                <div class="d-flex align-items-baseline gap-2 small">
+                                <div class="d-flex align-items-baseline gap-2 small flex-wrap">
                                     <span class="font-monospace text-muted" style="font-size: 0.8rem; min-width: 58px;">${a.time}</span>
                                     <span class="badge bg-secondary-subtle text-light px-1">${a.action || 'Xem'}</span>
                                     <strong class="text-success text-truncate">${a.title}</strong>
                                     <code class="text-muted small">${a.path}</code>
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle ms-auto font-monospace" style="font-size: 0.72rem;">⏱ ${a.formattedDuration || '20s'}</span>
                                 </div>
                             `).join('')}
                         </div>
@@ -613,6 +603,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 font-monospace small">
+                        <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian tương tác">⏱ ${u.formattedTotalDuration || '0s'}</span>
                         <span class="badge bg-dark border border-secondary-subtle text-light">${u.sessionCount || 1} phiên</span>
                         <span class="badge bg-dark border border-secondary-subtle text-success">${u.pageViewCount || (u.activities ? u.activities.length : 1)} lượt xem</span>
                     </div>

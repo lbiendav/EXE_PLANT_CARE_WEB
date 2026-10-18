@@ -200,20 +200,88 @@ public class UserActivityService
                     var rawList = doc.GetValue<List<object>>("activities");
                     if (rawList != null)
                     {
+                        var parsedItems = new List<(string path, string title, string action, string timeStr, DateTime dt)>();
                         foreach (var item in rawList)
                         {
                             if (item is Dictionary<string, object> dict)
                             {
-                                activitiesList.Add(new UserActivityItemVM
+                                var p = dict.TryGetValue("path", out var pVal) ? pVal?.ToString() ?? "" : "";
+                                var t = dict.TryGetValue("title", out var tVal) ? tVal?.ToString() ?? "" : "";
+                                var a = dict.TryGetValue("action", out var aVal) ? aVal?.ToString() ?? "Xem trang" : "Xem trang";
+                                var tm = dict.TryGetValue("time", out var tmVal) ? tmVal?.ToString() ?? "" : "";
+
+                                DateTime itemDt = DateTime.MinValue;
+                                if (dict.TryGetValue("timestamp", out var tsVal) && tsVal != null)
                                 {
-                                    Path = dict.TryGetValue("path", out var p) ? p?.ToString() ?? "" : "",
-                                    Title = dict.TryGetValue("title", out var t) ? t?.ToString() ?? "" : "",
-                                    Action = dict.TryGetValue("action", out var a) ? a?.ToString() ?? "Xem trang" : "Xem trang",
-                                    Time = dict.TryGetValue("time", out var tm) ? tm?.ToString() ?? "" : ""
-                                });
+                                    if (tsVal is Timestamp ts) itemDt = ts.ToDateTime().AddHours(7);
+                                    else if (tsVal is DateTime dtt) itemDt = dtt.AddHours(7);
+                                }
+                                if (itemDt == DateTime.MinValue && TimeSpan.TryParse(tm, out var parsedTs))
+                                {
+                                    if (DateTime.TryParseExact(dateKey, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var baseDate))
+                                    {
+                                        itemDt = baseDate.Add(parsedTs);
+                                    }
+                                }
+
+                                parsedItems.Add((p, t, a, tm, itemDt));
                             }
                         }
+
+                        for (int i = 0; i < parsedItems.Count; i++)
+                        {
+                            var curr = parsedItems[i];
+                            int duration = 20; // Default estimated engagement 20s
+                            if (i < parsedItems.Count - 1)
+                            {
+                                var next = parsedItems[i + 1];
+                                if (curr.dt != DateTime.MinValue && next.dt != DateTime.MinValue && next.dt >= curr.dt)
+                                {
+                                    var diffSec = (int)(next.dt - curr.dt).TotalSeconds;
+                                    if (diffSec > 0 && diffSec <= 1800)
+                                    {
+                                        duration = diffSec;
+                                    }
+                                }
+                            }
+
+                            activitiesList.Add(new UserActivityItemVM
+                            {
+                                Path = curr.path,
+                                Title = curr.title,
+                                Action = curr.action,
+                                Time = curr.timeStr,
+                                DurationSeconds = duration,
+                                FormattedDuration = FormatDuration(duration)
+                            });
+                        }
                     }
+                }
+
+                var pageSummaries = activitiesList
+                    .GroupBy(a => string.IsNullOrWhiteSpace(a.Path) ? "/" : a.Path, StringComparer.OrdinalIgnoreCase)
+                    .Select(g =>
+                    {
+                        var totalSec = g.Sum(x => x.DurationSeconds);
+                        var title = g.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Title))?.Title ?? g.Key;
+                        return new UserPageVisitSummaryVM
+                        {
+                            Path = g.Key,
+                            Title = title,
+                            VisitCount = g.Count(),
+                            TotalDurationSeconds = totalSec,
+                            FormattedDuration = FormatDuration(totalSec),
+                            VisitTimes = g.Select(x => x.Time).Where(t => !string.IsNullOrWhiteSpace(t)).ToList()
+                        };
+                    })
+                    .OrderByDescending(p => p.TotalDurationSeconds)
+                    .ThenByDescending(p => p.VisitCount)
+                    .ToList();
+
+                var userTotalDuration = activitiesList.Sum(a => a.DurationSeconds);
+                if (userTotalDuration == 0 && activitiesList.Count > 0)
+                {
+                    userTotalDuration = activitiesList.Count * 20;
                 }
 
                 result.Add(new DailyUserSummaryVM
@@ -227,7 +295,10 @@ public class UserActivityService
                     SessionCount = doc.ContainsField("sessionCount") ? Convert.ToInt32(doc.GetValue<object>("sessionCount")) : 1,
                     PageViewCount = doc.ContainsField("pageViewCount") ? Convert.ToInt32(doc.GetValue<object>("pageViewCount")) : activitiesList.Count,
                     LastActiveTime = doc.ContainsField("lastActiveTime") ? doc.GetValue<string>("lastActiveTime") : "",
-                    Activities = activitiesList
+                    Activities = activitiesList,
+                    PageSummaries = pageSummaries,
+                    TotalDurationSeconds = userTotalDuration,
+                    FormattedTotalDuration = FormatDuration(userTotalDuration)
                 });
                 addedUids.Add(uid);
             }
@@ -252,6 +323,25 @@ public class UserActivityService
                     var u = doc.ConvertTo<UserModel>();
                     if (u != null && !string.IsNullOrWhiteSpace(u.Id) && !addedUids.Contains(u.Id))
                     {
+                        var regActivity = new UserActivityItemVM
+                        {
+                            Path = "/Account/Register",
+                            Title = "Đăng ký tài khoản HomePlant",
+                            Action = "Tạo tài khoản mới",
+                            Time = u.CreatedAt.AddHours(7).ToString("HH:mm:ss"),
+                            DurationSeconds = 20,
+                            FormattedDuration = "20s"
+                        };
+                        var regPageSummary = new UserPageVisitSummaryVM
+                        {
+                            Path = "/Account/Register",
+                            Title = "Đăng ký tài khoản HomePlant",
+                            VisitCount = 1,
+                            TotalDurationSeconds = 20,
+                            FormattedDuration = "20s",
+                            VisitTimes = [u.CreatedAt.AddHours(7).ToString("HH:mm:ss")]
+                        };
+
                         result.Add(new DailyUserSummaryVM
                         {
                             Uid = u.Id,
@@ -263,16 +353,10 @@ public class UserActivityService
                             SessionCount = Math.Max(1, u.VisitCount),
                             PageViewCount = 1,
                             LastActiveTime = u.CreatedAt.AddHours(7).ToString("HH:mm:ss"),
-                            Activities =
-                            [
-                                new UserActivityItemVM
-                                {
-                                    Path = "/Account/Register",
-                                    Title = "Đăng ký tài khoản HomePlant",
-                                    Action = "Tạo tài khoản mới",
-                                    Time = u.CreatedAt.AddHours(7).ToString("HH:mm:ss")
-                                }
-                            ]
+                            Activities = [regActivity],
+                            PageSummaries = [regPageSummary],
+                            TotalDurationSeconds = 20,
+                            FormattedTotalDuration = "20s"
                         });
                         addedUids.Add(u.Id);
                     }
@@ -292,8 +376,27 @@ public class UserActivityService
         {
             return result.Where(u => !u.IsNew).ToList();
         }
+        if (string.Equals(type, "pages", StringComparison.OrdinalIgnoreCase))
+        {
+            return result.Where(u => (u.PageSummaries != null && u.PageSummaries.Count > 0) || (u.Activities != null && u.Activities.Count > 0)).ToList();
+        }
 
         return result;
+    }
+
+    public static string FormatDuration(int sec)
+    {
+        if (sec <= 0) return "0s";
+        if (sec < 60) return $"{sec}s";
+        var min = sec / 60;
+        var rem = sec % 60;
+        if (min < 60)
+        {
+            return rem > 0 ? $"{min}m {rem}s" : $"{min}m";
+        }
+        var hours = min / 60;
+        min %= 60;
+        return min > 0 ? $"{hours}h {min}m" : $"{hours}h";
     }
 
     public async Task<GoogleAnalyticsOverviewVM> EnrichWithDatabaseUsersAsync(GoogleAnalyticsOverviewVM gaOverview)
@@ -308,12 +411,14 @@ public class UserActivityService
             var dailyDocsByDate = dailySnap.Documents
                 .Where(d => {
                     var isGuest = d.ContainsField("isGuest") && d.GetValue<bool>("isGuest");
-                    var uid = d.ContainsField("uid") ? d.GetValue<string>("uid") : d.Id;
+                    var uid = d.ContainsField("uid") ? d.GetValue<string>("uid") : docId(d);
                     return !isGuest && !string.IsNullOrWhiteSpace(uid) && !uid.StartsWith("ga4_", StringComparison.OrdinalIgnoreCase) && !uid.StartsWith("guest_", StringComparison.OrdinalIgnoreCase);
                 })
                 .GroupBy(d => d.ContainsField("dateKey") ? d.GetValue<string>("dateKey") : "")
                 .Where(g => !string.IsNullOrEmpty(g.Key))
                 .ToDictionary(g => g.Key, g => g.ToList());
+
+            static string docId(Google.Cloud.Firestore.DocumentSnapshot d) => d.ContainsField("uid") ? d.GetValue<string>("uid") : d.Id;
 
             // Also query all users created in the last 30 days to ensure any registered user on each date is accounted for
             var minDateUtc = DateTime.UtcNow.AddHours(7).Date.AddDays(-30).AddHours(-7);
@@ -349,6 +454,7 @@ public class UserActivityService
                 var dayActiveUids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var dayNewUids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 var dayReturningUids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                long dayMemberPageViews = 0;
 
                 // 1. Process daily activity records for real members
                 if (dailyDocsByDate.TryGetValue(dateKey, out var dayDocs) && dayDocs.Count > 0)
@@ -361,6 +467,18 @@ public class UserActivityService
                         distinctActiveUserIdsIn30Days.Add(uid);
                         if (isNew) dayNewUids.Add(uid);
                         else dayReturningUids.Add(uid);
+
+                        long pv = 0;
+                        if (doc.ContainsField("pageViewCount"))
+                        {
+                            pv = Convert.ToInt64(doc.GetValue<object>("pageViewCount"));
+                        }
+                        else if (doc.ContainsField("activities"))
+                        {
+                            var rawList = doc.GetValue<List<object>>("activities");
+                            pv = rawList?.Count ?? 0;
+                        }
+                        dayMemberPageViews += Math.Max(1, pv);
                     }
                 }
 
@@ -369,6 +487,10 @@ public class UserActivityService
                 {
                     foreach (var u in newUsersList)
                     {
+                        if (!dayActiveUids.Contains(u.Id))
+                        {
+                            dayMemberPageViews += 1;
+                        }
                         dayActiveUids.Add(u.Id);
                         dayNewUids.Add(u.Id);
                         distinctActiveUserIdsIn30Days.Add(u.Id);
@@ -378,7 +500,6 @@ public class UserActivityService
 
                 existingDailyRows.TryGetValue(dateKey, out var originalRow);
                 var sessions = originalRow?.Sessions ?? 0;
-                var pageViews = originalRow?.PageViews ?? 0;
                 var display = originalRow?.DisplayDate ?? displayDate;
 
                 // Member counts strictly from real database accounts (excluding all anonymous guests):
@@ -394,7 +515,7 @@ public class UserActivityService
                     display,
                     activeCount,
                     sessions,
-                    pageViews,
+                    dayMemberPageViews,
                     newCount,
                     returningCount
                 ));
@@ -412,7 +533,7 @@ public class UserActivityService
                 Error = gaOverview.Error,
                 ActiveUsers30Days = distinctActiveUserIdsIn30Days.Count > 0 ? distinctActiveUserIdsIn30Days.Count : gaOverview.ActiveUsers30Days,
                 Sessions30Days = gaOverview.Sessions30Days,
-                PageViews30Days = gaOverview.PageViews30Days,
+                PageViews30Days = updatedDailyTrends.Sum(d => d.PageViews),
                 NewUsers30Days = totalDatabaseNewUsers,
                 ReturningUsers30Days = totalDatabaseReturningUsers,
                 AverageDailyUsers30Days = avgDailyUsers,
