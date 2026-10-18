@@ -380,7 +380,10 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
 
                 const countNew = window.allDailyUsers.filter(u => u.isNew).length;
                 const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
-                const countPages = window.allDailyUsers.reduce((sum, u) => sum + (u.pageViewCount || (u.activities ? u.activities.length : 0)), 0);
+                const countPages = window.allDailyUsers.reduce((sum, u) => {
+                    const featVisits = (u.pageSummaries || []).reduce((pSum, p) => pSum + (p.visitCount || 1), 0);
+                    return sum + featVisits;
+                }, 0);
 
                 const countAllEl = document.getElementById('modalCountAll');
                 const countNewEl = document.getElementById('modalCountNew');
@@ -396,7 +399,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                     summaryInfo.classList.remove('d-none');
                     const ga4El = document.getElementById('modalGa4Summary');
                     const dbEl = document.getElementById('modalDbSummary');
-                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' thành viên (' + countNew + ' mới, ' + countRet + ' cũ, ' + countPages + ' lượt xem trang)';
+                    if (ga4El) ga4El.innerText = window.allDailyUsers.length + ' thành viên (' + countNew + ' mới, ' + countRet + ' cũ, ' + countPages + ' lượt xem 7 trang tính năng)';
                     if (dbEl) dbEl.innerText = '100% tài khoản thành viên thật trong hệ thống';
                 }
 
@@ -431,7 +434,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         if (type === 'new') filtered = filtered.filter(u => u.isNew);
         if (type === 'returning') filtered = filtered.filter(u => !u.isNew);
         if (type === 'pages') {
-            filtered = filtered.filter(u => (u.pageSummaries && u.pageSummaries.length > 0) || (u.activities && u.activities.length > 0));
+            filtered = filtered.filter(u => u.pageSummaries && u.pageSummaries.length > 0);
         }
 
         if (filtered.length === 0) {
@@ -446,7 +449,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                     const countRet = window.allDailyUsers.filter(u => !u.isNew).length;
                     emptyMsg.innerHTML = 'Ngày này chưa có User mới đăng ký.<br><button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="window.filterDailyUsers(\'returning\')">Xem ' + countRet + ' User Cũ</button>';
                 } else if (type === 'pages') {
-                    emptyMsg.innerText = 'Ngày này chưa ghi nhận lượt xem trang nào từ các tài khoản thành viên.';
+                    emptyMsg.innerHTML = '<span class="fw-semibold">Ngày này chưa có thành viên nào truy cập 7 trang tính năng:</span><br><div class="mt-2 text-success small font-monospace">Thư viện cây · Cẩm nang · Cộng đồng · Gói đăng ký · Vườn của tôi · Chuyên gia · Nhắc việc</div>';
                 } else {
                     emptyMsg.innerText = 'Ngày này không có tài khoản thành viên nào đăng nhập / đăng ký.';
                 }
@@ -458,6 +461,79 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
         container.classList.remove('d-none');
 
         if (type === 'pages') {
+            // Aggregate totals across all users for the 7 navbar features
+            const navCategories = [
+                { name: 'Thư viện cây', icon: '🌿' },
+                { name: 'Cẩm nang', icon: '📖' },
+                { name: 'Cộng đồng', icon: '👥' },
+                { name: 'Gói đăng ký', icon: '⭐' },
+                { name: 'Vườn của tôi', icon: '🌱' },
+                { name: 'Chuyên gia', icon: '👨‍🌾' },
+                { name: 'Nhắc việc', icon: '⏰' }
+            ];
+
+            const catStats = {};
+            navCategories.forEach(c => {
+                catStats[c.name] = { visits: 0, users: new Set(), totalDuration: 0 };
+            });
+
+            (window.allDailyUsers || []).forEach(u => {
+                (u.pageSummaries || []).forEach(p => {
+                    if (p.category && catStats.hasOwnProperty(p.category)) {
+                        catStats[p.category].visits += (p.visitCount || 1);
+                        catStats[p.category].users.add(u.uid);
+                        catStats[p.category].totalDuration += (p.totalDurationSeconds || 0);
+                    }
+                });
+            });
+
+            const formatSecHelper = function(sec) {
+                if (sec <= 0) return '0s';
+                if (sec < 60) return sec + 's';
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                return s > 0 ? (m + 'm ' + s + 's') : (m + 'm');
+            };
+
+            // Summary banner for the 7 feature pages
+            const summaryBanner = document.createElement('div');
+            summaryBanner.className = 'p-3 rounded border mb-3';
+            summaryBanner.style.background = 'rgba(255, 255, 255, 0.02)';
+            summaryBanner.style.borderColor = 'rgba(208, 234, 144, 0.25)';
+
+            let pillsHtml = navCategories.map(c => {
+                const stat = catStats[c.name];
+                const hasVisits = stat.visits > 0;
+                const badgeClass = hasVisits
+                    ? 'bg-success-subtle text-success border border-success-subtle'
+                    : 'bg-dark text-muted border border-secondary-subtle opacity-75';
+                return `
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded ${badgeClass}" style="min-width: 155px; flex: 1 1 calc(25% - 8px);">
+                        <div>
+                            <span class="me-1">${c.icon}</span>
+                            <strong>${c.name}</strong>
+                        </div>
+                        <div class="text-end font-monospace small">
+                            ${hasVisits ? `<strong>${stat.visits} lượt</strong> <small class="d-block text-warning">⏱ ${formatSecHelper(stat.totalDuration)}</small>` : `<span class="text-muted">0 lượt</span>`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            summaryBanner.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom border-secondary-subtle">
+                    <span class="small text-uppercase fw-semibold text-success" style="letter-spacing: .05em;">
+                        Thống kê 7 trang tính năng chính được truy cập
+                    </span>
+                    <small class="text-muted">Chỉ hiển thị khi có thành viên truy cập</small>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    ${pillsHtml}
+                </div>
+            `;
+            container.appendChild(summaryBanner);
+
+            // Render each user who visited feature pages
             filtered.forEach((u) => {
                 const card = document.createElement('div');
                 card.className = 'p-3 rounded border';
@@ -471,27 +547,25 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                 const accountBadge = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle">Thành viên</span>';
                 const avatarHtml = `<img src="${u.avatarUrl || ('https://i.pravatar.cc/150?u=' + encodeURIComponent(u.uid))}" class="rounded-circle flex-shrink-0" width="36" height="36" style="object-fit: cover; border: 1px solid rgba(208, 234, 144, 0.3);" alt="User" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=1f3326&color=d0ea90';"/>`;
 
-                const pages = (u.pageSummaries && u.pageSummaries.length > 0)
-                    ? u.pageSummaries
-                    : [{
-                        path: (u.activities && u.activities[0]) ? u.activities[0].path : '/',
-                        title: (u.activities && u.activities[0]) ? u.activities[0].title : 'Xem trang',
-                        visitCount: u.pageViewCount || 1,
-                        formattedDuration: u.formattedTotalDuration || '20s',
-                        visitTimes: (u.activities ? u.activities.map(a => a.time) : [])
-                    }];
-
-                const totalUserDuration = u.formattedTotalDuration || '0s';
-                const totalUserViews = u.pageViewCount || (u.activities ? u.activities.length : 1);
+                const pages = (u.pageSummaries || []);
+                const userFeatureSec = pages.reduce((acc, p) => acc + (p.totalDurationSeconds || 0), 0);
+                const totalUserDuration = formatSecHelper(userFeatureSec);
+                const totalUserViews = pages.reduce((acc, p) => acc + (p.visitCount || 0), 0);
 
                 const tableRowsHtml = pages.map((p) => {
                     const timesStr = (p.visitTimes && p.visitTimes.length > 0)
                         ? `<div class="text-muted small mt-1 font-monospace" style="font-size: 0.72rem;">Thời điểm: ${p.visitTimes.join(', ')}</div>`
                         : '';
+                    const catBadge = p.category 
+                        ? `<span class="badge bg-success-subtle text-success border border-success-subtle me-1" style="font-size: 0.72rem;">${p.category}</span>`
+                        : '';
                     return `
                         <tr>
                             <td class="align-middle py-2">
-                                <strong class="text-light d-block text-truncate" style="max-width: 340px;" title="${p.title || p.path}">${p.title || p.path}</strong>
+                                <div class="d-flex align-items-center gap-1 mb-1">
+                                    ${catBadge}
+                                    <strong class="text-light text-truncate" style="max-width: 320px;" title="${p.title || p.path}">${p.title || p.path}</strong>
+                                </div>
                                 <code class="text-muted small">${p.path}</code>
                                 ${timesStr}
                             </td>
@@ -523,7 +597,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                             </div>
                         </div>
                         <div class="d-flex align-items-center gap-2 font-monospace small">
-                            <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian người dùng tương tác trong ngày">
+                            <span class="badge bg-dark border border-warning-subtle text-warning" title="Tổng thời gian ở lại các trang tính năng của User này">
                                 ⏱ Tổng thời gian: ${totalUserDuration}
                             </span>
                             <span class="badge bg-dark border border-secondary-subtle text-light">
@@ -535,7 +609,7 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                         <table class="table table-sm table-borderless align-middle mb-0" style="font-size: 0.85rem;">
                             <thead>
                                 <tr class="text-muted border-bottom border-secondary-subtle" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                    <th>Trang truy cập</th>
+                                    <th>Trang tính năng đã xem</th>
                                     <th class="text-center" style="width: 120px;">Số lần truy cập</th>
                                     <th class="text-end" style="width: 130px;">Thời gian ở lại</th>
                                 </tr>

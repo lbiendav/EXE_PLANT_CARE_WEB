@@ -75,7 +75,7 @@ public sealed class ActiveUserFilter(
                     isNewSession = true;
                 }
 
-                var currentNavKey = $"{method}:{controller}/{action}";
+                var currentNavKey = $"{method}:{path}";
                 var lastNavKey = session.GetString("LastNavKey");
                 if (lastNavKey != currentNavKey || isNewSession)
                 {

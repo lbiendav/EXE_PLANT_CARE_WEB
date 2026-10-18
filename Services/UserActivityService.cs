@@ -258,14 +258,21 @@ public class UserActivityService
                     }
                 }
 
-                var pageSummaries = activitiesList
-                    .GroupBy(a => string.IsNullOrWhiteSpace(a.Path) ? "/" : a.Path, StringComparer.OrdinalIgnoreCase)
+                var featureActivities = activitiesList
+                    .Where(a => IsTrackedNavbarFeature(a.Path, a.Title, out _, out _))
+                    .ToList();
+
+                var pageSummaries = featureActivities
+                    .GroupBy(a => a.Path, StringComparer.OrdinalIgnoreCase)
                     .Select(g =>
                     {
+                        var sample = g.First();
+                        IsTrackedNavbarFeature(sample.Path, sample.Title, out var category, out var defaultTitle);
+                        var title = g.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Title) && x.Title != "Xem trang")?.Title ?? defaultTitle;
                         var totalSec = g.Sum(x => x.DurationSeconds);
-                        var title = g.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Title))?.Title ?? g.Key;
                         return new UserPageVisitSummaryVM
                         {
+                            Category = category,
                             Path = g.Key,
                             Title = title,
                             VisitCount = g.Count(),
@@ -332,15 +339,6 @@ public class UserActivityService
                             DurationSeconds = 20,
                             FormattedDuration = "20s"
                         };
-                        var regPageSummary = new UserPageVisitSummaryVM
-                        {
-                            Path = "/Account/Register",
-                            Title = "Đăng ký tài khoản HomePlant",
-                            VisitCount = 1,
-                            TotalDurationSeconds = 20,
-                            FormattedDuration = "20s",
-                            VisitTimes = [u.CreatedAt.AddHours(7).ToString("HH:mm:ss")]
-                        };
 
                         result.Add(new DailyUserSummaryVM
                         {
@@ -354,7 +352,7 @@ public class UserActivityService
                             PageViewCount = 1,
                             LastActiveTime = u.CreatedAt.AddHours(7).ToString("HH:mm:ss"),
                             Activities = [regActivity],
-                            PageSummaries = [regPageSummary],
+                            PageSummaries = [],
                             TotalDurationSeconds = 20,
                             FormattedTotalDuration = "20s"
                         });
@@ -378,10 +376,94 @@ public class UserActivityService
         }
         if (string.Equals(type, "pages", StringComparison.OrdinalIgnoreCase))
         {
-            return result.Where(u => (u.PageSummaries != null && u.PageSummaries.Count > 0) || (u.Activities != null && u.Activities.Count > 0)).ToList();
+            return result.Where(u => u.PageSummaries != null && u.PageSummaries.Count > 0).ToList();
         }
 
         return result;
+    }
+
+    public static bool IsTrackedNavbarFeature(string path, string title, out string categoryName, out string friendlyTitle)
+    {
+        categoryName = "";
+        friendlyTitle = "";
+        if (string.IsNullOrWhiteSpace(path)) return false;
+
+        var p = path.Trim();
+
+        // 1. THƯ VIỆN CÂY
+        if (p.StartsWith("/Library", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Thư viện cây";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Xem thư viện"
+                ? "Thư viện cây"
+                : title;
+            return true;
+        }
+
+        // 2. CẨM NANG
+        if (p.StartsWith("/Article", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Cẩm nang";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Xem bài viết"
+                ? "Cẩm nang chăm sóc"
+                : title;
+            return true;
+        }
+
+        // 3. CỘNG ĐỒNG
+        if (p.StartsWith("/Community", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Cộng đồng";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Lướt cộng đồng"
+                ? "Cộng đồng yêu cây"
+                : title;
+            return true;
+        }
+
+        // 4. GÓI ĐĂNG KÝ
+        if (p.StartsWith("/Plans", StringComparison.OrdinalIgnoreCase) ||
+            p.StartsWith("/Subscription", StringComparison.OrdinalIgnoreCase) ||
+            p.StartsWith("/Checkout", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Gói đăng ký";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Xem gói dịch vụ"
+                ? "Gói đăng ký thành viên"
+                : title;
+            return true;
+        }
+
+        // 5. VƯỜN CỦA TÔI
+        if (p.StartsWith("/Plant", StringComparison.OrdinalIgnoreCase) ||
+            p.StartsWith("/CareLog", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Vườn của tôi";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Xem vườn cây"
+                ? "Vườn của tôi"
+                : title;
+            return true;
+        }
+
+        // 6. CHUYÊN GIA
+        if (p.StartsWith("/Expert", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Chuyên gia";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Hỏi đáp"
+                ? "Hỏi đáp Chuyên gia"
+                : title;
+            return true;
+        }
+
+        // 7. NHẮC VIỆC
+        if (p.StartsWith("/Notifications", StringComparison.OrdinalIgnoreCase))
+        {
+            categoryName = "Nhắc việc";
+            friendlyTitle = string.IsNullOrWhiteSpace(title) || title == "Xem trang" || title == "Xem thông báo"
+                ? "Lịch nhắc việc"
+                : title;
+            return true;
+        }
+
+        return false;
     }
 
     public static string FormatDuration(int sec)
@@ -456,7 +538,7 @@ public class UserActivityService
                 var dayReturningUids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 long dayMemberPageViews = 0;
 
-                // 1. Process daily activity records for real members
+                // 1. Process daily activity records for real members: only count visits to the 7 core features
                 if (dailyDocsByDate.TryGetValue(dateKey, out var dayDocs) && dayDocs.Count > 0)
                 {
                     foreach (var doc in dayDocs)
@@ -468,17 +550,27 @@ public class UserActivityService
                         if (isNew) dayNewUids.Add(uid);
                         else dayReturningUids.Add(uid);
 
-                        long pv = 0;
-                        if (doc.ContainsField("pageViewCount"))
-                        {
-                            pv = Convert.ToInt64(doc.GetValue<object>("pageViewCount"));
-                        }
-                        else if (doc.ContainsField("activities"))
+                        long featurePv = 0;
+                        if (doc.ContainsField("activities"))
                         {
                             var rawList = doc.GetValue<List<object>>("activities");
-                            pv = rawList?.Count ?? 0;
+                            if (rawList != null)
+                            {
+                                foreach (var item in rawList)
+                                {
+                                    if (item is Dictionary<string, object> dict)
+                                    {
+                                        var p = dict.TryGetValue("path", out var pVal) ? pVal?.ToString() ?? "" : "";
+                                        var t = dict.TryGetValue("title", out var tVal) ? tVal?.ToString() ?? "" : "";
+                                        if (IsTrackedNavbarFeature(p, t, out _, out _))
+                                        {
+                                            featurePv++;
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        dayMemberPageViews += Math.Max(1, pv);
+                        dayMemberPageViews += featurePv;
                     }
                 }
 
@@ -487,10 +579,6 @@ public class UserActivityService
                 {
                     foreach (var u in newUsersList)
                     {
-                        if (!dayActiveUids.Contains(u.Id))
-                        {
-                            dayMemberPageViews += 1;
-                        }
                         dayActiveUids.Add(u.Id);
                         dayNewUids.Add(u.Id);
                         distinctActiveUserIdsIn30Days.Add(u.Id);
