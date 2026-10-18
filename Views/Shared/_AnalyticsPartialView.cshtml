@@ -413,6 +413,43 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
             });
     };
 
+    const formatSecHelper = function(sec) {
+        if (!sec || sec <= 0) return '0s';
+        if (sec < 60) return sec + 's';
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return s > 0 ? (m + 'm ' + s + 's') : (m + 'm');
+    };
+
+    const getCategoryStyle = function(category) {
+        switch (category) {
+            case 'Thư viện cây':
+                return { bg: 'rgba(34, 197, 94, 0.16)', text: '#86efac', border: 'rgba(74, 222, 128, 0.45)' };
+            case 'Cẩm nang':
+                return { bg: 'rgba(56, 189, 248, 0.16)', text: '#7dd3fc', border: 'rgba(56, 189, 248, 0.45)' };
+            case 'Cộng đồng':
+                return { bg: 'rgba(168, 85, 247, 0.16)', text: '#d8b4fe', border: 'rgba(192, 132, 252, 0.45)' };
+            case 'Gói đăng ký':
+                return { bg: 'rgba(234, 179, 8, 0.16)', text: '#fde047', border: 'rgba(250, 204, 21, 0.45)' };
+            case 'Vườn của tôi':
+                return { bg: 'rgba(16, 185, 129, 0.16)', text: '#6ee7b7', border: 'rgba(52, 211, 153, 0.45)' };
+            case 'Chuyên gia':
+                return { bg: 'rgba(249, 115, 22, 0.16)', text: '#fdba74', border: 'rgba(251, 146, 60, 0.45)' };
+            case 'Nhắc việc':
+                return { bg: 'rgba(244, 63, 94, 0.16)', text: '#fda4af', border: 'rgba(251, 113, 133, 0.45)' };
+            default:
+                return { bg: 'rgba(255, 255, 255, 0.08)', text: '#f1f5f9', border: 'rgba(255, 255, 255, 0.2)' };
+        }
+    };
+
+    const renderBadges = function(isNew) {
+        const isNewHtml = isNew 
+            ? '<span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Mới</span>' 
+            : '<span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Cũ</span>';
+        const memberHtml = '<span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">Thành viên</span>';
+        return { isNewHtml, memberHtml };
+    };
+
     window.filterDailyUsers = function(type) {
         window.currentFilterType = type;
         const tabAll = document.getElementById('btnTabAll');
@@ -486,43 +523,6 @@ if (typeof window.dailyUsersInitialized === 'undefined') {
                     }
                 });
             });
-
-            const formatSecHelper = function(sec) {
-                if (sec <= 0) return '0s';
-                if (sec < 60) return sec + 's';
-                const m = Math.floor(sec / 60);
-                const s = sec % 60;
-                return s > 0 ? (m + 'm ' + s + 's') : (m + 'm');
-            };
-
-            const getCategoryStyle = function(category) {
-                switch (category) {
-                    case 'Thư viện cây':
-                        return { bg: 'rgba(34, 197, 94, 0.16)', text: '#86efac', border: 'rgba(74, 222, 128, 0.45)' };
-                    case 'Cẩm nang':
-                        return { bg: 'rgba(56, 189, 248, 0.16)', text: '#7dd3fc', border: 'rgba(56, 189, 248, 0.45)' };
-                    case 'Cộng đồng':
-                        return { bg: 'rgba(168, 85, 247, 0.16)', text: '#d8b4fe', border: 'rgba(192, 132, 252, 0.45)' };
-                    case 'Gói đăng ký':
-                        return { bg: 'rgba(234, 179, 8, 0.16)', text: '#fde047', border: 'rgba(250, 204, 21, 0.45)' };
-                    case 'Vườn của tôi':
-                        return { bg: 'rgba(16, 185, 129, 0.16)', text: '#6ee7b7', border: 'rgba(52, 211, 153, 0.45)' };
-                    case 'Chuyên gia':
-                        return { bg: 'rgba(249, 115, 22, 0.16)', text: '#fdba74', border: 'rgba(251, 146, 60, 0.45)' };
-                    case 'Nhắc việc':
-                        return { bg: 'rgba(244, 63, 94, 0.16)', text: '#fda4af', border: 'rgba(251, 113, 133, 0.45)' };
-                    default:
-                        return { bg: 'rgba(255, 255, 255, 0.08)', text: '#f1f5f9', border: 'rgba(255, 255, 255, 0.2)' };
-                }
-            };
-
-            const renderBadges = function(isNew) {
-                const isNewHtml = isNew 
-                    ? '<span class="badge" style="background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Mới</span>' 
-                    : '<span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">User Cũ</span>';
-                const memberHtml = '<span class="badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.4); font-weight: 600; font-size: 0.75rem; padding: 3px 8px;">Thành viên</span>';
-                return { isNewHtml, memberHtml };
-            };
 
             // Summary banner for the 7 feature pages
             const summaryBanner = document.createElement('div');
