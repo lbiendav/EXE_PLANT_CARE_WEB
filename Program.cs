@@ -23,11 +23,15 @@ if (!string.IsNullOrWhiteSpace(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{portNumber}");
 }
 
-builder.Services.AddControllersWithViews(options =>
+var mvcBuilder = builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<HomePlant.Filters.ActiveUserFilter>();
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-}).AddRazorRuntimeCompilation();
+});
+if (builder.Environment.IsDevelopment())
+{
+    mvcBuilder.AddRazorRuntimeCompilation();
+}
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = builder.Environment.IsDevelopment()

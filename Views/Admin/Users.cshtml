@@ -42,15 +42,15 @@
                     var lastSeen = user.LastActiveAt.HasValue
                         ? (user.LastActiveAt.Value.Kind == DateTimeKind.Utc ? user.LastActiveAt.Value.AddHours(7) : user.LastActiveAt.Value).ToString("dd/MM/yyyy HH:mm")
                         : (user.CreatedAt.Kind == DateTimeKind.Utc ? user.CreatedAt.AddHours(7) : user.CreatedAt).ToString("dd/MM/yyyy HH:mm");
-                    var safeName = user.FullName.Replace("'", "\\'");
-                    var safeEmail = user.Email.Replace("'", "\\'");
+                    var safeName = (user.FullName ?? "").Replace("'", "\\'");
+                    var safeEmail = (user.Email ?? "").Replace("'", "\\'");
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <img src="@(string.IsNullOrEmpty(user.AvatarUrl) ? "https://i.pravatar.cc/150" : user.AvatarUrl)"
                                      class="avatar-sm"
-                                     alt="Ảnh đại diện của @user.FullName" />
-                                <span class="fw-semibold">@user.FullName</span>
+                                     alt="Ảnh đại diện của @(user.FullName ?? "Người dùng")" />
+                                <span class="fw-semibold">@(string.IsNullOrWhiteSpace(user.FullName) ? "Người dùng" : user.FullName)</span>
                             </div>
                         </td>
 
