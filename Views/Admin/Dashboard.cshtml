@@ -88,6 +88,19 @@
         </a>
     </div>
 
+    <div class="col-lg-3 col-md-4 col-sm-6">
+        <a asp-action="Feedbacks" class="admin-stat-card">
+            <div class="stat-number">
+                @Model.PendingFeedbackCount
+                @if (Model.PendingFeedbackCount > 0)
+                {
+                    <span class="badge bg-warning text-dark fs-6 align-middle ms-1">Mới</span>
+                }
+            </div>
+            <div class="stat-label">Duyệt đánh giá</div>
+        </a>
+    </div>
+
 </div>
 
 @await Html.PartialAsync("_AnalyticsPartialView", Model.Analytics)

@@ -1,0 +1,289 @@
+@using HomePlant.Models
+@using HomePlant.Services
+@using Microsoft.AspNetCore.Http
+@{
+    var feedbacks = (Model as IEnumerable<FeedbackModel>) 
+                    ?? (ViewBag.Feedbacks as IEnumerable<FeedbackModel>) 
+                    ?? FeedbackService.GetDefaultFeedbacks();
+    var currentEmail = Context.Session.GetString("Email") ?? "";
+    var currentUserName = !string.IsNullOrEmpty(currentEmail) ? currentEmail.Split('@')[0] : "";
+}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     GÓC CHIA SẺ — FEEDBACK & TRẢI NGHIỆM NGƯỜI LÀM VƯỜN HOMEPLANT
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="feedback-section" class="feedback-section" aria-labelledby="feedbackHeading">
+
+    <!-- Header Section -->
+    <div class="feedback-header">
+        <div class="feedback-kicker-pill">
+            <span class="pill-icon" aria-hidden="true">💬</span>
+            <span>GÓC CHIA SẺ</span>
+        </div>
+
+        <h2 id="feedbackHeading" class="feedback-heading">
+            NGƯỜI YÊU CÂY <span class="feedback-heading-highlight">CHIA SẺ TRẢI NGHIỆM</span>
+        </h2>
+
+        <p class="feedback-subtitle">
+            Cảm nhận thực tế của các thành viên đã đồng hành cùng HomePlant để xây dựng khu vườn trong nhà xanh tươi và chăm cây không còn đoán mò.
+        </p>
+
+        <!-- Category Filters & Action -->
+        <div class="feedback-controls">
+            <button type="button" class="feedback-filter-btn active" data-filter="all">Tất cả</button>
+            <button type="button" class="feedback-filter-btn" data-filter="CỨU CÂY">🌿 Cứu cây thành công</button>
+            <button type="button" class="feedback-filter-btn" data-filter="NGƯỜI MỚI">🌱 Người mới bắt đầu</button>
+            <button type="button" class="feedback-filter-btn" data-filter="GOLD">✨ Hội viên Gold / AI</button>
+            <button type="button" class="feedback-filter-btn" data-filter="VƯỜN TRONG NHÀ">🪴 Vườn trong nhà</button>
+
+            <button type="button" 
+                    class="feedback-btn-open-form ms-md-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#feedbackModal">
+                <span>✍️</span>
+                <span>Chia sẻ trải nghiệm của bạn</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div id="feedbackCardsGrid" class="row g-4 feedback-grid">
+        @foreach (var fb in feedbacks)
+        {
+            var initial = !string.IsNullOrWhiteSpace(fb.UserName) ? fb.UserName.Trim()[0].ToString().ToUpperInvariant() : "H";
+            var tagClass = $"feedback-tag--{fb.TagType}";
+            
+            <div class="col-lg-4 col-md-6 col-12 feedback-card-wrapper" data-tag="@fb.Tag">
+                <article class="feedback-card">
+                    <!-- Decorative quotation mark watermark -->
+                    <span class="feedback-quote-watermark" aria-hidden="true">”</span>
+
+                    <!-- Card Header: Tag & Star Rating -->
+                    <div class="feedback-card-top">
+                        <span class="feedback-tag @tagClass">
+                            <span aria-hidden="true">@fb.TagIcon</span>
+                            <span>@fb.Tag</span>
+                        </span>
+
+                        <div class="feedback-stars" aria-label="@fb.Rating trên 5 sao">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= fb.Rating)
+                                {
+                                    <span class="star-gold">★</span>
+                                }
+                                else
+                                {
+                                    <span class="star-dim">★</span>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Card Title -->
+                    <h3 class="feedback-title">@fb.Title</h3>
+
+                    <!-- Quote Content -->
+                    <blockquote class="feedback-quote">
+                        "@fb.Content"
+                    </blockquote>
+
+                    <!-- Author Footer -->
+                    <div class="feedback-author">
+                        <div class="feedback-avatar" aria-hidden="true">@initial</div>
+                        <div class="feedback-author-meta">
+                            <span class="feedback-author-name">@fb.UserName</span>
+                            <span class="feedback-author-sub">@fb.UserSubtitle</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL: FORM FEEDBACK & LIVE PREVIEW
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="modal fade feedback-modal" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div>
+                    <span class="kicker mb-1">Góc chia sẻ HomePlant</span>
+                    <h4 class="modal-title" id="feedbackModalLabel">Gửi cảm nhận &amp; Đánh giá của bạn</h4>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <!-- Modal Body with 2 Columns: Form & Live Preview -->
+            <div class="modal-body">
+                <div class="row g-4 align-items-stretch">
+
+                    <!-- Form Inputs (Left Column) -->
+                    <div class="col-lg-7">
+                        <form id="feedbackSubmitForm" novalidate>
+                            <div id="feedbackSubmitError" class="alert alert-danger d-none" role="alert"></div>
+
+                            <!-- User Info -->
+                            <div class="row g-3 feedback-form-group">
+                                <div class="col-sm-6">
+                                    <label class="feedback-form-label" for="modalUserName">Họ và tên hoặc biệt danh *</label>
+                                    <input type="text" 
+                                           id="modalUserName" 
+                                           class="feedback-input" 
+                                           placeholder="Ví dụ: Nguyễn Văn Nam" 
+                                           value="@currentUserName" 
+                                           required />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="feedback-form-label" for="modalUserSubtitle">Thông tin vườn cây (Tùy chọn)</label>
+                                    <input type="text" 
+                                           id="modalUserSubtitle" 
+                                           class="feedback-input" 
+                                           placeholder="Ví dụ: Căn hộ chung cư · Vườn 6 cây" />
+                                </div>
+                            </div>
+
+                            <!-- Tag Selection -->
+                            <div class="feedback-form-group">
+                                <label class="feedback-form-label">Chủ đề chia sẻ *</label>
+                                <div class="tag-picker-wrap">
+                                    <label class="tag-picker-item">
+                                        <input type="radio" name="modalTag" value="CỨU CÂY THÀNH CÔNG" checked />
+                                        <span class="tag-picker-badge">🌿 Cứu cây thành công</span>
+                                    </label>
+                                    <label class="tag-picker-item">
+                                        <input type="radio" name="modalTag" value="NGƯỜI MỚI BẮT ĐẦU" />
+                                        <span class="tag-picker-badge">🌱 Người mới bắt đầu</span>
+                                    </label>
+                                    <label class="tag-picker-item">
+                                        <input type="radio" name="modalTag" value="HỘI VIÊN GOLD" />
+                                        <span class="tag-picker-badge">✨ Hội viên Gold / AI</span>
+                                    </label>
+                                    <label class="tag-picker-item">
+                                        <input type="radio" name="modalTag" value="VƯỜN TRONG NHÀ" />
+                                        <span class="tag-picker-badge">🪴 Vườn trong nhà</span>
+                                    </label>
+                                    <label class="tag-picker-item">
+                                        <input type="radio" name="modalTag" value="MẸO CHĂM SÓC" />
+                                        <span class="tag-picker-badge">💡 Mẹo chăm sóc</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Star Rating -->
+                            <div class="feedback-form-group">
+                                <label class="feedback-form-label">Mức độ hài lòng của bạn *</label>
+                                <div class="d-flex align-items-center flex-wrap gap-2">
+                                    <div class="star-rating-picker" role="radiogroup" aria-label="Đánh giá số sao">
+                                        <input type="radio" id="modalRating5" name="modalRating" value="5" checked />
+                                        <label for="modalRating5" title="5 sao">★</label>
+
+                                        <input type="radio" id="modalRating4" name="modalRating" value="4" />
+                                        <label for="modalRating4" title="4 sao">★</label>
+
+                                        <input type="radio" id="modalRating3" name="modalRating" value="3" />
+                                        <label for="modalRating3" title="3 sao">★</label>
+
+                                        <input type="radio" id="modalRating2" name="modalRating" value="2" />
+                                        <label for="modalRating2" title="2 sao">★</label>
+
+                                        <input type="radio" id="modalRating1" name="modalRating" value="1" />
+                                        <label for="modalRating1" title="1 sao">★</label>
+                                    </div>
+                                    <span id="starRatingDescription" class="star-rating-text">
+                                        5 sao — Rất hài lòng, tuyệt vời!
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Title Input -->
+                            <div class="feedback-form-group">
+                                <label class="feedback-form-label" for="modalTitle">Tiêu đề câu chuyện / Cảm nhận *</label>
+                                <input type="text" 
+                                       id="modalTitle" 
+                                       class="feedback-input" 
+                                       placeholder="Ví dụ: Hồi sinh cây Monstera sau 1 tuần" 
+                                       required />
+                            </div>
+
+                            <!-- Content Textarea -->
+                            <div class="feedback-form-group mb-0">
+                                <label class="feedback-form-label" for="modalContent">Chia sẻ chi tiết cảm nhận của bạn *</label>
+                                <textarea id="modalContent" 
+                                          class="feedback-textarea" 
+                                          rows="4" 
+                                          placeholder="Kể lại trải nghiệm của bạn khi chăm cây, dùng AI chẩn đoán, hoặc tham gia cộng đồng HomePlant..." 
+                                          required></textarea>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Live Card Preview (Right Column) -->
+                    <div class="col-lg-5">
+                        <div class="feedback-preview-container">
+                            <span class="feedback-preview-title">Xem trước thẻ hiển thị thực tế</span>
+
+                            <!-- Preview Card -->
+                            <article class="feedback-card h-100">
+                                <span class="feedback-quote-watermark" aria-hidden="true">”</span>
+
+                                <div class="feedback-card-top">
+                                    <span id="prevTag" class="feedback-tag feedback-tag--success">
+                                        <span>🌿</span>
+                                        <span>CỨU CÂY THÀNH CÔNG</span>
+                                    </span>
+
+                                    <div id="prevStars" class="feedback-stars" aria-label="5 trên 5 sao">
+                                        <span class="star-gold">★</span>
+                                        <span class="star-gold">★</span>
+                                        <span class="star-gold">★</span>
+                                        <span class="star-gold">★</span>
+                                        <span class="star-gold">★</span>
+                                    </div>
+                                </div>
+
+                                <h3 id="prevTitle" class="feedback-title">Hồi sinh cây Monstera sau 1 tuần</h3>
+
+                                <blockquote id="prevQuote" class="feedback-quote">
+                                    "Nhờ tính năng chẩn đoán AI của HomePlant, mình biết ngay cây bị úng rễ do giá thể bí khí..."
+                                </blockquote>
+
+                                <div class="feedback-author">
+                                    <div id="prevInitial" class="feedback-avatar" aria-hidden="true">N</div>
+                                    <div class="feedback-author-meta">
+                                        <span id="prevName" class="feedback-author-name">@(string.IsNullOrEmpty(currentUserName) ? "Người bạn yêu cây" : currentUserName)</span>
+                                        <span id="prevSubtitle" class="feedback-author-sub">Hôm nay · Thành viên HomePlant</span>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer d-flex justify-content-between">
+                <span class="small text-muted">
+                    🌱 Đánh giá của bạn sẽ được gửi tới ban quản trị duyệt trước khi hiển thị trên trang chủ.
+                </span>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary px-3" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" form="feedbackSubmitForm" id="feedbackSubmitBtn" class="btn btn-success px-4">
+                        Gửi chia sẻ ngay 🌿
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification element -->
+<div id="feedbackToast" class="feedback-toast" role="alert" aria-live="assertive" aria-atomic="true"></div>

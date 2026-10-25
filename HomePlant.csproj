@@ -5,12 +5,14 @@
     <UserSecretsId>HomePlant-LocalDevelopment</UserSecretsId>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RazorCompileOnBuild>false</RazorCompileOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.5.0" />
     <PackageReference Include="Google.Apis.Auth" Version="1.74.0" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="10.0.13" />
     <PackageReference Include="payOS" Version="2.1.0" />
   </ItemGroup>
 
@@ -31,8 +33,7 @@
     <Compile Remove="Tests/**" />
     <Content Remove="Firebase/**;Seed/**;3D_UI/**;docs/**;Tests/**" />
     <None Remove="Firebase/**;Seed/**;3D_UI/**;docs/**;Tests/**" />
-    <Content Include="3D_UI/index.html;3D_UI/assets/**;3D_UI/render_output/**"
-             Exclude="**/*.bak;**/.DS_Store">
+    <Content Include="3D_UI/index.html;3D_UI/assets/**;3D_UI/render_output/**" Exclude="**/*.bak;**/.DS_Store">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>

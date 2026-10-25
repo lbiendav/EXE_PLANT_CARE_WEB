@@ -20,5 +20,7 @@ public class AdminDashboardVM
 
     public int PendingSpeciesRequestCount { get; set; }
 
+    public int PendingFeedbackCount { get; set; }
+
     public GoogleAnalyticsOverviewVM Analytics { get; set; } = GoogleAnalyticsOverviewVM.NotConfigured;
 }

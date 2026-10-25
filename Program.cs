@@ -27,7 +27,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add<HomePlant.Filters.ActiveUserFilter>();
     options.Filters.Add(new Microsoft.AspNetCore.Mvc.AutoValidateAntiforgeryTokenAttribute());
-});
+}).AddRazorRuntimeCompilation();
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.Name = builder.Environment.IsDevelopment()
@@ -202,6 +202,7 @@ builder.Services.AddScoped<UserPlantService>();
 builder.Services.AddScoped<PlantTemplateService>();
 builder.Services.AddScoped<ImageStorageService>();
 builder.Services.AddScoped<CommunityPostService>();
+builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<QaThreadService>();
 builder.Services.AddScoped<AiDiagnosisService>();
 builder.Services.AddHttpClient<PlantExpertAiService>(client =>

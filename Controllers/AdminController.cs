@@ -23,6 +23,7 @@ public class AdminController : Controller
     private readonly GoogleAnalyticsService _analyticsService;
     private readonly UserActivityService _activityService;
     private readonly PlantSpeciesRequestService _speciesRequestService;
+    private readonly FeedbackService _feedbackService;
 
     public AdminController(
         UserService userService,
@@ -36,7 +37,8 @@ public class AdminController : Controller
         ImageStorageService imageStorage,
         GoogleAnalyticsService analyticsService,
         UserActivityService activityService,
-        PlantSpeciesRequestService speciesRequestService)
+        PlantSpeciesRequestService speciesRequestService,
+        FeedbackService feedbackService)
     {
         _userService = userService;
         _articleService = articleService;
@@ -50,6 +52,7 @@ public class AdminController : Controller
         _analyticsService = analyticsService;
         _activityService = activityService;
         _speciesRequestService = speciesRequestService;
+        _feedbackService = feedbackService;
     }
 
     [PrivilegedAdminOnly]
@@ -64,10 +67,11 @@ public class AdminController : Controller
         var diagnosisCount = _aiDiagnosisService.Count();
         var gardenCount = _userPlantService.CountAll();
         var speciesRequestCount = _speciesRequestService.CountPending();
+        var feedbackCount = _feedbackService.CountPendingAsync();
         var analyticsTask = _analyticsService.GetOverview(cancellationToken);
 
         await Task.WhenAll(userCount, articleCount, templateCount, sampleCount,
-            communityCount, qaCount, diagnosisCount, gardenCount, speciesRequestCount, analyticsTask);
+            communityCount, qaCount, diagnosisCount, gardenCount, speciesRequestCount, feedbackCount, analyticsTask);
 
         var enrichedAnalytics = await _activityService.EnrichWithDatabaseUsersAsync(analyticsTask.Result);
 
@@ -82,6 +86,7 @@ public class AdminController : Controller
             QaThreadCount = qaCount.Result,
             AiDiagnosisCount = diagnosisCount.Result,
             PendingSpeciesRequestCount = speciesRequestCount.Result,
+            PendingFeedbackCount = feedbackCount.Result,
             Analytics = enrichedAnalytics
         };
 
@@ -385,6 +390,38 @@ public class AdminController : Controller
         await _communityPostService.UpdateStatus(id, status);
         TempData["Success"] = "Đã cập nhật trạng thái bài đăng.";
         return RedirectToAction(nameof(CommunityPosts));
+    }
+
+    public async Task<IActionResult> Feedbacks(string status = "all")
+    {
+        var list = await _feedbackService.GetAllFeedbacksAsync(status);
+        ViewBag.CurrentStatus = status;
+        ViewBag.PendingCount = await _feedbackService.CountPendingAsync();
+        return View(list);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateFeedbackStatus(string id, string status)
+    {
+        if (status is not ("approved" or "hidden" or "pending"))
+            return BadRequest();
+
+        await _feedbackService.UpdateStatusAsync(id, status);
+        TempData["Success"] = status switch
+        {
+            "approved" => "Đã duyệt và hiển thị đánh giá lên trang chủ.",
+            "hidden" => "Đã ẩn đánh giá khỏi trang chủ.",
+            _ => "Đã chuyển trạng thái đánh giá về chờ duyệt."
+        };
+        return RedirectToAction(nameof(Feedbacks), new { status });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteFeedback(string id)
+    {
+        await _feedbackService.DeleteFeedbackAsync(id);
+        TempData["Success"] = "Đã xóa vĩnh viễn đánh giá.";
+        return RedirectToAction(nameof(Feedbacks));
     }
 
     public async Task<IActionResult> QaThreads()

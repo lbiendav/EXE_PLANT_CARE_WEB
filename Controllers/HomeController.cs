@@ -1,5 +1,6 @@
 using HomePlant.Models;
 using HomePlant.Services;
+using HomePlant.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -9,15 +10,18 @@ public class HomeController : Controller
 {
     private readonly PlantSampleService _plantSampleService;
     private readonly ArticleService _articleService;
+    private readonly FeedbackService _feedbackService;
     private readonly IConfiguration _configuration;
 
     public HomeController(
         PlantSampleService plantSampleService,
         ArticleService articleService,
+        FeedbackService feedbackService,
         IConfiguration configuration)
     {
         _plantSampleService = plantSampleService;
         _articleService = articleService;
+        _feedbackService = feedbackService;
         _configuration = configuration;
     }
 
@@ -32,7 +36,92 @@ public class HomeController : Controller
             ViewBag.Articles = new List<ArticleModel>();
         }
 
+        try
+        {
+            ViewBag.Feedbacks = await _feedbackService.GetFeaturedFeedbacksAsync();
+        }
+        catch
+        {
+            ViewBag.Feedbacks = FeedbackService.GetDefaultFeedbacks();
+        }
+
         return View();
+    }
+
+    [HttpGet("/Feedback")]
+    public IActionResult Feedback()
+    {
+        return Redirect("/#feedback-section");
+    }
+
+    [HttpPost("/api/feedback")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> SubmitFeedback([FromBody] FeedbackSubmitViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(new { success = false, message = string.Join("; ", errors) });
+        }
+
+        var tagType = model.Tag switch
+        {
+            var t when t.Contains("CỨU CÂY", StringComparison.OrdinalIgnoreCase) => "success",
+            var t when t.Contains("GOLD", StringComparison.OrdinalIgnoreCase) || t.Contains("CHUYÊN GIA", StringComparison.OrdinalIgnoreCase) => "gold",
+            var t when t.Contains("NGƯỜI MỚI", StringComparison.OrdinalIgnoreCase) => "info",
+            _ => "copper"
+        };
+
+        var tagIcon = model.Tag switch
+        {
+            var t when t.Contains("CỨU CÂY", StringComparison.OrdinalIgnoreCase) => "🌿",
+            var t when t.Contains("GOLD", StringComparison.OrdinalIgnoreCase) || t.Contains("CHUYÊN GIA", StringComparison.OrdinalIgnoreCase) => "✨",
+            var t when t.Contains("NGƯỜI MỚI", StringComparison.OrdinalIgnoreCase) => "🌱",
+            _ => "🪴"
+        };
+
+        var subtitle = string.IsNullOrWhiteSpace(model.UserSubtitle)
+            ? $"{DateTime.UtcNow:dd/MM/yyyy} · Thành viên HomePlant"
+            : model.UserSubtitle.Trim();
+
+        var feedback = new FeedbackModel
+        {
+            UserName = model.UserName.Trim(),
+            UserSubtitle = subtitle,
+            Tag = model.Tag.Trim().ToUpperInvariant(),
+            TagIcon = tagIcon,
+            TagType = tagType,
+            Rating = Math.Clamp(model.Rating, 1, 5),
+            Title = model.Title.Trim(),
+            Content = model.Content.Trim(),
+            IsFeatured = false,
+            Status = "pending"
+        };
+
+        var created = await _feedbackService.CreateFeedbackAsync(feedback);
+
+        return Ok(new
+        {
+            success = true,
+            message = "Cảm ơn bạn đã gửi cảm nhận! Đánh giá của bạn đã được gửi tới ban quản trị và sẽ hiển thị trên HomePlant sau khi được duyệt 🌿",
+            data = new
+            {
+                id = created.Id,
+                userName = created.UserName,
+                userSubtitle = created.UserSubtitle,
+                tag = created.Tag,
+                tagIcon = created.TagIcon,
+                tagType = created.TagType,
+                rating = created.Rating,
+                title = created.Title,
+                content = created.Content,
+                status = created.Status,
+                createdAt = DateTime.UtcNow.ToString("dd/MM/yyyy")
+            }
+        });
     }
 
     public IActionResult Privacy()
