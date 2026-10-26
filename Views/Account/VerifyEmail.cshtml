@@ -25,11 +25,16 @@
         <h1 class="mt-2 text-danger">Xác thực chưa hoàn tất</h1>
 
         <p class="text-muted mt-3">
-            Liên kết không hợp lệ hoặc email chưa được xác thực. Vui lòng thử lại từ email đã nhận được.
+            Liên kết không hợp lệ hoặc đã hết hạn (liên kết xác thực có hiệu lực trong <strong>3 ngày / 72 giờ</strong>). Vui lòng đăng ký lại bằng cùng email để nhận liên kết xác thực mới.
         </p>
 
-        <a asp-action="Login" class="btn btn-outline-success mt-3">
-            Quay lại đăng nhập
-        </a>
+        <div class="d-flex justify-content-center gap-2 mt-3">
+            <a asp-action="Register" class="btn btn-success">
+                Đăng ký lại
+            </a>
+            <a asp-action="Login" class="btn btn-outline-secondary">
+                Quay lại đăng nhập
+            </a>
+        </div>
     }
 </div>

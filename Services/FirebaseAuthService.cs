@@ -77,10 +77,24 @@ public class FirebaseAuthService
         {
             firebaseUser = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(model.Email);
             if (firebaseUser.EmailVerified || firebaseUser.Disabled)
-                throw new RegistrationException("Không thể tiếp tục đăng ký. Hãy đăng nhập hoặc sử dụng chức năng Quên mật khẩu.");
+                throw new RegistrationException("Email này đã được sử dụng. Hãy đăng nhập hoặc sử dụng chức năng Quên mật khẩu.");
 
-            // Do not overwrite the existing user's password, name, claims or profile.
-            // SendVerificationEmail checks the original password and matching UID first.
+            // The account exists in Auth but is unverified (e.g. earlier verification link expired).
+            // Update credentials and profile to allow seamless re-registration with a fresh verification link.
+            await FirebaseAuth.DefaultInstance.UpdateUserAsync(new UserRecordArgs
+            {
+                Uid = firebaseUser.Uid,
+                Password = model.Password,
+                DisplayName = model.FullName
+            });
+
+            await FirebaseAuth.DefaultInstance.SetCustomUserClaimsAsync(
+                firebaseUser.Uid,
+                new Dictionary<string, object>
+                {
+                    { "pendingPhone", model.Phone ?? "" }
+                });
+
             await SendVerificationEmail(model.Email, model.Password, firebaseUser.Uid);
             return firebaseUser.Uid;
         }
@@ -108,6 +122,17 @@ public class FirebaseAuthService
         var continueUrl = BuildContinueUrl($"/Account/VerifyEmail?uid={Uri.EscapeDataString(uid)}");
         using var http = _httpClientFactory.CreateClient();
         await RegistrationEmailClient.SendAsync(http, _apiKey, email, password, uid, continueUrl);
+    }
+
+    public async Task ResendVerificationEmail(
+        string email,
+        string password)
+    {
+        var authUser = await FirebaseAuth.DefaultInstance.GetUserByEmailAsync(email);
+        if (authUser.EmailVerified || authUser.Disabled)
+            return;
+
+        await SendVerificationEmail(email, password, authUser.Uid);
     }
 
     public async Task<bool> CompleteVerification(

@@ -15,8 +15,17 @@
         Nhấp vào liên kết đó để kích hoạt tài khoản trước khi đăng nhập.
     </p>
 
-    <a asp-action="Login" class="btn btn-success mt-3">
-        Quay lại đăng nhập
-    </a>
+    <p class="text-muted small">
+        Lưu ý: Liên kết xác thực có hiệu lực trong vòng <strong>3 ngày (72 giờ)</strong>. Vui lòng kiểm tra cả thư mục Spam/Rác.
+    </p>
+
+    <div class="d-flex justify-content-center gap-2 mt-3">
+        <a asp-action="Login" class="btn btn-success">
+            Quay lại đăng nhập
+        </a>
+        <a asp-action="Register" class="btn btn-outline-secondary">
+            Đăng ký lại
+        </a>
+    </div>
 
 </div>

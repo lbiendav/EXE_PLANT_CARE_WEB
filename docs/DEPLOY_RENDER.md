@@ -580,20 +580,14 @@ credential khác và không có cơ chế bảo vệ đích staging của script
   `/Library/Index`, `/Article/Index` để kiểm tra; nếu dùng rollback code thì dữ
   liệu seed vẫn còn. Script không có lệnh tự xóa seed.
 
-## 13. Thử lại đăng ký đã bị gián đoạn
+## 13. Thử lại đăng ký và xác thực email
 
-Sau khi bản sửa đăng ký đã deploy thành công:
+Liên kết xác thực email trong Firebase Authentication có thời hạn **3 ngày (72 giờ)**.
 
-1. Mở `https://homeplant-staging.onrender.com/Account/Register` bằng một lượt GET
-   mới (nhập URL trên thanh địa chỉ), không refresh lại POST lỗi cũ.
-2. Nhập lại cùng email và **mật khẩu ban đầu**. Với tài khoản chưa xác minh, ứng
-   dụng sẽ kiểm tra mật khẩu và gửi email xác minh lại thay vì tạo tài khoản trùng.
-   Thông tin tên/điện thoại nhập lại không ghi đè tài khoản đang có.
-3. Chỉ khi Firebase chấp nhận yêu cầu gửi email, ứng dụng mới hiện trang
-   “Kiểm tra email”. Kiểm tra cả Spam, mở liên kết xác minh và tiếp tục về HomePlant.
-4. Đăng nhập. Nếu quên mật khẩu ban đầu, dùng chức năng Quên mật khẩu; không xóa
-   tài khoản để né lỗi và không tự đặt `emailVerified = true` trong Console.
-5. Nếu còn lỗi, ghi lại giờ và thông báo trên form; không gửi mật khẩu hoặc API key.
+Nếu người dùng chưa ấn xác nhận hoặc liên kết đã hết hạn:
+1. **Đăng nhập với mật khẩu đã tạo**: Hệ thống sẽ phát hiện tài khoản chưa xác thực email và tự động gửi lại liên kết xác thực mới (có hiệu lực 3 ngày) vào hộp thư.
+2. **Đăng ký lại bằng cùng email**: Mở `https://homeplant-staging.onrender.com/Account/Register` (hoặc link tương ứng trên Production), nhập lại cùng email và mật khẩu mong muốn (có thể dùng mật khẩu mới hoặc cũ). Hệ thống sẽ cập nhật thông tin cho tài khoản chưa xác thực và gửi liên kết xác thực mới.
+3. Kiểm tra hộp thư (kể cả Spam), mở liên kết xác thực để kích hoạt tài khoản, sau đó đăng nhập.
 
 Chạy kiểm thử không gửi email:
 

@@ -62,7 +62,7 @@ public class AccountController : Controller
         {
             ModelState.AddModelError(
                 "",
-                "Chưa thể hoàn tất đăng ký. Vui lòng thử lại sau bằng cùng email và mật khẩu, hoặc chọn Quên mật khẩu.");
+                "Chưa thể hoàn tất đăng ký. Vui lòng thử lại sau ít phút hoặc liên hệ quản trị viên.");
 
             return View(vm);
         }
@@ -151,9 +151,19 @@ public class AccountController : Controller
 
         if (result.EmailNotVerified)
         {
-            ModelState.AddModelError(
-                "",
-                "Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư của bạn.");
+            try
+            {
+                await _authService.ResendVerificationEmail(vm.Email, vm.Password);
+                ModelState.AddModelError(
+                    "",
+                    "Tài khoản chưa được xác thực email. Hệ thống đã gửi lại liên kết xác thực mới đến email của bạn (hiệu lực trong 3 ngày). Vui lòng kiểm tra hộp thư (kể cả thư mục Spam).");
+            }
+            catch
+            {
+                ModelState.AddModelError(
+                    "",
+                    "Tài khoản chưa được xác thực email. Vui lòng kiểm tra email của bạn hoặc đăng ký lại để nhận liên kết xác thực mới (nếu liên kết cũ đã quá 3 ngày).");
+            }
 
             return View(vm);
         }
